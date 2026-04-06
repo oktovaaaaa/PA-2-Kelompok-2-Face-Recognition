@@ -19,7 +19,9 @@ import {
   Box,
   Avatar,
   CircularProgress,
-  TablePagination
+  TablePagination,
+  TextField,
+  InputAdornment
 } from '@mui/material'
 import { employeeService, Employee } from '../../libs/employeeService'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -32,6 +34,7 @@ const EmployeeApproval = () => {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   
   // Modal States
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
@@ -118,16 +121,38 @@ const EmployeeApproval = () => {
     setIsConfirmOpen(true)
   }
 
-  const paginatedEmployees = employees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  const filteredEmployees = employees.filter(emp => 
+    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.email.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const paginatedEmployees = filteredEmployees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-        <CardHeader 
-          title="Persetujuan Karyawan" 
-          subheader={`Daftar pendaftar baru yang memerlukan verifikasi (${employees.length} pending)`}
-          sx={{ pb: 5 }}
-        />
+        <Box sx={{ p: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
+          <Box>
+            <Typography variant="h5" sx={{ mb: 0.5 }}>Persetujuan Karyawan</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Daftar pendaftar baru yang memerlukan verifikasi ({employees.length} pending)
+            </Typography>
+          </Box>
+          <TextField
+            size='small'
+            placeholder='Cari Nama / Email...'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ width: { xs: '100%', sm: 300 } }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position='start'>
+                  <i className='ri-search-line' />
+                </InputAdornment>
+              )
+            }}
+          />
+        </Box>
       </Card>
 
       <Card>
@@ -151,7 +176,7 @@ const EmployeeApproval = () => {
                 {paginatedEmployees.length === 0 ? (
                     <TableRow>
                         <TableCell colSpan={5} align='center' sx={{ py: 10 }}>
-                            <Typography color='textSecondary'>Tidak ada pendaftaran baru yang tertunda.</Typography>
+                            <Typography color='textSecondary'>Tidak ada pendaftaran baru yang ditemukan.</Typography>
                         </TableCell>
                     </TableRow>
                 ) : paginatedEmployees.map((row) => (
@@ -203,7 +228,7 @@ const EmployeeApproval = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={employees.length}
+          count={filteredEmployees.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

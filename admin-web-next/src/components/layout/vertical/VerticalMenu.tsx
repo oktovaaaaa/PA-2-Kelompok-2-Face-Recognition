@@ -65,9 +65,6 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>
           Ringkasan Dashboard
         </MenuItem>
-        <MenuItem href='/analitik-absensi' icon={<i className='ri-bar-chart-box-line' />}>
-          Analitik Absensi
-        </MenuItem>
 
         <MenuSection label='Manajemen SDM'>
           <MenuItem href='/persetujuan' icon={<i className='ri-user-received-line' />}>
@@ -94,9 +91,6 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href='/payroll' icon={<i className='ri-money-dollar-circle-line' />}>
             Laporan Payroll
           </MenuItem>
-          <MenuItem href='/pelanggaran' icon={<i className='ri-alarm-warning-line' />}>
-            Data Pelanggaran
-          </MenuItem>
         </MenuSection>
 
         <MenuSection label='Aplikasi & Halaman'>
@@ -105,18 +99,6 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           </MenuItem>
           <MenuItem href='/operasional' icon={<i className='ri-settings-4-line' />}>
             Pengaturan Operasional
-          </MenuItem>
-          <MenuItem href='/template-dashboard' icon={<i className='ri-layout-grid-line' />}>
-            Template Dashboard
-          </MenuItem>
-          <MenuItem href='/card-basic' icon={<i className='ri-bar-chart-box-line' />}>
-            Kartu Statistik
-          </MenuItem>
-        </MenuSection>
-
-        <MenuSection label='Formulir & Tabel'>
-          <MenuItem href='/form-layouts' icon={<i className='ri-layout-4-line' />}>
-            Layout Formulir
           </MenuItem>
         </MenuSection>
 

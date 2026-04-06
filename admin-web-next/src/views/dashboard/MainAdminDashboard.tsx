@@ -277,11 +277,6 @@ const MainAdminDashboard = () => {
                                 );
                             })}
                         </Box>
-                        <Link href='/analitik-absensi' className='block no-underline'>
-                            <Button fullWidth variant='outlined' size='small' className='mbs-4 border-blue-200 text-blue-600 rounded-xl font-bold'>
-                                Lihat Analitik
-                            </Button>
-                        </Link>
                     </CardContent>
                 </Card>
             </Grid>

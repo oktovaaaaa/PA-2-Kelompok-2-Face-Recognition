@@ -69,6 +69,21 @@ export const authService = {
     return authData;
   },
 
+  async googleLogin(idToken: string) {
+    const response = await fetch(`${API_URL}/auth/google-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Gagal login dengan Google.');
+    }
+
+    return true;
+  },
+
   // Register Admin
   async register(name: string, email: string, password: string, companyName: string, otpCode: string) {
     const response = await fetch(`${API_URL}/auth/register-admin`, {

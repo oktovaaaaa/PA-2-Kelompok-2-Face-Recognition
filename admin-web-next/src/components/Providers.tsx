@@ -6,6 +6,7 @@ import { VerticalNavProvider } from '@menu/contexts/verticalNavContext'
 import { SettingsProvider } from '@core/contexts/settingsContext'
 import { NotificationProvider } from '@/contexts/NotificationContext'
 import ThemeProvider from '@components/theme'
+import GoogleAuthProvider from '@/components/GoogleAuthProvider'
 
 // Util Imports
 import { getMode, getSettingsFromCookie } from '@core/utils/serverHelpers'
@@ -27,7 +28,9 @@ const Providers = (props: Props) => {
       <SettingsProvider settingsCookie={settingsCookie} mode={mode}>
         <ThemeProvider direction={direction}>
           <NotificationProvider>
-            {children}
+            <GoogleAuthProvider>
+              {children}
+            </GoogleAuthProvider>
           </NotificationProvider>
         </ThemeProvider>
       </SettingsProvider>

@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 
 // Next Imports
@@ -18,6 +18,9 @@ import type { Mode } from '@core/types'
 // Component Imports
 import Link from '@components/Link'
 
+// React-OAuth Import
+import { useGoogleLogin } from '@react-oauth/google'
+
 // Service Imports
 import { authService } from '@/libs/auth'
 
@@ -30,6 +33,8 @@ const Login = ({ mode }: { mode: Mode }) => {
   const [password, setPassword] = useState('')
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', ''])
   const [rememberMe, setRememberMe] = useState(true)
+  const [resendTimer, setResendTimer] = useState(0)
+  const [isResending, setIsResending] = useState(false)
 
   // Notification States
   const [openSnackbar, setOpenSnackbar] = useState(false)
@@ -38,6 +43,48 @@ const Login = ({ mode }: { mode: Mode }) => {
 
   // Hooks
   const router = useRouter()
+
+  // Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (resendTimer > 0 && step === 'otp') {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1)
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [resendTimer, step])
+
+  useEffect(() => {
+    if (step === 'otp' && resendTimer === 0) {
+      setResendTimer(30)
+    }
+  }, [step])
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true)
+      try {
+        // Fetch user profile to get email
+        const userRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`)
+        const userData = await userRes.json()
+        
+        if (userData.email) {
+          // Trigger backend OTP send for this email
+          await authService.sendOTP(userData.email)
+          
+          setEmail(userData.email)
+          handleShowNotification('Akun Google diverifikasi. Silakan masukkan kode OTP yang dikirim ke email Anda.', 'success')
+          setStep('otp')
+        }
+      } catch (error: any) {
+        handleShowNotification('Gagal login dengan Google', 'error')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => handleShowNotification('Login Google dibatalkan', 'error')
+  })
 
   const handleShowNotification = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
     setSnackbarMessage(message)
@@ -94,6 +141,21 @@ const Login = ({ mode }: { mode: Mode }) => {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || isResending) return
+
+    setIsResending(true)
+    try {
+      await authService.sendOTP(email)
+      handleShowNotification('Kode OTP baru telah dikirim', 'success')
+      setResendTimer(30)
+    } catch (error: any) {
+      handleShowNotification(error.message || 'Gagal mengirim ulang OTP', 'error')
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -222,7 +284,12 @@ const Login = ({ mode }: { mode: Mode }) => {
                 <span className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[12px] text-[#64748B]'>Atau</span>
               </div>
 
-              <button className='w-full py-4 bg-white border-2 border-[#E2E8F0] rounded-full text-[14px] font-bold text-[#0F172A] transition-all hover:bg-[#f8fafc] hover:border-[#cbd5e1] flex items-center justify-center gap-3'>
+              <button 
+                type='button'
+                onClick={() => handleGoogleLogin()}
+                className='w-full py-4 bg-white border-2 border-[#E2E8F0] rounded-full text-[14px] font-bold text-[#0F172A] transition-all hover:bg-[#f8fafc] hover:border-[#cbd5e1] flex items-center justify-center gap-3 disabled:opacity-70'
+                disabled={loading}
+              >
                 <i className='bx bxl-google text-[24px] text-[#DB4437]' />
                 Masuk dengan Google
               </button>
@@ -265,13 +332,32 @@ const Login = ({ mode }: { mode: Mode }) => {
                   {loading ? <CircularProgress size={20} color='inherit' /> : 'Verifikasi Sekarang'}
                 </button>
                 
-                <button 
-                  type='button'
-                  onClick={() => setStep('login')}
-                  className='text-[14px] font-bold text-[#64748B] hover:text-[#0F172A]'
-                >
-                  Ganti Email / Kembali
-                </button>
+                <div className='flex flex-col gap-4 mt-2'>
+                  <p className='text-[14px] text-[#64748B]'>
+                    Tidak menerima kode?{' '}
+                    {resendTimer > 0 ? (
+                      <span className='text-[#94A3B8] font-bold'>Kirim ulang dalam {resendTimer}s</span>
+                    ) : (
+                      <button 
+                        type='button' 
+                        onClick={handleResendOtp}
+                        disabled={isResending}
+                        className='text-[#2563EB] font-bold hover:underline disabled:opacity-50'
+                      >
+                        Kirim Ulang
+                      </button>
+                    )}
+                  </p>
+
+                  <button 
+                    type='button'
+                    onClick={() => setStep('login')}
+                    className='w-full py-4 bg-[#F1F5F9] border-2 border-[#E2E8F0] rounded-full text-[14px] font-bold text-[#475569] hover:bg-[#E2E8F0] transition-all flex items-center justify-center gap-2'
+                  >
+                    <i className='bx bx-left-arrow-alt text-[20px]' />
+                    Ganti Email / Kembali
+                  </button>
+                </div>
               </form>
             </div>
           )}

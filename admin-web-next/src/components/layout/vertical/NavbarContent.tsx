@@ -23,6 +23,13 @@ const NavbarContent = () => {
       <div className='flex items-center gap-2 sm:gap-4'>
         <NavToggle />
         <NavSearch />
+        <Link 
+          href='/landing' 
+          className='ml-4 px-4 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-medium hidden md:block'
+          style={{ textDecoration: 'none' }}
+        >
+          Landing Page
+        </Link>
       </div>
       <div className='flex items-center'>
         <ModeDropdown />
