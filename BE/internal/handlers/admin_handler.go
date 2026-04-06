@@ -111,8 +111,12 @@ func ApproveEmployee(c *gin.Context) {
 	}
 
 	user.Status = "ACTIVE"
-
 	database.DB.Save(&user)
+
+	// Kirim Notifikasi ke Karyawan
+	services.CreateNotification(user.ID, user.CompanyID, "Akun Disetujui",
+		"Selamat! Akun Anda telah disetujui oleh admin. Anda sekarang bisa mengakses seluruh fitur aplikasi.", "EMPLOYEE_APPROVED", user.ID)
+	services.SendPushNotification(user.ID, "Akun Disetujui", "Akun Anda telah aktif. Silakan masuk kembali.")
 
 	utils.Success(c, "Karyawan berhasil diapprove", nil)
 }
@@ -144,8 +148,12 @@ func RejectEmployee(c *gin.Context) {
 	}
 
 	user.Status = "REJECTED"
-
 	database.DB.Save(&user)
+
+	// Kirim Notifikasi ke Karyawan
+	services.CreateNotification(user.ID, user.CompanyID, "Akun Ditolak",
+		"Maaf, pendaftaran akun Anda telah ditolak oleh admin. Hubungi admin instansi Anda untuk informasi lebih lanjut.", "EMPLOYEE_REJECTED", user.ID)
+	services.SendPushNotification(user.ID, "Akun Ditolak", "Pendaftaran akun Anda telah ditolak.")
 
 	utils.Success(c, "Karyawan ditolak", nil)
 }

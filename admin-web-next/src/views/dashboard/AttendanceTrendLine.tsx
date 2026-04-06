@@ -9,6 +9,7 @@ import Box from '@mui/material/Box'
 import type { ApexOptions } from 'apexcharts'
 import { AttendanceTrend } from '@/libs/dashboardService'
 import { useState, useEffect } from 'react'
+import { useTheme } from '@mui/material/styles'
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
@@ -17,11 +18,13 @@ interface Props {
 }
 
 const AttendanceTrendLine = ({ trend }: Props) => {
+  const theme = useTheme()
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+  
   const trendOptions: ApexOptions = {
     chart: {
       toolbar: { show: false },
@@ -32,11 +35,11 @@ const AttendanceTrendLine = ({ trend }: Props) => {
       categories: trend?.labels || [],
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { style: { colors: '#94A3B8', fontSize: '11px' } }
+      labels: { style: { colors: 'var(--mui-palette-text-secondary)', fontSize: '11px' } }
     },
     yaxis: {
       labels: {
-        style: { colors: '#94A3B8', fontSize: '11px' },
+        style: { colors: 'var(--mui-palette-text-secondary)', fontSize: '11px' },
         formatter: (val: number) => Math.round(val).toString()
       }
     },
@@ -52,7 +55,7 @@ const AttendanceTrendLine = ({ trend }: Props) => {
       }
     },
     grid: {
-      borderColor: 'rgba(0,0,0,0.05)',
+      borderColor: 'var(--mui-palette-divider)',
       padding: { bottom: 12, left: -10, right: -10 }
     },
     markers: { size: 4, strokeWidth: 2, strokeColors: '#fff', hover: { size: 6 } },
@@ -62,9 +65,13 @@ const AttendanceTrendLine = ({ trend }: Props) => {
       fontSize: '12px',
       fontWeight: 500,
       fontFamily: 'inherit',
+      labels: {
+        colors: 'var(--mui-palette-text-primary)'
+      },
       markers: { size: 8, strokeWidth: 0 }
     },
     tooltip: {
+      theme: theme.palette.mode as 'light' | 'dark',
       x: { show: true },
       y: { formatter: (val: number) => `${val} Karyawan` }
     }
@@ -84,10 +91,10 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         <CardContent className='p-6'>
             <Box className='flex justify-between items-center mbe-8'>
                 <Box>
-                    <Typography variant='h6' className='font-bold text-slate-800 uppercase text-sm tracking-widest'>Tren Kehadiran 7 Hari</Typography>
-                    <Typography variant='caption' className='text-slate-400'>Kedisplinan karyawan satu minggu terakhir</Typography>
+                    <Typography variant='subtitle2' className='font-bold uppercase tracking-widest'>Tren Kehadiran 7 Hari</Typography>
+                    <Typography variant='caption' color='text.secondary'>Kedisplinan karyawan satu minggu terakhir</Typography>
                 </Box>
-                <Box className='px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold'>
+                <Box className='px-3 py-1 bg-primaryLight text-primary rounded-full text-[10px] font-bold'>
                     7 HARI TERAKHIR
                 </Box>
             </Box>
@@ -96,7 +103,7 @@ const AttendanceTrendLine = ({ trend }: Props) => {
                     <AppReactApexCharts type='area' height={400} width='100%' options={trendOptions} series={trendSeries} />
                 ) : (
                     <Box className='h-[400px] flex items-center justify-center'>
-                        <i className='ri-loader-4-line animate-spin text-2xl text-slate-200' />
+                        <i className='ri-loader-4-line animate-spin text-2xl text-primary' />
                     </Box>
                 )}
             </Box>

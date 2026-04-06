@@ -112,8 +112,8 @@ const RecentAttendanceTable = () => {
     return (
         <Card className='shadow-lg rounded-3xl border-none overflow-hidden'>
             <CardHeader
-                title={<Typography variant='h6' className='font-bold text-slate-800 uppercase text-sm tracking-widest'>Log Absensi Hari Ini</Typography>}
-                subheader={<Typography variant='caption' className='text-slate-400'>Urutan kedatangan karyawan hari ini (Paling awal teratas)</Typography>}
+                title={<Typography variant='subtitle2' className='font-bold uppercase tracking-widest'>Log Absensi Hari Ini</Typography>}
+                subheader={<Typography variant='caption' color='text.secondary'>Urutan kedatangan karyawan hari ini (Paling awal teratas)</Typography>}
                 action={
                     <IconButton size='small' onClick={fetchLogs}>
                         <i className='ri-refresh-line text-slate-400' />
@@ -123,13 +123,13 @@ const RecentAttendanceTable = () => {
             />
             <TableContainer>
                 <Table sx={{ minWidth: 600 }}>
-                    <TableHead className='bg-slate-50'>
+                    <TableHead className='bg-actionHover transition-colors'>
                         <TableRow>
-                            <TableCell className='font-bold text-slate-500 uppercase text-[11px] py-4'>Karyawan</TableCell>
-                            <TableCell className='font-bold text-slate-500 uppercase text-[11px] py-4'>Email</TableCell>
-                            <TableCell className='font-bold text-slate-500 uppercase text-[11px] py-4'>Waktu Check-In</TableCell>
-                            <TableCell className='font-bold text-slate-500 uppercase text-[11px] py-4'>Waktu Check-Out</TableCell>
-                            <TableCell className='font-bold text-slate-500 uppercase text-[11px] py-4' align='center'>Status</TableCell>
+                            <TableCell className='font-bold uppercase text-[11px] py-4' color='text.secondary'>Karyawan</TableCell>
+                            <TableCell className='font-bold uppercase text-[11px] py-4' color='text.secondary'>Email</TableCell>
+                            <TableCell className='font-bold uppercase text-[11px] py-4' color='text.secondary'>Waktu Check-In</TableCell>
+                            <TableCell className='font-bold uppercase text-[11px] py-4' color='text.secondary'>Waktu Check-Out</TableCell>
+                            <TableCell className='font-bold uppercase text-[11px] py-4' align='center' color='text.secondary'>Status</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -140,24 +140,24 @@ const RecentAttendanceTable = () => {
                                         <Avatar 
                                             src={formatImageUrl(log.photo_url)} 
                                             alt={log.user_name}
-                                            className='shadow-sm border border-slate-100'
+                                            className='shadow-sm border border-divider'
                                         />
-                                        <Typography className='font-bold text-slate-700 text-sm'>{log.user_name}</Typography>
+                                        <Typography variant='subtitle2' className='font-bold'>{log.user_name}</Typography>
                                     </Box>
                                 </TableCell>
                                 <TableCell>
-                                    <Typography variant='caption' className='text-slate-500'>{log.user_email}</Typography>
+                                    <Typography variant='caption' color='text.secondary'>{log.user_email}</Typography>
                                 </TableCell>
                                 <TableCell>
                                     <Box className='flex items-center gap-2'>
                                         <i className='ri-time-line text-blue-500 text-lg' />
-                                        <Typography className='font-bold text-slate-800'>{formatTime(log.check_in_time)}</Typography>
+                                        <Typography className='font-bold' color='text.primary'>{formatTime(log.check_in_time)}</Typography>
                                     </Box>
                                 </TableCell>
                                 <TableCell>
                                     <Box className='flex items-center gap-2'>
                                         <i className='ri-time-line text-orange-500 text-lg' />
-                                        <Typography className='font-bold text-slate-800'>{formatTime(log.check_out_time)}</Typography>
+                                        <Typography className='font-bold' color='text.primary'>{formatTime(log.check_out_time)}</Typography>
                                     </Box>
                                 </TableCell>
                                 <TableCell align='center'>

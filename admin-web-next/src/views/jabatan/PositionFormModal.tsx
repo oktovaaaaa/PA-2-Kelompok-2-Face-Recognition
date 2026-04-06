@@ -14,6 +14,7 @@ import {
   CircularProgress
 } from '@mui/material'
 import { Position, employeeService } from '../../libs/employeeService'
+import { useNotification } from '../../contexts/NotificationContext'
 
 interface Props {
   open: boolean
@@ -23,8 +24,10 @@ interface Props {
 }
 
 const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
+  const { showNotification } = useNotification()
   const [name, setName] = useState('')
   const [salary, setSalary] = useState('')
+  const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
 
   const isEdit = !!position
@@ -34,9 +37,11 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
       if (position) {
         setName(position.name)
         setSalary(position.salary.toString())
+        setDescription(position.description || '')
       } else {
         setName('')
         setSalary('')
+        setDescription('')
       }
     }
   }, [open, position])
@@ -44,19 +49,31 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !salary) {
+      showNotification('Nama dan Gaji wajib diisi', 'warning')
       return
     }
 
     setLoading(true)
     try {
       if (isEdit) {
-        await employeeService.updatePosition(position.id, { name, salary: Number(salary) })
+        await employeeService.updatePosition(position.id, { 
+          name, 
+          salary: Number(salary),
+          description: description 
+        })
+        showNotification('Jabatan berhasil diperbarui', 'success')
       } else {
-        await employeeService.createPosition({ name, salary: Number(salary) })
+        await employeeService.createPosition({ 
+          name, 
+          salary: Number(salary),
+          description: description 
+        })
+        showNotification('Jabatan baru berhasil ditambahkan', 'success')
       }
       onSuccess()
       onClose()
     } catch (error: any) {
+      showNotification(error.message || 'Terjadi kesalahan sistem', 'error')
       console.error(error)
     } finally {
       setLoading(false)
@@ -99,6 +116,21 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
                     InputProps={{
                         startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
                     }}
+                />
+            </Box>
+
+            <Box>
+                <Typography variant='caption' fontWeight='700' color='textSecondary' sx={{ mb: 1, display: 'block' }}>
+                    DESKRIPSI JABATAN (OPSIONAL)
+                </Typography>
+                <TextField
+                    fullWidth
+                    size='small'
+                    multiline
+                    rows={3}
+                    placeholder='Jelaskan tugas dan tanggung jawab jabatan ini...'
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                 />
             </Box>
           </Box>

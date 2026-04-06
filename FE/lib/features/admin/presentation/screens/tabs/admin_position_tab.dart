@@ -37,6 +37,7 @@ class _AdminPositionTabState extends State<AdminPositionTab> {
     final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
     final salaryCtrl = TextEditingController(
         text: existing?['salary'] != null ? CurrencyInputFormatter.formatNumber((existing!['salary'] as num).toInt()) : '');
+    final descCtrl = TextEditingController(text: existing?['description'] ?? '');
     final isEdit = existing != null;
 
     showModalBottomSheet(
@@ -48,68 +49,85 @@ class _AdminPositionTabState extends State<AdminPositionTab> {
           left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(isEdit ? 'Edit Jabatan' : 'Tambah Jabatan',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration: InputDecoration(
-                labelText: 'Nama Jabatan',
-                hintText: 'contoh: Manager, Staff, Supervisor',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: salaryCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                CurrencyInputFormatter(),
-              ],
-              decoration: InputDecoration(
-                labelText: 'Gaji Pokok (Rp)',
-                hintText: 'contoh: 5000000',
-                prefixText: 'Rp ',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4D64F5),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isEdit ? 'Edit Jabatan' : 'Tambah Jabatan',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Nama Jabatan',
+                  hintText: 'contoh: Manager, Staff, Supervisor',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  final body = {
-                    'name': nameCtrl.text.trim(),
-                    'salary': CurrencyInputFormatter.unformat(salaryCtrl.text.trim()).toDouble(),
-                  };
-                  try {
-                    if (isEdit) {
-                      await ApiClient.put('/api/admin/positions/${existing!['id']}', body);
-                    } else {
-                      await ApiClient.post('/api/admin/positions', body);
-                    }
-                    _loadPositions();
-                    if (mounted) {
-                      AppDialog.showSuccess(context, isEdit ? 'Jabatan diperbarui' : 'Jabatan ditambahkan');
-                    }
-                  } catch (_) {}
-                },
-                child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Jabatan'),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: salaryCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  CurrencyInputFormatter(),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Gaji Pokok (Rp)',
+                  hintText: 'contoh: 5000000',
+                  prefixText: 'Rp ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Deskripsi Jabatan (Opsional)',
+                  hintText: 'Tuliskan deskripsi pekerjaan...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4D64F5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final body = {
+                      'name': nameCtrl.text.trim(),
+                      'salary': CurrencyInputFormatter.unformat(salaryCtrl.text.trim()).toDouble(),
+                      'description': descCtrl.text.trim(),
+                    };
+                    try {
+                      if (isEdit) {
+                        await ApiClient.put('/api/admin/positions/${existing!['id']}', body);
+                      } else {
+                        await ApiClient.post('/api/admin/positions', body);
+                      }
+                      _loadPositions();
+                      if (mounted) {
+                        AppDialog.showSuccess(context, isEdit ? 'Jabatan diperbarui' : 'Jabatan ditambahkan');
+                      }
+                      } catch (e) {
+                      if (mounted) {
+                        AppDialog.showError(context, 'Gagal menyimpan perubahan jabatan');
+                      }
+                    }
+                  },
+                  child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Jabatan'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -278,6 +296,15 @@ class _AdminPositionTabState extends State<AdminPositionTab> {
                                         children: [
                                           Text(p['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A))),
                                           const SizedBox(height: 4),
+                                          if (p['description'] != null && p['description'].toString().isNotEmpty) ...[
+                                            Text(
+                                              p['description'],
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                            ),
+                                            const SizedBox(height: 6),
+                                          ],
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                             decoration: BoxDecoration(

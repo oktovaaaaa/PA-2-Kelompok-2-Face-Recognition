@@ -20,8 +20,9 @@ func CreatePosition(c *gin.Context) {
 	adminUser := userCtx.(models.User)
 
 	var body struct {
-		Name   string  `json:"name"`
-		Salary float64 `json:"salary"`
+		Name        string  `json:"name"`
+		Salary      float64 `json:"salary"`
+		Description string  `json:"description"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil || body.Name == "" {
 		utils.Error(c, "Data jabatan tidak valid")
@@ -29,10 +30,11 @@ func CreatePosition(c *gin.Context) {
 	}
 
 	position := models.Position{
-		ID:        uuid.New().String(),
-		CompanyID: adminUser.CompanyID,
-		Name:      body.Name,
-		Salary:    body.Salary,
+		ID:          uuid.New().String(),
+		CompanyID:   adminUser.CompanyID,
+		Name:        body.Name,
+		Salary:      body.Salary,
+		Description: body.Description,
 	}
 	if err := database.DB.Create(&position).Error; err != nil {
 		utils.Error(c, "Gagal membuat jabatan")
@@ -58,8 +60,9 @@ func UpdatePosition(c *gin.Context) {
 
 	id := c.Param("id")
 	var body struct {
-		Name   string  `json:"name"`
-		Salary float64 `json:"salary"`
+		Name        string  `json:"name"`
+		Salary      float64 `json:"salary"`
+		Description string  `json:"description"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		utils.Error(c, "Data tidak valid")
@@ -74,6 +77,7 @@ func UpdatePosition(c *gin.Context) {
 
 	position.Name = body.Name
 	position.Salary = body.Salary
+	position.Description = body.Description
 	database.DB.Save(&position)
 	utils.Success(c, "Jabatan berhasil diperbarui", position)
 }

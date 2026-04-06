@@ -15,7 +15,7 @@ func GetNotifications(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
-	var notifications []models.Notification
+	var notifications = []models.Notification{}
 	database.DB.Where("user_id = ?", user.ID).
 		Order("created_at desc").
 		Limit(50).

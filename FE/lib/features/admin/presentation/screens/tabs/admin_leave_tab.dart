@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/network/api_client.dart';
 import '../../../../common/widgets/app_dialog.dart';
+import '../../../../../core/constants/app_constants.dart';
 
 class AdminLeaveTab extends StatefulWidget {
   const AdminLeaveTab({super.key});
@@ -153,7 +154,43 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
                   ]),
                   const SizedBox(height: 24),
 
-                  // 4. Catatan Admin
+                  // 4. Bukti Foto
+                  if (leave['photo_url'] != null && (leave['photo_url'] as String).isNotEmpty) ...[
+                    _buildSectionTitle('Bukti Foto'),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => _showFullScreenImage(ctx, AppConstants.baseUrl + leave['photo_url']),
+                      child: Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.network(
+                            AppConstants.baseUrl + leave['photo_url'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.broken_image_rounded, color: Colors.grey, size: 40),
+                                  SizedBox(height: 8),
+                                  Text('Gagal memuat gambar', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // 5. Catatan Admin
                   if (leave['admin_note'] != null && (leave['admin_note'] as String).isNotEmpty) ...[
                     _buildSectionTitle('Tanggapan Admin'),
                     const SizedBox(height: 12),
@@ -213,6 +250,36 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
                       ],
                     ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                errorBuilder: (ctx, _, __) => const Icon(Icons.broken_image, color: Colors.white, size: 50),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
               ),
             ),
           ],

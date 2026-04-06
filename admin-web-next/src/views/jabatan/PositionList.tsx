@@ -22,9 +22,11 @@ import {
   Divider
 } from '@mui/material'
 import { employeeService, Position } from '../../libs/employeeService'
+import { useNotification } from '../../contexts/NotificationContext'
 import PositionFormModal from './PositionFormModal'
 
 const PositionList = () => {
+  const { showNotification } = useNotification()
   const [positions, setPositions] = useState<Position[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -64,9 +66,11 @@ const PositionList = () => {
     if (!selectedPosition) return
     try {
       await employeeService.deletePosition(selectedPosition.id)
+      showNotification('Jabatan berhasil dihapus', 'success')
       loadData()
       setIsDeleteConfirmOpen(false)
     } catch (error: any) {
+      showNotification(error.message || 'Gagal menghapus jabatan', 'error')
       console.error(error)
     }
   }
@@ -193,9 +197,31 @@ const PositionList = () => {
                     </Box>
                   </Box>
 
-                  <Typography variant='h5' fontWeight='800' color='primary' sx={{ mb: 4 }}>
+                  <Typography variant='h5' fontWeight='800' color='primary' sx={{ mb: 2 }}>
                     {formatCurrency(pos.salary)}
                   </Typography>
+
+                  {pos.description ? (
+                    <Typography 
+                      variant='body2' 
+                      color='textSecondary' 
+                      sx={{ 
+                        mb: 4, 
+                        display: '-webkit-box', 
+                        WebkitLineClamp: 2, 
+                        WebkitBoxOrient: 'vertical', 
+                        overflow: 'hidden',
+                        height: '40px',
+                        lineHeight: '20px'
+                      }}
+                    >
+                      {pos.description}
+                    </Typography>
+                  ) : (
+                    <Typography variant='body2' color='text.disabled' fontStyle='italic' sx={{ mb: 4, height: '40px' }}>
+                        Tidak ada deskripsi.
+                    </Typography>
+                  )}
 
                   <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 

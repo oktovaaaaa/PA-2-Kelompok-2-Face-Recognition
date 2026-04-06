@@ -56,5 +56,14 @@ func RegisterEmployee(user models.User, inviteToken string) error {
 	invite.Status = "USED"
 	database.DB.Save(&invite)
 
+	// Kirim Notifikasi ke Admin
+	var admin models.User
+	if err := database.DB.Where("company_id = ? AND role = ?", invite.CompanyID, "ADMIN").First(&admin).Error; err == nil {
+		CreateNotification(admin.ID, invite.CompanyID, "Pendaftaran Karyawan Baru", 
+			user.Name + " telah mendaftar dan menunggu persetujuan.", "EMPLOYEE_REGISTERED", user.ID)
+		SendPushNotification(admin.ID, "Pendaftaran Karyawan Baru", 
+			user.Name + " telah mendaftar. Silakan cek di daftar karyawan pending.")
+	}
+
 	return nil
 }

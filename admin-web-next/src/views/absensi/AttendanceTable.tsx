@@ -26,6 +26,7 @@ import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
 import * as XLSX from 'xlsx'
 import { attendanceService } from '@/libs/attendanceService'
+import { useNotification } from '@/contexts/NotificationContext'
 
 interface AttendanceTableProps {
   parentPeriod: string
@@ -34,6 +35,7 @@ interface AttendanceTableProps {
 }
 
 const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTableProps) => {
+  const { showNotification } = useNotification()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -247,9 +249,15 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     else if (parentPeriod === 'year') fileName += `_Tahun_${parentYear}`
 
     // Generate & Save
-    const buffer = await workbook.xlsx.writeBuffer()
-    const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    saveAs(data, `${fileName}.xlsx`)
+    try {
+        showNotification('Sedang menyiapkan file Excel...', 'info')
+        const buffer = await workbook.xlsx.writeBuffer()
+        const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        saveAs(data, `${fileName}.xlsx`)
+        showNotification('Laporan berhasil diunduh!', 'success')
+    } catch (error) {
+        showNotification('Gagal mengunduh laporan.', 'error')
+    }
   }
 
   const getStatusColor = (status: string) => {

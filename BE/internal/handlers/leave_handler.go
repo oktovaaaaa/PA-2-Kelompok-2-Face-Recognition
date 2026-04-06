@@ -27,15 +27,24 @@ func AdminGetLeaveRequests(c *gin.Context) {
 	search := c.Query("search")
 
 	type LeaveWithUser struct {
-		models.LeaveRequest
-		UserName  string `json:"user_name"`
-		UserEmail string `json:"user_email"`
-		UserPhoto string `json:"user_photo"`
+		ID              string    `json:"id"`
+		UserID          string    `json:"user_id"`
+		UserName        string    `json:"user_name"`
+		UserEmail       string    `json:"user_email"`
+		UserPhoto       string    `json:"user_photo"`
+		Type            string    `json:"type"`
+		Title           string    `json:"title"`
+		Description     string    `json:"description"`
+		PhotoURL        string    `json:"photo_url"`
+		Status          string    `json:"status"`
+		AdminNote       string    `json:"admin_note"`
+		ConfirmedHonest bool      `json:"confirmed_honest"`
+		CreatedAt       time.Time `json:"created_at"`
 	}
 
 	var result []LeaveWithUser
 	query := database.DB.Table("leave_requests").
-		Select("leave_requests.*, users.name as user_name, users.email as user_email, users.photo_url as user_photo").
+		Select("leave_requests.id, leave_requests.user_id, leave_requests.type, leave_requests.title, leave_requests.description, leave_requests.photo_url, leave_requests.status, leave_requests.admin_note, leave_requests.confirmed_honest, leave_requests.created_at, users.name as user_name, users.email as user_email, users.photo_url as user_photo").
 		Joins("left join users on users.id = leave_requests.user_id").
 		Where("leave_requests.company_id = ? AND leave_requests.is_deleted_by_admin = ?", adminUser.CompanyID, false)
 
@@ -253,7 +262,7 @@ func EmployeeCreateLeave(c *gin.Context) {
 
 	// Cari admin perusahaan ini untuk kirim notifikasi
 	var admin models.User
-	if err := database.DB.Where("company_id = ? AND role = ?", emp.CompanyID, "admin").First(&admin).Error; err == nil {
+	if err := database.DB.Where("company_id = ? AND role = ?", emp.CompanyID, "ADMIN").First(&admin).Error; err == nil {
 		services.CreateNotification(admin.ID, emp.CompanyID, "Pengajuan Izin Baru",
 			emp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
 		services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",

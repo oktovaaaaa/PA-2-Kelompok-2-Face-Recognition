@@ -73,6 +73,18 @@ export interface ManualPenalty {
     };
 }
 
+export interface Notification {
+    id: string;
+    user_id: string;
+    company_id: string;
+    title: string;
+    body: string;
+    type: string;
+    ref_id: string;
+    is_read: boolean;
+    created_at: string;
+}
+
 export const settingService = {
     // 1. Profile Methods
     async getProfile() {
@@ -240,5 +252,36 @@ export const settingService = {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal mengunggah file.');
         return data.data; // Expecting { url: string }
+    },
+
+    // 7. Notification Methods
+    async getNotifications() {
+        const response = await fetch(`${API_URL}/notifications`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat notifikasi.');
+        return data.data as { notifications: Notification[], unread_count: number };
+    },
+
+    async markNotificationRead(id: string) {
+        const response = await fetch(`${API_URL}/notifications/${id}/read`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menandai notifikasi.');
+        return data;
+    },
+
+    async markAllNotificationsRead() {
+        const response = await fetch(`${API_URL}/notifications/read-all`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menandai semua notifikasi.');
+        return data;
     }
 };

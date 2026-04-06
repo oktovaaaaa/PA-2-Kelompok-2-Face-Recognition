@@ -29,6 +29,7 @@ export interface Position {
     id: string;
     name: string;
     salary: number;
+    description: string;
 }
 
 export const employeeService = {
@@ -73,7 +74,7 @@ export const employeeService = {
     },
 
     // 3.1 Create Position
-    async createPosition(data: { name: string, salary: number }) {
+    async createPosition(data: { name: string, salary: number, description?: string }) {
         const response = await fetch(`${API_URL}/admin/positions`, {
             method: 'POST',
             headers: getAuthHeaders(),
@@ -86,7 +87,7 @@ export const employeeService = {
     },
 
     // 3.2 Update Position
-    async updatePosition(id: string, data: { name: string, salary: number }) {
+    async updatePosition(id: string, data: { name: string, salary: number, description?: string }) {
         const response = await fetch(`${API_URL}/admin/positions/${id}`, {
             method: 'PUT',
             headers: getAuthHeaders(),

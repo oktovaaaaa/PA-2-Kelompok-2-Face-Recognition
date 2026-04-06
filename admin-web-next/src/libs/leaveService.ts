@@ -10,6 +10,17 @@ const getAuthHeaders = () => {
     };
 };
 
+export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080';
+
+export const formatImageUrl = (url?: string) => {
+    if (!url) return undefined;
+    if (url.startsWith('http')) return url;
+    
+    // Ensure no double slashes
+    const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+    return `${BASE_URL}/${cleanUrl}`;
+};
+
 export interface LeaveRequest {
   id: string
   user_id: string

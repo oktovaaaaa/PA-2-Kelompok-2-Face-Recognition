@@ -99,47 +99,46 @@ const MainAdminDashboard = () => {
                 </Card>
             </Grid>
 
-            {/* Summary Pie Chart - Refactored to separate component */}
-            <Grid item xs={12} md={5}>
+            {/* Charts Row */}
+            <Grid item xs={12} lg={8}>
+                <AttendanceTrendLine trend={trend} />
+            </Grid>
+            <Grid item xs={12} lg={4}>
                 <AttendanceSummaryPie summary={summary} onRefresh={fetchData} />
             </Grid>
 
-            {/* Performance Trend Chart - Refactored to separate component */}
-            <Grid item xs={12} md={7}>
-                <AttendanceTrendLine trend={trend} />
-            </Grid>
-
-            {/* Quick Actions */}
-            <Grid item xs={12}>
-                <Box className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
-                    {quickActions.map((action, idx) => (
-                        <Link key={idx} href={action.url} className='block no-underline'>
-                            <Card className='shadow-md rounded-2xl border-none hover:translate-y-[-4px] transition-all cursor-pointer'>
-                                <CardContent className='p-4 flex flex-col items-center gap-3'>
-                                    <Box className={`p-4 rounded-full ${action.color}`}>
-                                        <i className={`${action.icon} text-2xl`} />
-                                    </Box>
-                                    <Typography className='font-bold text-xs uppercase tracking-wider text-slate-700'>{action.label}</Typography>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </Box>
-            </Grid>
-
-            {/* Management & Invites */}
-            <Grid item xs={12} md={8}>
+            {/* Main Content & Sidebar Row */}
+            <Grid item xs={12} lg={8}>
                 <Grid container spacing={4}>
+                    {/* Quick Actions */}
+                    <Grid item xs={12}>
+                        <Box className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+                            {quickActions.map((action, idx) => (
+                                <Link key={idx} href={action.url} className='block no-underline'>
+                                    <Card className='shadow-sm rounded-xl border-none hover:translate-y-[-2px] transition-all cursor-pointer bg-card'>
+                                        <CardContent className='p-3 flex flex-col items-center gap-2'>
+                                            <Box className={`p-3 rounded-lg ${action.color}`}>
+                                                <i className={`${action.icon} text-xl`} />
+                                            </Box>
+                                            <Typography variant='caption' className='font-bold uppercase tracking-wider text-[10px]' color='text.secondary'>{action.label}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </Box>
+                    </Grid>
+
+                    {/* Management & Invites */}
                     <Grid item xs={12} sm={6}>
                          <Link href='/absensi' className='block no-underline h-full'>
-                            <Card className='shadow-lg rounded-2xl border-none h-full hover:shadow-xl transition-all cursor-pointer'>
-                                <CardContent className='flex items-center gap-5'>
-                                    <Box className='bg-purple-100 p-4 rounded-xl text-purple-600'>
-                                        <i className='ri-file-list-3-line text-2xl' />
+                            <Card className='shadow-sm rounded-xl border-none h-full hover:shadow-md transition-all cursor-pointer'>
+                                <CardContent className='flex items-center gap-4 p-4'>
+                                    <Box className='bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg text-purple-600 dark:text-purple-400'>
+                                        <i className='ri-file-list-3-line text-xl' />
                                     </Box>
                                     <Box>
-                                        <Typography className='font-bold text-slate-800'>Laporan Kehadiran</Typography>
-                                        <Typography variant='caption' className='text-slate-400'>Ekspor Excel & Riwayat Lengkap</Typography>
+                                        <Typography variant='subtitle2' className='font-bold'>Laporan Kehadiran</Typography>
+                                        <Typography variant='caption' color='text.secondary' className='text-[10px]'>Ekspor Excel & Riwayat</Typography>
                                     </Box>
                                 </CardContent>
                             </Card>
@@ -147,34 +146,35 @@ const MainAdminDashboard = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                          <Link href='/payroll' className='block no-underline h-full'>
-                            <Card className='shadow-lg rounded-2xl border-none h-full hover:shadow-xl transition-all cursor-pointer'>
-                                <CardContent className='flex items-center gap-5'>
-                                    <Box className='bg-emerald-100 p-4 rounded-xl text-emerald-600'>
-                                        <i className='ri-money-dollar-box-line text-2xl' />
+                            <Card className='shadow-sm rounded-xl border-none h-full hover:shadow-md transition-all cursor-pointer'>
+                                <CardContent className='flex items-center gap-4 p-4'>
+                                    <Box className='bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-lg text-emerald-600 dark:text-emerald-400'>
+                                        <i className='ri-money-dollar-box-line text-xl' />
                                     </Box>
                                     <Box>
-                                        <Typography className='font-bold text-slate-800'>Manajemen Gaji</Typography>
-                                        <Typography variant='caption' className='text-slate-400'>Proses Pembayaran & Potongan</Typography>
+                                        <Typography variant='subtitle2' className='font-bold'>Manajemen Gaji</Typography>
+                                        <Typography variant='caption' color='text.secondary' className='text-[10px]'>Proses & Potongan</Typography>
                                     </Box>
                                 </CardContent>
                             </Card>
                          </Link>
                     </Grid>
                     <Grid item xs={12}>
-                        <Card className='shadow-lg rounded-2xl border-none bg-slate-900 border border-slate-100 p-2'>
-                            <CardContent className='flex flex-col sm:flex-row items-center justify-between gap-6'>
-                                <Box className='flex items-center gap-5'>
-                                    <Box className='bg-white/10 p-4 rounded-xl text-white'>
-                                        <i className='ri-qr-code-line text-3xl' />
+                        <Card className='shadow-lg rounded-2xl border-none bg-slate-900 p-1'>
+                            <CardContent className='flex flex-col sm:flex-row items-center justify-between gap-4 p-4'>
+                                <Box className='flex items-center gap-4'>
+                                    <Box className='bg-white/10 p-3 rounded-xl text-white'>
+                                        <i className='ri-qr-code-line text-2xl' />
                                     </Box>
                                     <Box>
-                                        <Typography className='font-bold text-white'>Undangan Rekrutmen</Typography>
-                                        <Typography variant='caption' className='text-white/50'>Barcode baru akan diperbarui tiap 30 detik</Typography>
+                                        <Typography className='font-bold text-white text-sm'>Undangan Rekrutmen</Typography>
+                                        <Typography variant='caption' className='text-white/50 text-[10px]'>Barcode diperbarui berkala</Typography>
                                     </Box>
                                 </Box>
                                 <Button 
                                     variant='contained' 
-                                    className='rounded-xl shadow-none bg-blue-600 hover:bg-blue-700 h-[50px] px-8 text-white'
+                                    size='small'
+                                    className='rounded-lg shadow-none bg-blue-600 hover:bg-blue-700 h-[40px] px-6 text-white text-xs'
                                     startIcon={<i className='ri-qr-scan-2-line' />}
                                     onClick={() => setQrModalOpen(true)}
                                 >
@@ -187,44 +187,98 @@ const MainAdminDashboard = () => {
             </Grid>
 
             {/* Sidebar Stats & Percentage */}
-            <Grid item xs={12} md={4}>
-                <Card className='shadow-md rounded-2xl border-none h-full bg-blue-50'>
-                    <CardContent className='p-6'>
-                        <Typography className='font-bold mbe-4 flex items-center gap-2'>
-                            <i className='ri-notification-badge-line text-blue-600' />
-                            Statistik Persentase
+            <Grid item xs={12} lg={4}>
+                <Card className='shadow-md rounded-2xl border-none h-full bg-primaryLight'>
+                    <CardContent className='p-5'>
+                        <Typography variant='subtitle2' className='font-bold mbe-4 flex items-center gap-2'>
+                            <i className='ri-notification-badge-line text-primary' />
+                            Statistik 7 Hari Terakhir
                         </Typography>
-                        <Box className='space-y-4'>
-                            <Box className='p-3 bg-white rounded-xl shadow-sm'>
-                                <Typography variant='caption' className='text-slate-400'>Kehadiran (Presentase)</Typography>
-                                <Box className='flex items-center justify-between mbs-1'>
-                                    <Typography className='font-bold text-green-600'>
-                                        {summary && summary.total > 0 ? ((summary.present / summary.total) * 100).toFixed(1) : 0}%
-                                    </Typography>
-                                    <Typography variant='caption' className='bg-green-100 text-green-700 px-2 py-0.5 rounded uppercase font-bold'>Positif</Typography>
-                                </Box>
-                            </Box>
-                            <Box className='p-3 bg-white rounded-xl shadow-sm'>
-                                <Typography variant='caption' className='text-slate-400'>Keterlambatan (Rasio)</Typography>
-                                <Box className='flex items-center justify-between mbs-1'>
-                                    <Typography className='font-bold text-amber-600'>
-                                        {summary && summary.total > 0 ? ((summary.late / summary.total) * 100).toFixed(1) : 0}%
-                                    </Typography>
-                                    <Typography variant='caption' className='bg-amber-100 text-amber-700 px-2 py-0.5 rounded uppercase font-bold'>Waspada</Typography>
-                                </Box>
-                            </Box>
-                            <Box className='p-3 bg-white rounded-xl shadow-sm'>
-                                <Typography variant='caption' className='text-slate-400'>Rasio Alpha</Typography>
-                                <Box className='flex items-center justify-between mbs-1'>
-                                    <Typography className='font-bold text-red-600'>
-                                        {summary && summary.total > 0 ? ((summary.absent / summary.total) * 100).toFixed(1) : 0}%
-                                    </Typography>
-                                    <Typography variant='caption' className='bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase font-bold'>Kritis</Typography>
-                                </Box>
-                            </Box>
+                        <Box className='grid grid-cols-2 gap-3'>
+                            {( [
+                                { 
+                                    label: 'Hadir Tepat Waktu', 
+                                    value: trend?.present.reduce((a, b) => a + b, 0) || 0, 
+                                    color: 'text-green-600', 
+                                    rgb: '76, 175, 80', 
+                                    badge: 'Positif', 
+                                    badgeColorHex: '#2e7d32' 
+                                },
+                                { 
+                                    label: 'Terlambat', 
+                                    value: trend?.late.reduce((a, b) => a + b, 0) || 0, 
+                                    color: 'text-amber-600', 
+                                    rgb: '255, 160, 0', 
+                                    badge: 'Waspada', 
+                                    badgeColorHex: '#f57c00' 
+                                },
+                                { 
+                                    label: 'Alpha', 
+                                    value: trend?.absent.reduce((a, b) => a + b, 0) || 0, 
+                                    color: 'text-red-600', 
+                                    rgb: '244, 67, 54', 
+                                    badge: 'Kritis', 
+                                    badgeColorHex: '#d32f2f' 
+                                },
+                                { 
+                                    label: 'Izin/Sakit', 
+                                    value: trend?.leave_sick.reduce((a, b) => a + b, 0) || 0, 
+                                    color: 'text-blue-600', 
+                                    rgb: '33, 150, 243', 
+                                    badge: 'Info', 
+                                    badgeColorHex: '#1976d2' 
+                                },
+                                { 
+                                    label: 'Pulang di Jam Kerja', 
+                                    value: trend?.early_leave.reduce((a, b) => a + b, 0) || 0, 
+                                    color: 'text-orange-600', 
+                                    rgb: '255, 152, 0', 
+                                    badge: 'PJK', 
+                                    badgeColorHex: '#e65100' 
+                                },
+                                { 
+                                    label: 'Terlambat & Pulang di Jam Kerja', 
+                                    value: trend?.late_early_leave.reduce((a, b) => a + b, 0) || 0, 
+                                    color: 'text-purple-600', 
+                                    rgb: '156, 39, 176', 
+                                    badge: 'Perhatian', 
+                                    badgeColorHex: '#7b1fa2' 
+                                },
+                            ] as { label: string; value: number; color: string; rgb: string; badge: string; badgeColorHex: string }[]).map((item, index) => {
+                                const totalTrend = (trend?.present.reduce((a, b) => a + b, 0) || 0) +
+                                                 (trend?.late.reduce((a, b) => a + b, 0) || 0) +
+                                                 (trend?.absent.reduce((a, b) => a + b, 0) || 0) +
+                                                 (trend?.leave_sick.reduce((a, b) => a + b, 0) || 0) +
+                                                 (trend?.early_leave.reduce((a, b) => a + b, 0) || 0) +
+                                                 (trend?.late_early_leave.reduce((a, b) => a + b, 0) || 0);
+                                
+                                const percentage = totalTrend > 0 ? ((item.value / totalTrend) * 100).toFixed(1) : '0.0';
+                                
+                                return (
+                                    <Box key={index} className='p-3 bg-card border border-divider rounded-xl shadow-sm'>
+                                        <Typography variant='caption' color='text.secondary' className='block truncate'>{item.label}</Typography>
+                                        <Box className='flex items-center justify-between mbs-1'>
+                                            <Typography className={`font-bold ${item.color}`}>
+                                                {percentage}%
+                                            </Typography>
+                                            <Typography 
+                                                variant='caption' 
+                                                className='px-2 py-0.5 rounded uppercase font-bold text-[10px]'
+                                                sx={{ 
+                                                    backgroundColor: theme => theme.palette.mode === 'light' ? `rgba(${item.rgb}, 0.12)` : `rgba(${item.rgb}, 0.25)`,
+                                                    color: item.badgeColorHex,
+                                                    border: theme => theme.palette.mode === 'light' ? `1px solid rgba(${item.rgb}, 0.2)` : 'none'
+                                                }}
+                                            >
+                                                {item.badge}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                );
+                            })}
                         </Box>
                         <Link href='/analitik-absensi' className='block no-underline'>
-                            <Button fullWidth variant='outlined' className='mbs-6 border-blue-200 text-blue-600 rounded-xl font-bold'>
+                            <Button fullWidth variant='outlined' size='small' className='mbs-4 border-blue-200 text-blue-600 rounded-xl font-bold'>
                                 Lihat Analitik
                             </Button>
                         </Link>

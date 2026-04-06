@@ -37,9 +37,18 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
           size: '75%',
           labels: {
             show: true,
+            name: {
+              show: true,
+              color: 'var(--mui-palette-text-primary)'
+            },
+            value: {
+              show: true,
+              color: 'var(--mui-palette-text-primary)'
+            },
             total: {
               show: true,
               label: 'Karyawan',
+              color: 'var(--mui-palette-text-secondary)',
               formatter: () => summary?.total.toString() || '0'
             }
           }
@@ -64,8 +73,8 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
         <CardContent className='p-6'>
             <Box className='flex justify-between items-center mbe-8'>
                 <Box>
-                    <Typography variant='h6' className='font-bold text-slate-800 uppercase text-sm tracking-widest'>Ringkasan Kehadiran</Typography>
-                    <Typography variant='caption' className='text-slate-400'>Statistik kehadiran karyawan hari ini</Typography>
+                    <Typography variant='subtitle2' className='font-bold uppercase tracking-widest'>Ringkasan Kehadiran</Typography>
+                    <Typography variant='caption' color='text.secondary'>Statistik kehadiran karyawan hari ini</Typography>
                 </Box>
                 <IconButton size='small' onClick={onRefresh}>
                     <i className='ri-refresh-line text-slate-400' />
@@ -77,24 +86,26 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
                 ) : (
                     <Box className='h-[300px] flex flex-col items-center justify-center gap-4'>
                         <i className='ri-loader-4-line animate-spin text-3xl text-blue-500' />
-                        <Typography className='text-slate-400 text-xs italic'>Memuat data ringkasan...</Typography>
+                        <Typography variant='caption' color='text.secondary' className='italic'>Memuat data ringkasan...</Typography>
                     </Box>
                 )}
                 <Grid container spacing={2} className='mbs-6'>
                     {[
-                        { color: 'bg-[#22C55E]', label: 'Hadir', val: summary?.present },
-                        { color: 'bg-[#FBBF24]', label: 'Telat', val: summary?.late },
-                        { color: 'bg-[#EF4444]', label: 'Alpha', val: summary?.absent },
-                        { color: 'bg-[#0EA5E9]', label: 'Izin', val: (summary?.leave || 0) + (summary?.sick || 0) },
-                        { color: 'bg-[#6366F1]', label: 'Bekerja', val: summary?.working },
-                        { color: 'bg-[#F97316]', label: 'Pulang JK', val: summary?.early_leave },
-                        { color: 'bg-[#D946EF]', label: 'Terlambat & Pulang di Jam Kerja', val: summary?.late_early_leave },
-                        { color: 'bg-[#94A3B8]', label: 'Belum Hadir', val: summary?.not_yet }
+                        { color: '#22C55E', label: 'Hadir', val: summary?.present },
+                        { color: '#FBBF24', label: 'Telat', val: summary?.late },
+                        { color: '#EF4444', label: 'Alpha', val: summary?.absent },
+                        { color: '#0EA5E9', label: 'Izin', val: (summary?.leave || 0) + (summary?.sick || 0) },
+                        { color: '#6366F1', label: 'Bekerja', val: summary?.working },
+                        { color: '#F97316', label: 'Pulang JK', val: summary?.early_leave },
+                        { color: '#D946EF', label: 'Telat & Pulang', val: summary?.late_early_leave },
+                        { color: '#94A3B8', label: 'Belum Hadir', val: summary?.not_yet }
                     ].map((item, idx) => (
                         <Grid item xs={6} key={idx}>
-                            <Box className='flex items-center gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100'>
-                                <Box className={`w-2.5 h-2.5 rounded-full`} style={{ backgroundColor: item.color.replace('bg-[', '').replace(']', '') }} />
-                                <Typography className='text-[10px] text-slate-600 whitespace-nowrap'>{item.label}: <b className='text-slate-800 ml-1'>{item.val || 0}</b></Typography>
+                            <Box className='flex items-center gap-2 p-2 rounded-xl bg-actionHover border border-divider'>
+                                <Box className='w-2.5 h-2.5 rounded-full' style={{ backgroundColor: item.color }} />
+                                <Typography variant='caption' className='whitespace-nowrap'>
+                                    {item.label}: <b className='ml-1' style={{ color: 'var(--mui-palette-text-primary)' }}>{item.val || 0}</b>
+                                </Typography>
                             </Box>
                         </Grid>
                     ))}

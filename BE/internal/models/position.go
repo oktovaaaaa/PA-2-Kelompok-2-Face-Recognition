@@ -13,7 +13,8 @@ type Position struct {
 	CompanyID string  `gorm:"index" json:"company_id"`
 
 	Name   string  `json:"name"`
-	Salary float64 `json:"salary"`
+	Salary      float64 `json:"salary"`
+	Description string  `json:"description" gorm:"type:text"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

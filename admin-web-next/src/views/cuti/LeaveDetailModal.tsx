@@ -14,7 +14,7 @@ import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
-import { LeaveRequest } from '@/libs/leaveService'
+import { LeaveRequest, formatImageUrl } from '@/libs/leaveService'
 import { format } from 'date-fns'
 
 interface Props {
@@ -79,13 +79,55 @@ const LeaveDetailModal = ({ open, onClose, leave, onProcess }: Props) => {
           
           {leave.photo_url && (
             <Grid item xs={12}>
-                <Typography variant='caption' color='text.secondary'>Bukti Foto</Typography>
+                <Typography variant='caption' color='text.secondary' sx={{ mb: 2, display: 'block' }}>Bukti Foto</Typography>
                 <Box 
-                    component="img" 
-                    src={`http://localhost:8080${leave.photo_url}`} 
-                    sx={{ width: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: 2, mt: 2, border: theme => `1px solid ${theme.palette.divider}` }}
-                    alt="Bukti Izin"
-                />
+                    sx={{ 
+                      position: 'relative',
+                      width: '100%',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      border: theme => `1px solid ${theme.palette.divider}`,
+                      cursor: 'pointer',
+                      '&:hover .zoom-overlay': { opacity: 1 }
+                    }}
+                    onClick={() => {
+                        const url = formatImageUrl(leave.photo_url);
+                        console.log('Opening leave photo:', url);
+                        if (url) window.open(url, '_blank');
+                    }}
+                >
+                    <Box 
+                        component="img" 
+                        src={formatImageUrl(leave.photo_url)} 
+                        onLoad={() => console.log('Photo loaded successfully')}
+                        onError={(e) => console.error('Photo failed to load', e)}
+                        sx={{ 
+                          width: '100%', 
+                          maxHeight: 400, 
+                          objectFit: 'cover',
+                          display: 'block'
+                        }}
+                        alt="Bukti Izin"
+                    />
+                    <Box 
+                      className="zoom-overlay"
+                      sx={{ 
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        bgcolor: 'rgba(0,0,0,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0,
+                        transition: 'opacity 0.2s ease-in-out'
+                      }}
+                    >
+                      <i className='ri-zoom-in-line text-white text-3xl' />
+                    </Box>
+                </Box>
+                <Typography variant='caption' color='text.disabled' sx={{ mt: 1, display: 'block' }}>
+                  Klik gambar untuk memperbesar
+                </Typography>
             </Grid>
           )}
 

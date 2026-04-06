@@ -276,8 +276,11 @@ func AdminPaySalary(c *gin.Context) {
 	database.DB.Preload("Payments").First(&salary, "id = ?", salaryID)
 
 	// Kirim notifikasi ke karyawan
+	var user models.User
+	database.DB.Select("company_id").First(&user, "id = ?", salary.UserID)
+
 	monthName := time.Month(salary.Month).String()
-	services.CreateNotification(salary.UserID, "admin", "Gaji Dibayarkan",
+	services.CreateNotification(salary.UserID, user.CompanyID, "Gaji Dibayarkan",
 		fmt.Sprintf("Gaji kamu untuk bulan %s %d telah dibayarkan sebesar Rp %.0f.", monthName, salary.Year, payAmount),
 		"PAYROLL_PAID", salary.ID)
 	services.SendPushNotification(salary.UserID, "Gaji Dibayarkan",

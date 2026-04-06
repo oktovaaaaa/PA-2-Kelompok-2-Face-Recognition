@@ -14,6 +14,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import { employeeService, Employee } from '@/libs/employeeService'
 import { format } from 'date-fns'
+import { useNotification } from '@/contexts/NotificationContext'
 
 interface Props {
   open: boolean
@@ -23,6 +24,7 @@ interface Props {
 }
 
 const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => {
+  const { showNotification } = useNotification()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [formData, setFormData] = useState({
     user_id: '',
@@ -39,10 +41,7 @@ const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => 
         .then(setEmployees)
         .catch(err => {
           console.error("Gagal mengambil karyawan:", err)
-          // Jika token tidak valid, user mungkin perlu login ulang
-          if (err.message.includes('token')) {
-            // Optional: redirect to login or show alert
-          }
+          showNotification('Gagal memuat daftar karyawan.', 'error')
         })
       if (selectedDate) {
         setFormData(prev => ({ ...prev, date: format(selectedDate, 'yyyy-MM-dd') }))

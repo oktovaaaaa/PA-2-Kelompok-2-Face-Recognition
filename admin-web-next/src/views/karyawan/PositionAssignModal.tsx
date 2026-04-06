@@ -18,6 +18,7 @@ import {
   Radio
 } from '@mui/material'
 import { employeeService, Position } from '../../libs/employeeService'
+import { useNotification } from '../../contexts/NotificationContext'
 
 interface Props {
   open: boolean
@@ -28,6 +29,7 @@ interface Props {
 }
 
 const PositionAssignModal = ({ open, onClose, onAssign, currentPositionId, employeeName }: Props) => {
+  const { showNotification } = useNotification()
   const [positions, setPositions] = useState<Position[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedId, setSelectedId] = useState(currentPositionId || '')
@@ -46,6 +48,7 @@ const PositionAssignModal = ({ open, onClose, onAssign, currentPositionId, emplo
       setPositions(data)
     } catch (error) {
       console.error(error)
+      showNotification('Gagal memuat daftar jabatan.', 'error')
     } finally {
       setLoading(false)
     }
