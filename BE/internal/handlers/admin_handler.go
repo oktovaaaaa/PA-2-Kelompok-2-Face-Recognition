@@ -147,15 +147,13 @@ func RejectEmployee(c *gin.Context) {
 		return
 	}
 
-	user.Status = "REJECTED"
-	database.DB.Save(&user)
+	// Hapus User secara Permanen (Hard Delete) agar email/phone bisa digunakan kembali
+	if err := database.DB.Delete(&user).Error; err != nil {
+		utils.Error(c, "Gagal menghapus data karyawan yang ditolak")
+		return
+	}
 
-	// Kirim Notifikasi ke Karyawan
-	services.CreateNotification(user.ID, user.CompanyID, "Akun Ditolak",
-		"Maaf, pendaftaran akun Anda telah ditolak oleh admin. Hubungi admin instansi Anda untuk informasi lebih lanjut.", "EMPLOYEE_REJECTED", user.ID)
-	services.SendPushNotification(user.ID, "Akun Ditolak", "Pendaftaran akun Anda telah ditolak.")
-
-	utils.Success(c, "Karyawan ditolak", nil)
+	utils.Success(c, "Pendaftaran karyawan telah ditolak dan data dihapus", nil)
 }
 
 func GetAllUsers(c *gin.Context) {

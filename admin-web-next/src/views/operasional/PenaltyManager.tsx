@@ -33,16 +33,17 @@ const PenaltyManager = () => {
   const [month, setMonth] = useState<string>((new Date().getMonth() + 1).toString())
   const [year, setYear] = useState<string>(new Date().getFullYear().toString())
   const [availableYears, setAvailableYears] = useState<string[]>([])
+  const [searchKeyword, setSearchKeyword] = useState<string>('')
   
   // Confirm Dialog State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const loadData = useCallback(async (currPage: number = 0, limit: number = 10, fMonth: string, fYear: string) => {
+  const loadData = useCallback(async (currPage: number = 0, limit: number = 10, fMonth: string, fYear: string, fSearch: string) => {
     // We don't set global loading here to avoid flashing, only for initial load
     try {
       const [res, eData, yData] = await Promise.all([
-        settingService.getManualPenalties(currPage + 1, limit, fMonth, fYear),
+        settingService.getManualPenalties(currPage + 1, limit, fMonth, fYear, fSearch),
         employeeService.getEmployees('ACTIVE'),
         settingService.getPenaltyYears()
       ])
@@ -68,8 +69,8 @@ const PenaltyManager = () => {
   }, [year])
 
   useEffect(() => {
-    loadData(page, rowsPerPage, month, year)
-  }, [loadData, page, rowsPerPage, month, year])
+    loadData(page, rowsPerPage, month, year, searchKeyword)
+  }, [loadData, page, rowsPerPage, month, year, searchKeyword])
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage)
@@ -91,7 +92,7 @@ const PenaltyManager = () => {
       await settingService.createManualPenalty(formData)
       showNotification('Denda manual berhasil dicatat!', 'success')
       setFormData({ user_id: '', title: '', amount: 0, date: format(new Date(), 'yyyy-MM-dd') })
-      loadData(page, rowsPerPage, month, year)
+      loadData(page, rowsPerPage, month, year, searchKeyword)
     } catch (error: any) {
       showNotification(error.message || 'Gagal menambahkan denda.', 'error')
     } finally {
@@ -109,7 +110,7 @@ const PenaltyManager = () => {
     try {
       await settingService.deletePenalty(selectedId)
       showNotification('Data denda berhasil dihapus.', 'success')
-      loadData(page, rowsPerPage, month, year)
+      loadData(page, rowsPerPage, month, year, searchKeyword)
     } catch (error) {
       showNotification('Gagal menghapus data.', 'error')
     }
@@ -157,9 +158,13 @@ const PenaltyManager = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Besar Sanksi" type="number" size="small" required
-                    value={formData.amount}
-                    onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})}
+                    fullWidth label="Besar Sanksi" type="text" size="small" required
+                    value={formData.amount === 0 ? '' : formData.amount.toLocaleString('id-ID')}
+                    onChange={e => {
+                        const rawValue = e.target.value.replace(/[^0-9]/g, '')
+                        const intValue = parseInt(rawValue, 10)
+                        setFormData({...formData, amount: isNaN(intValue) ? 0 : intValue})
+                    }}
                     InputProps={{ startAdornment: <InputAdornment position="start">Rp</InputAdornment> }}
                   />
                 </Grid>
@@ -194,6 +199,20 @@ const PenaltyManager = () => {
             avatar={<i className='ri-history-line' style={{ fontSize: '1.5rem', color: '#64748b' }} />}
             action={
               <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  size="small" 
+                  placeholder="Cari Karyawan / Pelanggaran..."
+                  value={searchKeyword}
+                  onChange={e => { setSearchKeyword(e.target.value); setPage(0); }}
+                  sx={{ width: 250 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <i className="ri-search-line"></i>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
                 <TextField
                   select size="small" label="Bulan"
                   value={month}

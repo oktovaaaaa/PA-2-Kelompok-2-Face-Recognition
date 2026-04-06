@@ -22,6 +22,7 @@ import { id as idLocale } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
 import classnames from 'classnames'
 
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { settingService, Notification } from '@/libs/settingService'
 
 const NotificationList = () => {
@@ -29,6 +30,12 @@ const NotificationList = () => {
   const [loading, setLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const router = useRouter()
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [selectedIdToDelete, setSelectedIdToDelete] = useState<string | null>(null)
+  
+  const [deleteAllConfirm1Open, setDeleteAllConfirm1Open] = useState(false)
+  const [deleteAllConfirm2Open, setDeleteAllConfirm2Open] = useState(false)
 
   const fetchNotifs = async () => {
     try {
@@ -71,6 +78,30 @@ const NotificationList = () => {
     }
   }
 
+  const handleDeleteNotification = async () => {
+    if (!selectedIdToDelete) return
+    try {
+      await settingService.deleteNotification(selectedIdToDelete)
+      fetchNotifs()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeleteConfirmOpen(false)
+      setSelectedIdToDelete(null)
+    }
+  }
+
+  const handleDeleteAllNotifications = async () => {
+    try {
+      await settingService.deleteAllNotifications()
+      fetchNotifs()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeleteAllConfirm2Open(false)
+    }
+  }
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'LEAVE_REQUEST':
@@ -99,16 +130,20 @@ const NotificationList = () => {
   }
 
   return (
+    <>
     <Card>
       <CardHeader 
         title="Daftar Notifikasi" 
         subtitle={`${unreadCount} pesan belum dibaca`}
         action={
-          unreadCount > 0 && (
-            <Button variant="outlined" size="small" onClick={handleMarkAllRead}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button variant="outlined" size="small" onClick={handleMarkAllRead} disabled={unreadCount === 0}>
               Tandai Semua Dibaca
             </Button>
-          )
+            <Button variant="outlined" color="error" size="small" onClick={() => setDeleteAllConfirm1Open(true)} disabled={notifications.length === 0}>
+              Hapus Semua
+            </Button>
+          </Box>
         }
       />
       <Divider />
@@ -130,9 +165,22 @@ const NotificationList = () => {
                     })}
                     onClick={() => handleMarkAsRead(notif.id, notif.type, notif.ref_id)}
                     secondaryAction={
-                      !notif.is_read && (
-                        <Box sx={{ width: 10, h: 10, bgcolor: 'primary.main', borderRadius: '50%' }} />
-                      )
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {!notif.is_read && (
+                          <Box sx={{ width: 10, height: 10, bgcolor: 'primary.main', borderRadius: '50%' }} />
+                        )}
+                        <IconButton 
+                          size="small" 
+                          color="error" 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedIdToDelete(notif.id)
+                            setDeleteConfirmOpen(true)
+                          }}
+                        >
+                          <i className="ri-delete-bin-7-line" />
+                        </IconButton>
+                      </Box>
                     }
                   >
                     <ListItemAvatar>
@@ -166,6 +214,40 @@ const NotificationList = () => {
         )}
       </CardContent>
     </Card>
+
+      {/* Individual Delete Confirm */}
+      <ConfirmDialog 
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteNotification}
+        title="Hapus Notifikasi"
+        message="Apakah Anda yakin ingin menghapus notifikasi ini?"
+        type="error"
+      />
+
+      {/* Delete All Confirm 1 */}
+      <ConfirmDialog 
+        open={deleteAllConfirm1Open}
+        onClose={() => setDeleteAllConfirm1Open(false)}
+        onConfirm={() => {
+          setDeleteAllConfirm1Open(false)
+          setTimeout(() => setDeleteAllConfirm2Open(true), 300)
+        }}
+        title="Hapus Semua Notifikasi"
+        message="Apakah Anda yakin ingin menghapus SELURUH notifikasi Anda? Tindakan ini akan membersihkan semua riwayat pesan secara permanen."
+        type="warning"
+      />
+
+      {/* Delete All Confirm 2 */}
+      <ConfirmDialog 
+        open={deleteAllConfirm2Open}
+        onClose={() => setDeleteAllConfirm2Open(false)}
+        onConfirm={handleDeleteAllNotifications}
+        title="Konfirmasi Terakhir Penghapusan"
+        message="Ini adalah konfirmasi kedua. Tindakan ini benar-benar tidak dapat dibatalkan. Apakah Anda sangat yakin ingin menghapus SEMUA notifikasi saat ini juga?"
+        type="error"
+      />
+    </>
   )
 }
 

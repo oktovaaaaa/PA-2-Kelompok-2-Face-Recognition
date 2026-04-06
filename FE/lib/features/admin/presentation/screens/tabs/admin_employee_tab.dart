@@ -59,27 +59,131 @@ class _AdminEmployeeTabState extends State<AdminEmployeeTab> with SingleTickerPr
   }
 
   Future<void> _fireEmployee(Map<String, dynamic> emp) async {
-    final reasonCtrl = TextEditingController();
+    // STEP 1: Konfirmasi awal
     final confirmed = await AppDialog.showConfirm(
       context,
       title: 'Pecat Karyawan',
       message: 'Apakah Anda yakin ingin memecat ${emp['name']}? Status karyawan akan menjadi RESIGNED dan tidak bisa login lagi.',
-      confirmText: 'Ya, Pecat',
-      confirmColor: Colors.red,
+      confirmText: 'Ya, Lanjutkan',
+      confirmColor: Colors.orange,
     );
     if (confirmed != true) return;
 
-    try {
-      final res = await ApiClient.post('/api/admin/employees/fire',
-          {'user_id': emp['id'], 'reason': reasonCtrl.text});
-      if (!mounted) return;
-      if (res.success) {
-        AppDialog.showSuccess(context, '${emp['name']} berhasil diberhentikan');
-        _loadData();
-      } else {
-        AppDialog.showError(context, res.message ?? 'Gagal memecat karyawan');
-      }
-    } catch (_) {}
+    // STEP 2: Ketik "SAYA YAKIN"
+    final phraseCtrl = TextEditingController();
+    bool loading = false;
+    bool success = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+          padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: const [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                    SizedBox(width: 12),
+                    Text('Konfirmasi Terakhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.red)),
+                  ]),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: const Text('Tindakan ini tidak dapat diurungkan.', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+              const SizedBox(height: 20),
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                  children: [
+                    const TextSpan(text: 'Ketik frasa formal di bawah ini untuk mengonfirmasi:\n\n'),
+                    TextSpan(
+                      text: 'SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${emp['name'].toString().toUpperCase()}',
+                      style: TextStyle(fontWeight: FontWeight.w900, color: Colors.red.shade900, fontSize: 14, letterSpacing: 1),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phraseCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Ketik Frasa Konfirmasi',
+                  prefixIcon: const Icon(Icons.text_fields_rounded),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  errorText: phraseCtrl.text.isNotEmpty && 
+                            phraseCtrl.text.trim().toUpperCase() != 'SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${emp['name'].toString().toUpperCase()}' 
+                            ? 'Frasa tidak sesuai' : null,
+                ),
+                onChanged: (_) => setModalState(() {}),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: loading || phraseCtrl.text.trim().toUpperCase() != 'SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${emp['name'].toString().toUpperCase()}' ? null : () async {
+                    setModalState(() => loading = true);
+                    try {
+                      final res = await ApiClient.post('/api/admin/employees/fire', {
+                        'user_id': emp['id'],
+                        'reason': 'Pecat Karyawan dengan konfirmasi 2 lapis'
+                      });
+                      if (res.success) {
+                        success = true;
+                        if (mounted) {
+                          Navigator.pop(context);
+                          AppDialog.showSuccess(context, '${emp['name']} berhasil diberhentikan');
+                          _loadData();
+                        }
+                      } else {
+                        if (mounted) AppDialog.showError(context, res.message ?? 'Gagal memecat karyawan');
+                      }
+                    } catch (e) {
+                      if (mounted) AppDialog.showError(context, 'Terjadi kesalahan: $e');
+                    } finally {
+                      if (mounted) setModalState(() => loading = false);
+                    }
+                  },
+                  child: loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_remove_rounded),
+                          SizedBox(width: 8),
+                          Text('Konfirmasi Pecat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _reactivateEmployee(Map<String, dynamic> emp) async {

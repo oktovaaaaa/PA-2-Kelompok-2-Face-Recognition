@@ -164,10 +164,11 @@ export const settingService = {
     },
 
     // 4. Manual Penalty Management
-    async getManualPenalties(page: number = 1, limit: number = 10, month?: string, year?: string) {
+    async getManualPenalties(page: number = 1, limit: number = 10, month?: string, year?: string, search?: string) {
         let url = `${API_URL}/admin/penalties?page=${page}&limit=${limit}`;
         if (month) url += `&month=${month}`;
         if (year) url += `&year=${year}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
 
         const response = await fetch(url, {
             method: 'GET',
@@ -282,6 +283,38 @@ export const settingService = {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal menandai semua notifikasi.');
+        return data;
+    },
+
+    async deleteNotification(id: string) {
+        const response = await fetch(`${API_URL}/notifications/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menghapus notifikasi.');
+        return data;
+    },
+
+    async deleteAllNotifications() {
+        const response = await fetch(`${API_URL}/notifications`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menghapus semua notifikasi.');
+        return data;
+    },
+
+    // 8. Delete Account
+    async deleteAdminAccount(password: string, confirmationPhrase: string) {
+        const response = await fetch(`${API_URL}/profile`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ password, confirmation_phrase: confirmationPhrase }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menghapus akun.');
         return data;
     }
 };

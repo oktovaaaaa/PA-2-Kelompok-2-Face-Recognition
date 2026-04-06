@@ -60,3 +60,31 @@ func MarkAllNotificationsRead(c *gin.Context) {
 
 	utils.Success(c, "Semua notifikasi ditandai sudah dibaca", nil)
 }
+
+// DeleteNotification — hapus satu notifikasi
+func DeleteNotification(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	id := c.Param("id")
+
+	if err := database.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.Notification{}).Error; err != nil {
+		utils.Error(c, "Gagal menghapus notifikasi")
+		return
+	}
+
+	utils.Success(c, "Notifikasi dihapus", nil)
+}
+
+// DeleteAllNotifications — hapus semua notifikasi
+func DeleteAllNotifications(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	if err := database.DB.Where("user_id = ?", user.ID).Delete(&models.Notification{}).Error; err != nil {
+		utils.Error(c, "Gagal menghapus semua notifikasi")
+		return
+	}
+
+	utils.Success(c, "Semua notifikasi dihapus", nil)
+}

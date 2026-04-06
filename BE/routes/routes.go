@@ -56,12 +56,14 @@ func SetupRouter() *gin.Engine {
 		protected.POST("/profile/request-otp", handlers.RequestProfileOTP)
 		protected.POST("/profile/change-password", handlers.ChangePassword)
 		protected.POST("/profile/change-pin", handlers.ChangePin)
+		protected.DELETE("/profile", handlers.DeleteAccount)
 
 		// Notifikasi (admin & karyawan)
 		protected.GET("/notifications", handlers.GetNotifications)
 		protected.PUT("/notifications/:id/read", handlers.MarkNotificationRead)
 		protected.PUT("/notifications/read-all", handlers.MarkAllNotificationsRead)
-
+		protected.DELETE("/notifications/:id", handlers.DeleteNotification)
+		protected.DELETE("/notifications", handlers.DeleteAllNotifications)
 		// Denda Pelanggaran (Melihat denda sendiri)
 		protected.GET("/penalties", handlers.GetPenalties)
 	}

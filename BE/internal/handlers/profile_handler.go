@@ -7,6 +7,8 @@ import (
 	"employee-system/internal/models"
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
+	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -261,4 +263,80 @@ func ChangePin(c *gin.Context) {
 	}
 
 	utils.Success(c, "PIN berhasil diperbarui", nil)
+}
+
+// DeleteAccount — hapus akun sendiri secara permanen (3 lapis keamanan)
+func DeleteAccount(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	var body struct {
+		Password           string `json:"password"`
+		ConfirmationPhrase string `json:"confirmation_phrase"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		utils.Error(c, "Data tidak valid")
+		return
+	}
+
+	// Validasi 1: Cek password
+	if body.Password == "" {
+		utils.Error(c, "Password wajib diisi untuk menghapus akun")
+		return
+	}
+
+	// Ambil user terbaru dari database
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "Akun tidak ditemukan")
+		return
+	}
+
+	if !utils.CheckPassword(dbUser.Password, body.Password) {
+		utils.Error(c, "Password salah, penghapusan akun dibatalkan")
+		return
+	}
+
+	// Validasi 2: Cek frasa konfirmasi
+	if body.ConfirmationPhrase != "SAYA YAKIN" {
+		utils.Error(c, "Frasa konfirmasi tidak sesuai. Ketik \"SAYA YAKIN\" untuk melanjutkan")
+		return
+	}
+
+	// Hapus data berdasarkan role
+	// Notifikasi selalu dihapus
+	database.DB.Where("user_id = ?", user.ID).Delete(&models.Notification{})
+
+	if dbUser.Role == "ADMIN" {
+		// Admin: hapus semua data miliknya (hard delete)
+		database.DB.Where("user_id = ?", user.ID).Delete(&models.Attendance{})
+		database.DB.Where("user_id = ?", user.ID).Delete(&models.Penalty{})
+		database.DB.Where("user_id = ?", user.ID).Delete(&models.LeaveRequest{})
+		database.DB.Where("user_id = ?", user.ID).Delete(&models.Salary{})
+		
+		if err := database.DB.Exec("DELETE FROM users WHERE id = ?", dbUser.ID).Error; err != nil {
+			utils.Error(c, "Gagal menghapus akun: "+err.Error())
+			return
+		}
+	} else {
+		// Karyawan: Soft Delete (Anonymization) untuk menjaga riwayat (absensi, denda, gaji)
+		timestamp := time.Now().Unix()
+		dbUser.Status = "RESIGNED"
+		dbUser.DeviceID = ""
+		dbUser.FcmToken = ""
+		dbUser.Password = "" // Kosongkan password agar tidak bisa login sama sekali
+		
+		// Lepaskan email dan phone (Email Release)
+		dbUser.Email = fmt.Sprintf("%s_DELETED_%d", dbUser.Email, timestamp)
+		if dbUser.Phone != "" {
+			dbUser.Phone = fmt.Sprintf("%s_DELETED_%d", dbUser.Phone, timestamp)
+		}
+		
+		if err := database.DB.Save(&dbUser).Error; err != nil {
+			utils.Error(c, "Gagal memproses penghapusan akun: "+err.Error())
+			return
+		}
+	}
+
+	utils.Success(c, "Akun berhasil dihapus secara permanen", nil)
 }

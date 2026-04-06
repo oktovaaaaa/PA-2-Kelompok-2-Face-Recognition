@@ -145,7 +145,7 @@ func AdminGetSalaries(c *gin.Context) {
 		userSubQuery = userSubQuery.Where("position_id = ?", positionID)
 	}
 	if search != "" {
-		userSubQuery = userSubQuery.Where("name LIKE ?", "%"+search+"%")
+		userSubQuery = userSubQuery.Where("LOWER(name) LIKE LOWER(?)", "%"+search+"%")
 	}
 
 	var userIDs []string

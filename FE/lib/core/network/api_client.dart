@@ -84,7 +84,7 @@ class ApiClient {
     }
   }
 
-  static Future<ApiResponse> delete(String path) async {
+  static Future<ApiResponse> delete(String path, {Map<String, dynamic>? body}) async {
     final token = await SessionStorage.getToken();
 
     final response = await http.delete(
@@ -93,6 +93,7 @@ class ApiClient {
         'Content-Type': 'application/json',
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
+      body: body != null ? jsonEncode(body) : null,
     );
 
     try {

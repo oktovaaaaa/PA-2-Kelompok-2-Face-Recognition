@@ -6,6 +6,9 @@ import (
 	"employee-system/internal/database"
 	"employee-system/internal/models"
 	"employee-system/internal/utils"
+	"fmt"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -87,7 +90,7 @@ func FireEmployee(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := database.DB.Where("id = ? AND company_id = ? AND role = ?", body.UserID, adminUser.CompanyID, "employee").First(&user).Error; err != nil {
+	if err := database.DB.Where("id = ? AND company_id = ? AND role = ?", body.UserID, adminUser.CompanyID, "EMPLOYEE").First(&user).Error; err != nil {
 		utils.Error(c, "Karyawan tidak ditemukan")
 		return
 	}
@@ -99,6 +102,14 @@ func FireEmployee(c *gin.Context) {
 	user.Status = "RESIGNED"
 	// Hapus device ID agar tidak bisa login lagi
 	user.DeviceID = ""
+	
+	// Lepaskan email dan phone agar bisa digunakan mendaftar lagi (Email Release)
+	timestamp := time.Now().Unix()
+	user.Email = fmt.Sprintf("%s_EX_%d", user.Email, timestamp)
+	if user.Phone != "" {
+		user.Phone = fmt.Sprintf("%s_EX_%d", user.Phone, timestamp)
+	}
+
 	database.DB.Save(&user)
 
 	utils.Success(c, "Karyawan berhasil diberhentikan", gin.H{
@@ -122,7 +133,7 @@ func ReactivateEmployee(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := database.DB.Where("id = ? AND company_id = ?", body.UserID, adminUser.CompanyID).First(&user).Error; err != nil {
+	if err := database.DB.Where("id = ? AND company_id = ? AND role = ?", body.UserID, adminUser.CompanyID, "EMPLOYEE").First(&user).Error; err != nil {
 		utils.Error(c, "Karyawan tidak ditemukan")
 		return
 	}
@@ -132,6 +143,17 @@ func ReactivateEmployee(c *gin.Context) {
 	}
 
 	user.Status = "ACTIVE"
+	
+	// Bersihkan suffix _EX_[timestamp] jika ada untuk mengembalikan email asli
+	if strings.Contains(user.Email, "_EX_") {
+		parts := strings.Split(user.Email, "_EX_")
+		user.Email = parts[0]
+	}
+	if strings.Contains(user.Phone, "_EX_") {
+		parts := strings.Split(user.Phone, "_EX_")
+		user.Phone = parts[0]
+	}
+
 	database.DB.Save(&user)
 	utils.Success(c, "Karyawan berhasil diaktifkan kembali", nil)
 }

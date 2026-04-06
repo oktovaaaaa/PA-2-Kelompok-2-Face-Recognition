@@ -70,6 +70,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         </MenuItem>
 
         <MenuSection label='Manajemen SDM'>
+          <MenuItem href='/persetujuan' icon={<i className='ri-user-received-line' />}>
+            Persetujuan Karyawan
+          </MenuItem>
           <MenuItem href='/karyawan' icon={<i className='ri-user-line' />}>
             Data Karyawan
           </MenuItem>

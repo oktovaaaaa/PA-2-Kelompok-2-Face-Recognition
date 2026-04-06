@@ -30,6 +30,7 @@ import EmployeeDetailModal from './EmployeeDetailModal'
 import PositionAssignModal from './PositionAssignModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useNotification } from '@/contexts/NotificationContext'
+import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Divider } from '@mui/material'
 
 const EmployeeList = () => {
   const { showNotification } = useNotification()
@@ -55,6 +56,12 @@ const EmployeeList = () => {
   // Pagination States
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  // Double Confirm States for Firing
+  const [isFireConfirmOpen, setIsFireConfirmOpen] = useState(false)
+  const [firePhrase, setFirePhrase] = useState('')
+  const [fireError, setFireError] = useState('')
+  const [fireLoading, setFireLoading] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -117,17 +124,46 @@ const EmployeeList = () => {
           ? `Apakah Anda yakin ingin memecat ${selectedEmployee.name}? Status akan menjadi RESIGNED.` 
           : `Aktifkan kembali ${selectedEmployee.name}?`,
         action: async () => {
-          try {
-             if (isFiring) await employeeService.fireEmployee(selectedEmployee.id)
-             else await employeeService.reactivateEmployee(selectedEmployee.id)
-             showNotification(isFiring ? 'Karyawan telah dinonaktifkan.' : 'Karyawan telah diaktifkan kembali.', 'success')
-             loadData()
-          } catch (e) {
-             showNotification('Gagal memproses aksi status.', 'error')
+          if (isFiring) {
+            // If firing, show step 2
+            setFirePhrase('')
+            setFireError('')
+            setIsFireConfirmOpen(true)
+          } else {
+            // reactivation is fine with 1 step
+            try {
+              await employeeService.reactivateEmployee(selectedEmployee.id)
+              showNotification('Karyawan telah diaktifkan kembali.', 'success')
+              loadData()
+            } catch (e) {
+              showNotification('Gagal mengaktifkan karyawan.', 'error')
+            }
           }
         }
       })
       setIsConfirmOpen(true)
+    }
+  }
+
+  const handleFinalFire = async () => {
+    if (!selectedEmployee) return
+    const requiredPhrase = `SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${selectedEmployee.name.toUpperCase()}`
+    
+    if (firePhrase.trim().toUpperCase() !== requiredPhrase) {
+      setFireError(`Harap ketik frasa konfirmasi dengan benar.`)
+      return
+    }
+
+    setFireLoading(true)
+    try {
+      await employeeService.fireEmployee(selectedEmployee.id)
+      showNotification('Karyawan telah dinonaktifkan.', 'success')
+      setIsFireConfirmOpen(false)
+      loadData()
+    } catch (e) {
+      showNotification('Gagal memecat karyawan.', 'error')
+    } finally {
+      setFireLoading(false)
     }
   }
 
@@ -299,6 +335,67 @@ const EmployeeList = () => {
         message={confirmConfig?.message || ''}
         type={confirmConfig?.type}
       />
+
+      {/* Confirmation Step 2: Firing ONLY */}
+      <Dialog open={isFireConfirmOpen} onClose={() => setIsFireConfirmOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: '700', color: 'error.main' }}>
+          <Box className="flex items-center gap-3">
+            <i className="ri-error-warning-fill text-2xl" />
+            Konfirmasi Pemeceatan
+          </Box>
+        </DialogTitle>
+        <Divider />
+        <DialogContent>
+          <Alert severity="error" variant="outlined" sx={{ mb: 4, mt: 2 }}>
+            Tindakan ini akan menonaktifkan akun karyawan <strong>{selectedEmployee?.name}</strong>.
+          </Alert>
+          <Typography variant="body2" sx={{ mb: 4 }}>
+            Ketik frasa di bawah ini untuk memproses pemecatan:
+            <Box sx={{ 
+              display: 'block', 
+              fontWeight: '800', 
+              color: '#991b1b', 
+              mt: 2, 
+              letterSpacing: 1, 
+              textAlign: 'center', 
+              p: 3, 
+              bgcolor: '#fef2f2', 
+              borderRadius: 2, 
+              border: '1px solid #fecaca',
+              fontSize: '0.85rem',
+              lineHeight: 1.5,
+              wordBreak: 'break-word'
+            }}>
+              SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA {selectedEmployee?.name.toUpperCase()}
+            </Box>
+          </Typography>
+          <TextField 
+            fullWidth 
+            label="Ketik Frasa Konfirmasi" 
+            placeholder="Ketik frasa di atas"
+            value={firePhrase}
+            onChange={(e) => {
+              setFirePhrase(e.target.value)
+              setFireError('')
+            }}
+            error={!!fireError}
+            helperText={fireError}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 6, pb: 4 }}>
+          <Button onClick={() => setIsFireConfirmOpen(false)} variant="outlined">Batal</Button>
+          <Button 
+            onClick={handleFinalFire} 
+            variant="contained" 
+            color="error"
+            disabled={fireLoading || firePhrase.trim().toUpperCase() !== `SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${selectedEmployee?.name.toUpperCase()}`}
+            startIcon={fireLoading ? <CircularProgress size={16} color="inherit" /> : <i className="ri-delete-bin-7-line" />}
+          >
+            {fireLoading ? 'Memproses...' : 'Pecat Karyawan'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

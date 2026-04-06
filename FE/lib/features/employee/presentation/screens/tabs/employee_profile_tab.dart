@@ -574,6 +574,14 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
             subtitle: const Text('Gunakan PIN lama atau OTP email', style: TextStyle(fontSize: 12)),
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
           ),
+          const Divider(height: 1, indent: 70),
+          ListTile(
+            onTap: _showDeleteAccountFlow,
+            leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+            title: const Text('Hapus Akun Permanen', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
+            subtitle: const Text('Data riwayat tetap tersimpan di perusahaan', style: TextStyle(fontSize: 12, color: Colors.red)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.red),
+          ),
         ],
       ),
     );
@@ -886,6 +894,190 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                   child: loading 
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Simpan PIN Baru', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountFlow() async {
+    // STEP 1: Konfirmasi awal
+    final step1 = await AppDialog.showConfirm(
+      context,
+      title: 'Hapus Akun Permanen',
+      message: 'Anda akan menghapus akun karyawan Anda secara permanen.\n\nTindakan ini TIDAK DAPAT DIBATALKAN.\nAnda tidak akan bisa login kembali ke aplikasi ini.\n\nCatatan: Data riwayat absensi, denda, dan cuti Anda tetap tersimpan di perusahaan untuk keperluan pencatatan.\n\nApakah Anda yakin ingin melanjutkan?',
+      confirmText: 'Ya, Lanjutkan',
+      confirmColor: Colors.orange,
+    );
+    if (step1 != true || !mounted) return;
+
+    // STEP 2: Minta password
+    final passwordCtrl = TextEditingController();
+    String? passwordFromStep2;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+          padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: const [
+                    Icon(Icons.lock_outline_rounded, color: Colors.red, size: 28),
+                    SizedBox(width: 12),
+                    Text('Verifikasi Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Color(0xFF0F172A))),
+                  ]),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('Masukkan password akun Anda untuk membuktikan identitas.', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+              const SizedBox(height: 24),
+              AppTextField(controller: passwordCtrl, label: 'Password Anda', obscure: true, prefixIcon: Icons.vpn_key_rounded),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    if (passwordCtrl.text.trim().isEmpty) {
+                      AppDialog.showError(context, 'Password tidak boleh kosong');
+                      return;
+                    }
+                    passwordFromStep2 = passwordCtrl.text.trim();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Verifikasi & Lanjutkan', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (passwordFromStep2 == null || passwordFromStep2!.isEmpty || !mounted) return;
+
+    // STEP 3: Ketik SAYA YAKIN
+    final phraseCtrl = TextEditingController();
+    bool deleteLoading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+          padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: const [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                    SizedBox(width: 12),
+                    Text('Konfirmasi Terakhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.red)),
+                  ]),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: const Text(
+                  'Ini adalah langkah terakhir yang tidak dapat diurungkan.',
+                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 20),
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                  children: const [
+                    TextSpan(text: 'Ketik '),
+                    TextSpan(text: 'SAYA YAKIN', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.red, letterSpacing: 2)),
+                    TextSpan(text: ' pada kotak di bawah untuk menghapus akun Anda secara permanen.'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(controller: phraseCtrl, label: 'Ketik "SAYA YAKIN"', prefixIcon: Icons.text_fields_rounded),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: deleteLoading ? null : () async {
+                    if (phraseCtrl.text.trim() != 'SAYA YAKIN') {
+                      AppDialog.showError(context, 'Frasa konfirmasi harus persis: SAYA YAKIN');
+                      return;
+                    }
+                    setModalState(() => deleteLoading = true);
+                    try {
+                      final res = await ApiClient.delete('/api/profile', body: {
+                        'password': passwordFromStep2,
+                        'confirmation_phrase': 'SAYA YAKIN',
+                      });
+                      if (!mounted) return;
+                      if (res.success) {
+                        Navigator.pop(context);
+                        await SessionStorage.clear();
+                        if (!mounted) return;
+                        AppDialog.showSuccess(context, 'Akun Anda telah dihapus secara permanen');
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const LandingScreen()),
+                          (route) => false,
+                        );
+                      } else {
+                        AppDialog.showError(context, res.message ?? 'Gagal menghapus akun');
+                        setModalState(() => deleteLoading = false);
+                      }
+                    } catch (e) {
+                      if (mounted) AppDialog.showError(context, 'Terjadi kesalahan: $e');
+                      setModalState(() => deleteLoading = false);
+                    }
+                  },
+                  child: deleteLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete_forever_rounded),
+                          SizedBox(width: 8),
+                          Text('Hapus Akun Permanen', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        ],
+                      ),
                 ),
               ),
             ],

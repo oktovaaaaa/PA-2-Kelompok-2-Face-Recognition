@@ -87,30 +87,66 @@ func GetPenalties(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
-	query := database.DB.Preload("User").Preload("User.Position")
+	query := database.DB.Preload("User").Preload("User.Position").Model(&models.Penalty{})
+
+	// Search filter
+	search := c.Query("search")
+	if search != "" {
+		query = query.Joins("JOIN users ON users.id = penalties.user_id").
+			Where("LOWER(penalties.title) LIKE LOWER(?) OR LOWER(users.name) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
+	}
 
 	// Admin filters: Only show penalties for users in the same company
 	if user.Role == "ADMIN" {
-		query = query.Where("user_id IN (SELECT id FROM users WHERE company_id = ?)", user.CompanyID)
+		query = query.Where("penalties.user_id IN (SELECT id FROM users WHERE company_id = ?)", user.CompanyID)
 		
 		filterUserID := c.Query("user_id")
 		if filterUserID != "" {
-			query = query.Where("user_id = ?", filterUserID)
+			query = query.Where("penalties.user_id = ?", filterUserID)
 		}
 	} else {
 		// Employee only sees their own
-		query = query.Where("user_id = ?", user.ID)
+		query = query.Where("penalties.user_id = ?", user.ID)
 	}
 
 	// Date filters
+	filter := c.Query("filter")
 	month := c.Query("month")
 	year := c.Query("year")
-	if month != "" && year != "" {
+
+	if filter != "" {
+		switch filter {
+		case "today":
+			today := time.Now().Format("2006-01-02")
+			query = query.Where("penalties.date = ?", today)
+		case "week":
+			start := getFilterStart("week")
+			query = query.Where("penalties.date >= ?", start)
+		case "month":
+			if month != "" && year != "" {
+				monthInt, _ := strconv.Atoi(month)
+				query = query.Where("penalties.date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
+			} else {
+				start := getFilterStart("month")
+				query = query.Where("penalties.date >= ?", start)
+			}
+		case "year":
+			if year != "" {
+				query = query.Where("penalties.date LIKE ?", year+"-%%")
+			} else {
+				start := getFilterStart("year")
+				query = query.Where("penalties.date >= ?", start)
+			}
+		}
+	} else if month != "" && year != "" {
 		monthInt, _ := strconv.Atoi(month)
-		// Simpler: filter by prefix
-		query = query.Where("date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
+		query = query.Where("penalties.date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
 	} else if year != "" {
-		query = query.Where("date LIKE ?", year+"-%%")
+		query = query.Where("penalties.date LIKE ?", year+"-%%")
+	} else {
+		// Default behavior
+		start := getFilterStart("month")
+		query = query.Where("penalties.date >= ?", start)
 	}
 
 	// Pagination

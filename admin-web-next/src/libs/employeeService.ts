@@ -176,5 +176,43 @@ export const employeeService = {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar tahun.');
         return data.data as string[];
+    },
+
+    // 9. Get Pending Employees (Approval)
+    async getPendingEmployees() {
+        const response = await fetch(`${API_URL}/admin/pending-employees`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar pendaftaran.');
+        return data.data as Employee[];
+    },
+
+    // 10. Approve Employee
+    async approveEmployee(userId: string) {
+        const response = await fetch(`${API_URL}/admin/approve-employee`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ user_id: userId }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menyetujui karyawan.');
+        return data;
+    },
+
+    // 11. Reject Employee
+    async rejectEmployee(userId: string) {
+        const response = await fetch(`${API_URL}/admin/reject-employee`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ user_id: userId }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menolak karyawan.');
+        return data;
     }
 };
