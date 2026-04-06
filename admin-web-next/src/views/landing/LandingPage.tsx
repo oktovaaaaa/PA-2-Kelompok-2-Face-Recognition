@@ -24,6 +24,9 @@ const LandingPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userEmail, setUserEmail] = useState('')
   const [showContactForm, setShowContactForm] = useState(false)
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false)
+  const [testimonials, setTestimonials] = useState<any[]>([])
+  const [isUploading, setIsUploading] = useState(false)
 
   const [formData, setFormData] = useState({
     nama: '',
@@ -37,6 +40,68 @@ const LandingPage = () => {
     subyek: '',
     pesan: ''
   })
+
+  const [testiForm, setTestiForm] = useState({
+    name: '',
+    rating: 5,
+    description: '',
+    photo_url: ''
+  })
+
+  const fetchTestimonials = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials`)
+      if (res.ok) {
+        const data = await res.json()
+        setTestimonials(data.data || [])
+      }
+    } catch (err) { console.error(err) }
+  }
+
+  useEffect(() => {
+    fetchTestimonials()
+  }, [])
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return
+    setIsUploading(true)
+    const formData = new FormData()
+    formData.append('file', e.target.files[0])
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials/upload`, {
+        method: 'POST',
+        body: formData
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTestiForm({ ...testiForm, photo_url: data.data.url })
+      } else {
+        alert('Gagal mengupload foto')
+      }
+    } catch (err) { alert('Terjadi kesalahan saat upload') }
+    setIsUploading(false)
+  }
+
+  const handleTestiSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!testiForm.photo_url) {
+      alert('Tunggu hingga foto selesai diupload!')
+      return
+    }
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testiForm)
+      })
+      if (res.ok) {
+        alert('Testimoni berhasil dikirim!')
+        setShowTestimonialModal(false)
+        fetchTestimonials()
+      }
+    } catch (err) { alert('Gagal mengirim testimoni') }
+  }
 
   // Raw features array stays same...
   const rawFeatures = [
@@ -360,34 +425,111 @@ Saya ingin menghubungi Anda dengan detail berikut:
         </div>
       </section>
 
-      {/* Steps Section */}
-      <section className='steps-container' id='how-it-works'>
+      {/* Testimonials Section (Replacing Steps) */}
+      <section className='testimonials-section' id='testimonials'>
         <div className='section-header'>
-          <h2>Coba sekarang <span>juga.</span></h2>
+          <h2>Apa Kata <span>Mereka?</span></h2>
+          <button className='btn-add-testi' onClick={() => setShowTestimonialModal(true)}>+ Beri Testimoni</button>
         </div>
-        <div className='steps-grid'>
-          <div className='step-card'>
-            <img src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' className='step-image' alt='Scan' />
-            <div className='step-content'>
-              <span className='step-number'>01</span>
-              <h3 className='step-title'>Scanning</h3>
+
+        <div className='testimonials-marquee-wrapper'>
+          {/* Row 1: Moves Left */}
+          <div className='marquee-row row-left'>
+            <div className='marquee-content'>
+              {(testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials] : []).map((testi, idx) => (
+                <div key={idx} className='testimonial-card'>
+                  <div className='testi-quote'>“</div>
+                  <p className='testi-desc'>{testi.description}</p>
+                  <div className='testi-user'>
+                    <img 
+                      src={testi.photo_url ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` : 'https://img.icons8.com/bubbles/100/user.png'} 
+                      className='testi-avatar' 
+                      alt={testi.name} 
+                    />
+                    <div className='testi-meta'>
+                      <h4>{testi.name}</h4>
+                      <div className='testi-stars'>
+                        {Array.from({ length: testi.rating }).map((_, i) => <span key={i}>⭐</span>)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className='step-card' style={{ border: '2px solid var(--secondary-blue)' }}>
-            <img src='https://images.unsplash.com/photo-1551288049-bbbda536339a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' className='step-image' alt='Analyzing' />
-            <div className='step-content'>
-              <span className='step-number'>02</span>
-              <h3 className='step-title'>Analyzing</h3>
-            </div>
-          </div>
-          <div className='step-card'>
-            <img src='https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' className='step-image' alt='Reporting' />
-            <div className='step-content'>
-              <span className='step-number'>03</span>
-              <h3 className='step-title'>Reporting</h3>
+
+          {/* Row 2: Moves Right */}
+          <div className='marquee-row row-right'>
+            <div className='marquee-content'>
+              {(testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials].reverse() : []).map((testi, idx) => (
+                <div key={idx} className='testimonial-card'>
+                  <div className='testi-quote'>“</div>
+                  <p className='testi-desc'>{testi.description}</p>
+                  <div className='testi-user'>
+                    <img 
+                      src={testi.photo_url ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` : 'https://img.icons8.com/bubbles/100/user.png'} 
+                      className='testi-avatar' 
+                      alt={testi.name} 
+                    />
+                    <div className='testi-meta'>
+                      <h4>{testi.name}</h4>
+                      <div className='testi-stars'>
+                        {Array.from({ length: testi.rating }).map((_, i) => <span key={i}>⭐</span>)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+
+        {/* Testimonial Submission Modal */}
+        {showTestimonialModal && (
+          <div className='modal-overlay'>
+            <div className='testi-modal'>
+              <div className='modal-header'>
+                <h3>Kirim Testimoni</h3>
+                <button onClick={() => setShowTestimonialModal(false)}>✕</button>
+              </div>
+              <form onSubmit={handleTestiSubmit}>
+                <div className='input-group'>
+                  <label>Nama Lengkap</label>
+                  <input type='text' required placeholder='Nama anda...' onChange={e => setTestiForm({...testiForm, name: e.target.value})} />
+                </div>
+                <div className='input-group'>
+                  <label>Rating (1-5)</label>
+                  <select onChange={e => setTestiForm({...testiForm, rating: parseInt(e.target.value)})}>
+                    <option value='5'>⭐⭐⭐⭐⭐ (5)</option>
+                    <option value='4'>⭐⭐⭐⭐ (4)</option>
+                    <option value='3'>⭐⭐⭐ (3)</option>
+                    <option value='2'>⭐⭐ (2)</option>
+                    <option value='1'>⭐ (1)</option>
+                  </select>
+                </div>
+                <div className='input-group'>
+                  <label>Pesan Ulasan</label>
+                  <textarea required rows={4} placeholder='Tulis ulasan anda...' onChange={e => setTestiForm({...testiForm, description: e.target.value})}></textarea>
+                </div>
+                <div className='input-group'>
+                  <label>Upload Foto Profil {isUploading && '(Sabar sedang mengupload...)'}</label>
+                  <input type='file' accept='image/*' onChange={handleFileUpload} />
+                  {testiForm.photo_url && !isUploading && (
+                    <p style={{ color: '#9fe811', fontSize: '0.8rem', marginTop: '0.5rem' }}>✓ Foto berhasil diunggah!</p>
+                  )}
+                </div>
+                <button 
+                  type='submit' 
+                  className='btn-submit-testi' 
+                  disabled={isUploading}
+                  style={{ opacity: isUploading ? 0.5 : 1 }}
+                >
+                  {isUploading ? 'Menunggu Upload...' : 'Kirim Sekarang'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* New Astra-Style Footer Section */}

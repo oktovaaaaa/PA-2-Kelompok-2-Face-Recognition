@@ -41,6 +41,9 @@ func SetupRouter() *gin.Engine {
 	api.POST("/auth/login-pin", handlers.LoginPin)
 	api.POST("/auth/forgot-password", handlers.ForgotPassword)
 	api.POST("/auth/reset-password", handlers.ResetPassword)
+	api.GET("/testimonials", handlers.GetTestimonials)
+	api.POST("/testimonials", handlers.CreateTestimonial)
+	api.POST("/testimonials/upload", handlers.UploadFile)
 
 	// Protected routes (semua user yang sudah login)
 	protected := api.Group("/")
@@ -130,6 +133,11 @@ func SetupRouter() *gin.Engine {
 		admin.GET("/penalties", handlers.GetPenalties)
 		admin.DELETE("/penalties/:id", handlers.DeletePenalty)
 		admin.GET("/penalties/years", handlers.AdminGetPenaltyYears)
+
+		// Testimoni admin
+		admin.GET("/testimonials", handlers.AdminGetTestimonials)
+		admin.PUT("/testimonials/:id/approve", handlers.ApproveTestimonial)
+		admin.DELETE("/testimonials/:id", handlers.DeleteTestimonial)
 	}
 
 	// Protected Employee Routes
