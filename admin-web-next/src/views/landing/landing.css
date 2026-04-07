@@ -319,7 +319,7 @@
   width: 100%;
   background: var(--primary-blue);
   padding: 1.5rem 0;
-  margin: 6rem 0;
+  margin: 15rem 0 6rem 0;
   overflow: visible; /* Changed to visible so person can peek out */
   position: relative;
   border-top: 2px solid var(--secondary-blue);
@@ -331,14 +331,14 @@
 
 .ribbon-person {
   position: absolute;
-  height: 400px; /* Much larger to really overlap */
-  top: 50%;
+  height: 600px; /* Jaga ukuran agar tetap besar */
+  top: -250px; /* Nilai ini makin negatif, makin naik ke atas */
   left: 50%;
-  transform: translate(-50%, -50%) rotate(2deg); /* Perfectly centered & counter-rotated */
-  z-index: 6; /* Move in front of the ribbon for 'nimpa' effect */
+  transform: translate(-50%, -50%) rotate(2deg); /* Tetap di tengah horizontal */
+  z-index: 6; 
   opacity: 1;
   filter: drop-shadow(0 15px 30px rgba(0,0,0,0.5));
-  mix-blend-mode: screen; /* REMOVES BLACK BACKGROUND for a transparent look */
+  mix-blend-mode: screen; 
   pointer-events: none;
 }
 
@@ -348,7 +348,7 @@
   animation: scroll-ribbon 15s linear infinite;
   gap: 2rem;
   position: relative;
-  z-index: 2; /* In front of person */
+  z-index: 20; /* Di depan HP agar menimpa HP */
 }
 
 .ribbon-track span {

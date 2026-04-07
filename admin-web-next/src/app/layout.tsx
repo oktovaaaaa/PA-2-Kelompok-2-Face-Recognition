@@ -15,8 +15,15 @@ import Providers from '@components/Providers'
 const outfit = Outfit({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
 export const metadata = {
-  title: 'VIDENTI | Admin Dashboard',
-  description: 'Smart Attendance Management System'
+  title: {
+    template: 'VIDENTI - %s',
+    default: 'VIDENTI'
+  },
+  description: 'Smart Attendance Management System',
+  icons: {
+    icon: '/images/videnti.png',
+    apple: '/images/videnti.png'
+  }
 }
 
 const RootLayout = ({ children }: ChildrenType) => {

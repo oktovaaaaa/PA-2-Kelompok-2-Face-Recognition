@@ -1,4 +1,5 @@
 // src/app/(dashboard)/dashboard/page.tsx
+export const metadata = { title: 'Dashboard' }
 import Grid from '@mui/material/Grid'
 
 // New Premium Dashboard Component

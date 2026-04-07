@@ -4,6 +4,10 @@ import Login from '@views/Login'
 // Server Action Imports
 import { getServerMode } from '@core/utils/serverHelpers'
 
+export const metadata = {
+  title: 'Form Masuk'
+}
+
 const LoginPage = () => {
   // Vars
   const mode = getServerMode()

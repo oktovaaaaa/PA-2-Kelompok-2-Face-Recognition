@@ -3,8 +3,12 @@ import type { ChildrenType } from '@core/types'
 import Providers from '@components/Providers'
 
 export const metadata: Metadata = {
-  title: 'VIDENTI - Modern Attendance System',
-  description: 'Smart and Secure Attendance Management System for modern businesses.'
+  title: 'Beranda',
+  description: 'Smart and Secure Attendance Management System for modern businesses.',
+  icons: {
+    icon: '/images/videnti.png',
+    apple: '/images/videnti.png'
+  }
 }
 
 const LandingLayout = ({ children }: ChildrenType) => {
