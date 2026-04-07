@@ -33,6 +33,9 @@ const RootLayout = ({ children }: ChildrenType) => {
   return (
     <html id='__next' dir={direction}>
       <head>
+        <link rel='icon' href='/images/videnti.png?v=2' />
+        <link rel='icon' type='image/png' sizes='32x32' href='/images/videnti.png?v=2' />
+        <link rel='apple-touch-icon' href='/images/videnti.png' />
         <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet' />
       </head>
       <body className={`${outfit.className} flex is-full min-bs-full flex-auto flex-col`}>

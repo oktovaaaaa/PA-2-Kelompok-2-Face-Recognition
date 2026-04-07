@@ -12,7 +12,6 @@ const FACE_ID_ICON = 'https://img.icons8.com/fluency/240/facial-recognition.png'
 const REALTIME_ICON = 'https://img.icons8.com/fluency/240/clock.png'
 const ANALYTICS_ICON = 'https://img.icons8.com/fluency/240/bar-chart.png'
 const RIBBON_PERSON_IMAGE = '/mockupvidenti1.png'
-const FOOTER_BOY_IMAGE = '/indonesian_kid_flag_astra_style_illustrator_1775493190869.png'
 const ABOUT_IMAGE_MAIN = '/professional_man_holding_card_about_1775493818834.png'
 const ABOUT_IMAGE_SUB = '/woman_laptop_office_about_small_1775493849199.png'
 
@@ -61,7 +60,7 @@ const LandingPage = () => {
 
   const [testiForm, setTestiForm] = useState({
     name: '',
-    rating: 5,
+    rating: 0,
     description: '',
     photo_url: ''
   })
@@ -105,6 +104,10 @@ const LandingPage = () => {
     e.preventDefault()
     if (isUploading) {
       alert('Tunggu hingga foto selesai diupload!')
+      return
+    }
+    if (testiForm.rating === 0) {
+      alert('Silakan pilih rating minimal 1 bintang!')
       return
     }
     try {
@@ -282,8 +285,8 @@ Saya ingin menghubungi Anda dengan detail berikut:
       {/* Hero Section */}
       <section className='hero' id='home'>
         <div className='hero-content'>
-          <p className='hero-subtitle'>Smart Attendance System</p>
-          <h1 className='hero-title'>The Best Attendance For You.</h1>
+          <p className='hero-subtitle'>Sistem Absensi Cerdas</p>
+          <h1 className='hero-title'>Sistem Absensi Terbaik untuk Anda.</h1>
           <p className='hero-description'>
             VIDENTI adalah sistem absensi modern berbasis Face Recognition yang cepat, akurat, dan aman. 
             Kelola data kehadiran karyawan Anda dengan efisiensi tinggi tanpa ribet.
@@ -309,16 +312,16 @@ Saya ingin menghubungi Anda dengan detail berikut:
               <img src={ABOUT_IMAGE_SUB} alt='Modern Working' className='collage-sub-img' />
             </div>
             <div className='about-badge'>
-              <div className='badge-number'>1,485 +</div>
-              <div className='badge-text'>Trusted Clients</div>
+              <div className='badge-number'>1.485 +</div>
+              <div className='badge-text'>Klien Terpercaya</div>
             </div>
           </div>
           
           <div className='about-info'>
             <div className='about-label'>
-              <span className='dot-purple'></span> About Company
+              <span className='dot-purple'></span> Tentang Perusahaan
             </div>
-            <h2 className='about-title'>We Are The Best Online Face Attendance Agency</h2>
+            <h2 className='about-title'>Kami Adalah Agen Absensi Wajah Online Terbaik</h2>
             <p className='about-desc'>
               Kami berdedikasi untuk mentransformasi cara perusahaan mengelola kehadiran karyawan. 
               Dengan teknologi mutakhir dan tim ahli yang berpengalaman, kami memberikan solusi 
@@ -331,7 +334,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   <img src='https://img.icons8.com/color/48/conference-call.png' alt='Partner' />
                 </div>
                 <div className='item-text'>
-                  <h4>Trusted Partner</h4>
+                  <h4>Mitra Terpercaya</h4>
                   <p>Mitra terpercaya bagi ratusan perusahaan besar di Indonesia.</p>
                 </div>
               </div>
@@ -340,7 +343,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   <img src='https://img.icons8.com/color/48/fast-forward.png' alt='Fast' />
                 </div>
                 <div className='item-text'>
-                  <h4>Fastpace Platform</h4>
+                  <h4>Platform Cepat</h4>
                   <p>Platform super cepat dengan infrastruktur cloud modern.</p>
                 </div>
               </div>
@@ -349,7 +352,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   <img src='https://img.icons8.com/color/48/guarantee.png' alt='Reliability' />
                 </div>
                 <div className='item-text'>
-                  <h4>Tested Reliability</h4>
+                  <h4>Keandalan Teruji</h4>
                   <p>Keandalan yang telah teruji dalam menangani ribuan data setiap hari.</p>
                 </div>
               </div>
@@ -359,20 +362,12 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
         <div className='stats-bar'>
           <div className='stat-item'>
-            <h3>25 +</h3>
-            <p>Years Of Experience</p>
-          </div>
-          <div className='stat-item'>
-            <h3>3,452 +</h3>
-            <p>Total Transaction</p>
-          </div>
-          <div className='stat-item'>
             <h3>751 +</h3>
-            <p>Active User</p>
+            <p>Pengguna Aktif</p>
           </div>
           <div className='stat-item'>
             <h3>592 +</h3>
-            <p>Positive Reviews</p>
+            <p>Ulasan Positif</p>
           </div>
         </div>
       </section>
@@ -418,7 +413,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <div className='ribbon-wrapper' id='features'>
         {/* Background Watermark Text - Starbucks Style */}
         <div className='ribbon-bg-text'>
-          SMART<span>ATTENDANCE</span>
+          ABSENSI<span>CERDAS</span>
         </div>
 
         {/* Left Side Content */}
@@ -449,6 +444,25 @@ Saya ingin menghubungi Anda dengan detail berikut:
           </div>
         </div>
       </div>
+
+      {/* Epic Mockup Grid Section */}
+      <section className='epic-mockup-section'>
+        <div className='epic-blend-top'></div>
+        
+        <div className='epic-content'>
+          <h2>Fitur Canggih,<br />Terintegrasi Sempurna</h2>
+          <p>
+            VIDENTI mengintegrasikan absensi, laporan, dan pengelolaan karyawan<br />
+            dalam satu platform — cepat, aman, dan mudah digunakan.
+          </p>
+        </div>
+        
+        <div className='epic-image-container'>
+          <img src='/videnti_epic_mockups.png' alt='VIDENTI Mockup Collection' className='epic-image' />
+        </div>
+
+        <div className='epic-blend-bottom'></div>
+      </section>
 
       {/* Showcase Section (Bukan Sekedar Absensi Biasa) */}
       <section className='showcase' id='about'>
@@ -580,14 +594,20 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   <input type='text' required placeholder='Nama anda...' onChange={e => setTestiForm({...testiForm, name: e.target.value})} />
                 </div>
                 <div className='input-group'>
-                  <label>Rating (1-5)</label>
-                  <select onChange={e => setTestiForm({...testiForm, rating: parseInt(e.target.value)})}>
-                    <option value='5'>⭐⭐⭐⭐⭐ (5)</option>
-                    <option value='4'>⭐⭐⭐⭐ (4)</option>
-                    <option value='3'>⭐⭐⭐ (3)</option>
-                    <option value='2'>⭐⭐ (2)</option>
-                    <option value='1'>⭐ (1)</option>
-                  </select>
+                  <label>Rating Kepuasan Anda *</label>
+                  <div className='star-rating-input'>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type='button'
+                        className={`star-btn ${star <= testiForm.rating ? 'active' : ''}`}
+                        onClick={() => setTestiForm({ ...testiForm, rating: star })}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  {testiForm.rating > 0 && <span className='rating-label-hint'>{testiForm.rating} Bintang</span>}
                 </div>
                 <div className='input-group'>
                   <label>Pesan Ulasan</label>
@@ -619,7 +639,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
         {!showContactForm ? (
           <div className='footer-main-content'>
             <div className='footer-visual'>
-              <img src={FOOTER_BOY_IMAGE} alt='Indonesian Pride' className='footer-boy-img' />
+              <img src='/images/videnti.png' alt='VIDENTI Logo' className='footer-logo-img' />
             </div>
             <div className='footer-text-content'>
               <h2 className='footer-headline'>Terhubung dengan Kami</h2>
@@ -666,7 +686,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                 <img src='/images/videnti.png' alt='Logo' width={48} height={48} />
                 <span className='form-brand-name'>VIDENTI</span>
               </div>
-              <button className='btn-close-form' onClick={() => setShowContactForm(false)}>✕ Close</button>
+              <button className='btn-close-form' onClick={() => setShowContactForm(false)}>✕ Tutup</button>
             </div>
             
             <div className='form-layout-grid'>
