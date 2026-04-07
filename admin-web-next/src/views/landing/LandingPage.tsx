@@ -207,6 +207,32 @@ Saya ingin menghubungi Anda dengan detail berikut:
     router.push('/landing')
   }
 
+  // Scroll Reveal Logic
+  useEffect(() => {
+    const revealElements = document.querySelectorAll('.reveal');
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        } else {
+          // Remove active when leaving to allow re-animation (Exit effect)
+          entry.target.classList.remove('active');
+        }
+      });
+    }, { 
+      threshold: 0.1, // Trigger when 10% visible
+      rootMargin: '0px 0px -50px 0px' // Offset to trigger slightly before bottom of screen
+    });
+
+    revealElements.forEach(el => observer.observe(el));
+    
+    return () => {
+      revealElements.forEach(el => observer.unobserve(el));
+      observer.disconnect();
+    };
+  }, []); // Re-run if content changes or layout updates
+
   return (
     <div className='landing-container'>
       {/* Navbar */}
@@ -284,7 +310,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
       {/* Hero Section */}
       <section className='hero' id='home'>
-        <div className='hero-content'>
+        <div className='hero-content reveal reveal-up'>
           <p className='hero-subtitle'>Sistem Absensi Cerdas</p>
           <h1 className='hero-title'>Sistem Absensi Terbaik untuk Anda.</h1>
           <p className='hero-description'>
@@ -296,7 +322,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
           </div>
         </div>
         
-        <div className='hero-image-container'>
+        <div className='hero-image-container reveal reveal-left'>
           <img src={HERO_IMAGE} alt='Attendance App' className='hero-image' />
         </div>
       </section>
@@ -304,20 +330,20 @@ Saya ingin menghubungi Anda dengan detail berikut:
       {/* About Company Section (Collage & Stats) */}
       <section className='about-company' id='about-company'>
         <div className='about-container'>
-          <div className='about-collage'>
+          <div className='about-collage reveal reveal-left'>
             <div className='collage-main-wrapper'>
               <img src={ABOUT_IMAGE_MAIN} alt='Our Expert' className='collage-main-img' />
             </div>
             <div className='collage-sub-wrapper'>
               <img src={ABOUT_IMAGE_SUB} alt='Modern Working' className='collage-sub-img' />
             </div>
-            <div className='about-badge'>
+            <div className='about-badge reveal reveal-scale delay-2'>
               <div className='badge-number'>1.485 +</div>
               <div className='badge-text'>Klien Terpercaya</div>
             </div>
           </div>
           
-          <div className='about-info'>
+          <div className='about-info reveal reveal-right'>
             <div className='about-label'>
               <span className='dot-purple'></span> Tentang Perusahaan
             </div>
@@ -329,7 +355,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             </p>
             
             <div className='about-features-list'>
-              <div className='about-feature-item'>
+              <div className='about-feature-item reveal reveal-up delay-1'>
                 <div className='item-icon-box purple-bg'>
                   <img src='https://img.icons8.com/color/48/conference-call.png' alt='Partner' />
                 </div>
@@ -338,7 +364,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   <p>Mitra terpercaya bagi ratusan perusahaan besar di Indonesia.</p>
                 </div>
               </div>
-              <div className='about-feature-item'>
+              <div className='about-feature-item reveal reveal-up delay-2'>
                 <div className='item-icon-box outline-bg'>
                   <img src='https://img.icons8.com/color/48/fast-forward.png' alt='Fast' />
                 </div>
@@ -347,7 +373,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   <p>Platform super cepat dengan infrastruktur cloud modern.</p>
                 </div>
               </div>
-              <div className='about-feature-item'>
+              <div className='about-feature-item reveal reveal-up delay-3'>
                 <div className='item-icon-box outline-bg'>
                   <img src='https://img.icons8.com/color/48/guarantee.png' alt='Reliability' />
                 </div>
@@ -361,11 +387,11 @@ Saya ingin menghubungi Anda dengan detail berikut:
         </div>
 
         <div className='stats-bar'>
-          <div className='stat-item'>
+          <div className='stat-item reveal reveal-scale delay-1'>
             <h3>751 +</h3>
             <p>Pengguna Aktif</p>
           </div>
-          <div className='stat-item'>
+          <div className='stat-item reveal reveal-scale delay-2'>
             <h3>592 +</h3>
             <p>Ulasan Positif</p>
           </div>
@@ -449,7 +475,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <section className='epic-mockup-section'>
         <div className='epic-blend-top'></div>
         
-        <div className='epic-content'>
+        <div className='epic-content reveal reveal-up'>
           <h2>Fitur Canggih,<br />Terintegrasi Sempurna</h2>
           <p>
             VIDENTI mengintegrasikan absensi, laporan, dan pengelolaan karyawan<br />
@@ -457,7 +483,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
           </p>
         </div>
         
-        <div className='epic-image-container'>
+        <div className='epic-image-container reveal reveal-scale delay-2'>
           <img src='/videnti_epic_mockups.png' alt='VIDENTI Mockup Collection' className='epic-image' />
         </div>
 
@@ -466,15 +492,15 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
       {/* Showcase Section (Bukan Sekedar Absensi Biasa) */}
       <section className='showcase' id='about'>
-        <div className='showcase-card-container'>
-          <div className='showcase-collage-area'>
+        <div className='showcase-card-container reveal reveal-up'>
+          <div className='showcase-collage-area reveal reveal-left delay-1'>
             <img 
               src='/attendance_app_collage_1775491357614.png' 
               alt='App Collage' 
               className='collage-image'
             />
           </div>
-          <div className='showcase-overlay-box'>
+          <div className='showcase-overlay-box reveal reveal-right delay-2'>
             <h2 className='showcase-title'>Bukan Sekedar Absensi Biasa.</h2>
             <div className='divider-yellow'></div>
             <p className='showcase-desc'>
@@ -488,7 +514,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
       {/* Testimonials Section (Replacing Steps) */}
       <section className='testimonials-section' id='testimonials'>
-        <div className='section-header'>
+        <div className='section-header reveal reveal-up'>
           <h2>Apa Kata <span>Mereka?</span></h2>
           <button className='btn-add-testi' onClick={() => setShowTestimonialModal(true)}>+ Beri Testimoni</button>
         </div>
@@ -638,16 +664,16 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <section className='astra-footer' id='contact'>
         {!showContactForm ? (
           <div className='footer-main-content'>
-            <div className='footer-visual'>
+            <div className='footer-visual reveal reveal-scale'>
               <img src='/images/videnti.png' alt='VIDENTI Logo' className='footer-logo-img' />
             </div>
             <div className='footer-text-content'>
-              <h2 className='footer-headline'>Terhubung dengan Kami</h2>
-              <p className='footer-subheadline'>
+              <h2 className='footer-headline reveal reveal-up'>Terhubung dengan Kami</h2>
+              <p className='footer-subheadline reveal reveal-up delay-1'>
                 Jadilah bagian dari komunitas kami yang bersemangat dan saling terhubung dalam visi masa depan yang berkelanjutan.
               </p>
               
-              <div className='footer-social-row'>
+              <div className='footer-social-row reveal reveal-up delay-2'>
                 <a href='#' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/instagram-new.png' alt='Instagram' />
                 </a>
