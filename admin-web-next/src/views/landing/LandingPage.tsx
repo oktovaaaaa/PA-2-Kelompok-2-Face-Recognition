@@ -218,6 +218,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <li><a href='#home'>Beranda</a></li>
           <li><a href='#features'>Fitur</a></li>
           <li><a href='#how-it-works'>Cara Kerja</a></li>
+          <li><a href='#testimonials'>Testimoni</a></li>
           <li><a href='#about'>Tentang Kami</a></li>
           <li><a href='#contact'>Kontak</a></li>
         </ul>
@@ -413,12 +414,39 @@ Saya ingin menghubungi Anda dengan detail berikut:
         </div>
       </section>
 
-      {/* Scrolling Ribbon Divider */}
-      <div className='scrolling-divider'>
+      {/* Scrolling Ribbon Divider Wrapper */}
+      <div className='ribbon-wrapper' id='features'>
+        {/* Background Watermark Text - Starbucks Style */}
+        <div className='ribbon-bg-text'>
+          SMART<span>ATTENDANCE</span>
+        </div>
+
+        {/* Left Side Content */}
+        <div className='ribbon-side-content left'>
+          <p>Sistem cerdas yang mempermudah <br /><strong>manajemen waktu Anda.</strong></p>
+          <svg className='ribbon-arrow-svg left-arrow' viewBox='0 0 100 100'>
+            <path d='M10,10 Q50,10 80,50' fill='none' stroke='var(--secondary-blue)' strokeWidth='2' />
+            <path d='M75,35 L80,50 L65,55' fill='none' stroke='var(--secondary-blue)' strokeWidth='2' />
+          </svg>
+        </div>
+
+        {/* Phone Mockup (Subject) */}
         <img src={RIBBON_PERSON_IMAGE} className='ribbon-person' alt='Ribbon User' />
-        <div className='ribbon-track'>
-          <span>VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • </span>
-          <span>VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • </span>
+
+        {/* Right Side Content */}
+        <div className='ribbon-side-content right'>
+          <svg className='ribbon-arrow-svg right-arrow' viewBox='0 0 100 100'>
+            <path d='M90,10 Q50,10 20,50' fill='none' stroke='var(--secondary-blue)' strokeWidth='2' />
+            <path d='M25,35 L20,50 L35,55' fill='none' stroke='var(--secondary-blue)' strokeWidth='2' />
+          </svg>
+          <p>Keamanan berlapis dengan teknologi <br /><strong>Face Recognition terkini.</strong></p>
+        </div>
+
+        <div className='scrolling-divider'>
+          <div className='ribbon-track'>
+            <span>VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • </span>
+            <span>VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • </span>
+          </div>
         </div>
       </div>
 
@@ -455,14 +483,19 @@ Saya ingin menghubungi Anda dengan detail berikut:
           {/* Row 1: Moves Left */}
           <div className='marquee-row row-left'>
             <div className='marquee-content'>
-              {/* Row 1: Tripled for infinite loop */}
               {(() => {
-                const tripled = testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials] : [];
+                const displayData = testimonials.length > 0 ? testimonials : [
+                  { name: 'Budi Santoso', description: 'VIDENTI sangat memudahkan manajemen absensi di pabrik kami. Sangat akurat!', rating: 5 },
+                  { name: 'Siti Aminah', description: 'Fitur payroll otomatisnya menghemat waktu HRD kami hingga 70%. Luar biasa!', rating: 5 },
+                  { name: 'Andi Wijaya', description: 'Topik pengenalan wajahnya sangat cepat, bahkan dalam kondisi minim cahaya.', rating: 4 },
+                  { name: 'Dewi Lestari', description: 'Dashboard admin sangat intuitif dan mudah dipahami oleh staf baru.', rating: 5 }
+                ];
+                const tripled = [...displayData, ...displayData, ...displayData];
                 return tripled.map((testi, idx) => {
-                  const originalIndex = idx % testimonials.length;
+                  const originalIndex = idx % displayData.length;
                   const avatarSrc = testi.photo_url 
                     ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
-                    : `/images/avatars/${(originalIndex % 8) + 1}.png`;
+                    : `https://i.pravatar.cc/150?u=${testi.name}`;
 
                   return (
                     <div key={idx} className='testimonial-card'>
@@ -491,21 +524,22 @@ Saya ingin menghubungi Anda dengan detail berikut:
           {/* Row 2: Moves Right */}
           <div className='marquee-row row-right'>
             <div className='marquee-content'>
-              {/* Row 2: Tripled and Reversed for visual variety */}
               {(() => {
-                const tripled = testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials] : [];
+                const displayData = testimonials.length > 0 ? testimonials : [
+                  { name: 'Joko Widodo', description: 'Implementasi gampang dan tim supportnya sangat responsif membantu.', rating: 5 },
+                  { name: 'Rina Marlina', description: 'Karyawan saya senang karena bisa absensi langsung dari HP masing-masing.', rating: 5 },
+                  { name: 'Anton Setiawan', description: 'Analitiknya sangat detail, membantu saya memantau produktivitas tim.', rating: 4 },
+                  { name: 'Maya Putri', description: 'Harga berlangganannya sangat terjangkau dibanding kompetitor lain.', rating: 5 }
+                ];
+                const tripled = [...displayData, ...displayData, ...displayData];
                 const reversed = [...tripled].reverse();
                 
                 return reversed.map((testi, idx) => {
-                  // To keep avatar consistent, we find the index of this item in the ORIGINAL testimonials list
-                  // Since 'tripled' is [T1, T2, T3, T1, T2, T3...], we need the original index.
-                  // For a reversed list of length 3L, the original index of what was at 'tripled[j]' is j % L.
-                  // j here is (3L - 1 - idx).
-                  const L = testimonials.length;
+                  const L = displayData.length;
                   const originalIndex = (L * 3 - 1 - idx) % L;
                   const avatarSrc = testi.photo_url 
                     ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
-                    : `/images/avatars/${(originalIndex % 8) + 1}.png`;
+                    : `https://i.pravatar.cc/155?u=${testi.name}`;
 
                   return (
                     <div key={idx} className='testimonial-card'>
