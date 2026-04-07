@@ -1743,6 +1743,94 @@
   .footer-bottom-links {
     justify-content: center;
   }
+
+  /* About Company Mobile Fixes */
+  .about-company {
+    padding: 5rem 5% 3rem;
+  }
+
+  .about-container {
+    flex-direction: column;
+    gap: 4rem;
+    text-align: center;
+  }
+
+  .about-collage {
+    height: 450px;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+
+  .collage-main-wrapper {
+    width: 100%;
+    height: 350px;
+    border-radius: 30px;
+  }
+
+  .collage-sub-wrapper {
+    width: 180px;
+    height: 220px;
+    left: 0;
+    top: 10%;
+    border-radius: 32px;
+    border-width: 6px;
+  }
+
+  .about-badge {
+    width: 120px;
+    height: 120px;
+    padding: 1.5rem;
+    left: 10%;
+    bottom: -15px;
+  }
+
+  .badge-number {
+    font-size: 1.5rem;
+  }
+
+  .about-label {
+    justify-content: center;
+  }
+
+  .about-title {
+    font-size: 2.2rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .about-desc {
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .about-feature-item {
+    text-align: left;
+    gap: 1rem;
+  }
+
+  .item-text h4 {
+    font-size: 1.1rem;
+  }
+
+  /* Stats Bar Mobile Fix */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.5rem;
+    padding: 4rem 1.5rem;
+    margin: 4rem 1rem 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .stat-item h3 {
+    font-size: 2rem;
+  }
+
+  .stat-item p {
+    font-size: 0.85rem;
+  }
 }
 
 /* Close the main 1024px media query if it was still open, or just ensure end of file is clean */
