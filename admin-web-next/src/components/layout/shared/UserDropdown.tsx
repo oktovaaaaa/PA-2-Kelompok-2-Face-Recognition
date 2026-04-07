@@ -126,6 +126,10 @@ const UserDropdown = () => {
                     <i className='ri-settings-4-line' />
                     <Typography color='text.primary'>Pengaturan</Typography>
                   </MenuItem>
+                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e, '/landing')}>
+                    <i className='ri-earth-line' />
+                    <Typography color='text.primary'>Halaman Beranda</Typography>
+                  </MenuItem>
                   <Divider className='mlb-1' />
                   <div className='flex items-center plb-2 pli-4'>
                     <Button

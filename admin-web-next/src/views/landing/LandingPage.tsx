@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { GoogleLogin, googleLogout, CredentialResponse } from '@react-oauth/google'
+import { googleLogout } from '@react-oauth/google'
 import './landing.css'
 
 // Image path as generated earlier
@@ -27,6 +27,24 @@ const LandingPage = () => {
   const [showTestimonialModal, setShowTestimonialModal] = useState(false)
   const [testimonials, setTestimonials] = useState<any[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(0)
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+
+  useEffect(() => {
+    setWindowWidth(window.innerWidth)
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    const handleScroll = () => setIsScrolled(window.scrollY > 50)
+    
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const [formData, setFormData] = useState({
     nama: '',
@@ -85,7 +103,7 @@ const LandingPage = () => {
 
   const handleTestiSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!testiForm.photo_url) {
+    if (isUploading) {
       alert('Tunggu hingga foto selesai diupload!')
       return
     }
@@ -148,7 +166,7 @@ const LandingPage = () => {
 
   const handleWhatsAppSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const message = `Halo Admin FaceAttend,
+    const message = `Halo Admin VIDENTI,
 Saya ingin menghubungi Anda dengan detail berikut:
 *Nama:* ${formData.nama}
 *Kategori:* ${formData.kategori}
@@ -171,56 +189,16 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    const email = localStorage.getItem('user_email')
-    if (token && email) { setIsLoggedIn(true); setUserEmail(email) }
+    if (token) { setIsLoggedIn(true) }
   }, [])
-
-  const handleLoginSuccess = async (response: CredentialResponse) => {
-    if (!response.credential) return
-
-    try {
-      // Decode JWT to get email locally first (optional)
-      const base64Url = response.credential.split('.')[1]
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(function (c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-          })
-          .join('')
-      )
-      const payload = JSON.parse(jsonPayload)
-      const email = payload.email
-
-      // Backend call to verify admin
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: response.credential })
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user_email', email)
-        setIsLoggedIn(true)
-        setUserEmail(email)
-        alert('Login Successful! Welcome Admin.')
-      } else {
-        const errorData = await res.json()
-        alert(errorData.message || 'Login failed. Only admin accounts are allowed.')
-      }
-    } catch (error) {
-      console.error('Login error:', error)
-      alert('An error occurred during login.')
-    }
-  }
 
   const handleLogout = () => {
     googleLogout()
     localStorage.removeItem('token')
-    localStorage.removeItem('user_email')
+    localStorage.removeItem('user_id')
+    localStorage.removeItem('user_name')
+    localStorage.removeItem('role')
+    localStorage.removeItem('company_id')
     setIsLoggedIn(false)
     setUserEmail('')
     router.push('/landing')
@@ -229,11 +207,13 @@ Saya ingin menghubungi Anda dengan detail berikut:
   return (
     <div className='landing-container'>
       {/* Navbar */}
-      <nav className='navbar'>
+      <nav className={`navbar ${isScrolled ? 'navbar--scrolled' : ''}`}>
         <Link href='/' className='navbar-logo'>
-          <img src='https://img.icons8.com/fluency/48/face-id.png' alt='Logo' />
-          <span>FaceAttend</span>
+          <img src='/images/videnti.png' alt='Logo' width={48} height={48} />
+          <span>VIDENTI</span>
         </Link>
+        
+        {/* Desktop Links */}
         <ul className='navbar-links'>
           <li><a href='#home'>Beranda</a></li>
           <li><a href='#features'>Fitur</a></li>
@@ -241,24 +221,61 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <li><a href='#about'>Tentang Kami</a></li>
           <li><a href='#contact'>Kontak</a></li>
         </ul>
+
+        {/* Desktop Auth */}
         <div className='navbar-auth'>
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link href='/dashboard' className='login-btn' style={{ background: 'transparent' }}>Dashboard</Link>
-              <button onClick={handleLogout} className='login-btn'>Log Out</button>
+              <Link href='/dashboard' className='login-btn' style={{ background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)', color: '#fff', border: 'none' }}>
+                Kembali ke Dashboard
+              </Link>
+              <button onClick={handleLogout} className='login-btn' style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                Log Out
+              </button>
             </div>
           ) : (
-            <div className='google-login-wrapper'>
-              <GoogleLogin
-                onSuccess={handleLoginSuccess}
-                onError={() => alert('Login Failed')}
-                theme='filled_blue'
-                shape='pill'
-                text='signin'
-              />
-            </div>
+            <Link href='/login' className='login-btn'>Login Admin</Link>
           )}
         </div>
+
+        {/* Hamburger Menu Toggle (Mobile) */}
+        <button className={`menu-toggle ${isMenuOpen ? 'active' : ''}`} onClick={toggleMenu} aria-label='Toggle Menu'>
+          <span className='hamburger-line'></span>
+          <span className='hamburger-line'></span>
+          <span className='hamburger-line'></span>
+        </button>
+
+        {/* Mobile Sidebar */}
+        <div className={`mobile-sidebar ${isMenuOpen ? 'active' : ''}`}>
+          <div className='sidebar-header'>
+            <span className='sidebar-logo'>Menu</span>
+            <button className='close-menu' onClick={toggleMenu}>✕</button>
+          </div>
+          <ul className='sidebar-links'>
+            <li><a href='#home' onClick={toggleMenu}>Beranda</a></li>
+            <li><a href='#features' onClick={toggleMenu}>Fitur</a></li>
+            <li><a href='#how-it-works' onClick={toggleMenu}>Cara Kerja</a></li>
+            <li><a href='#about' onClick={toggleMenu}>Tentang Kami</a></li>
+            <li><a href='#contact' onClick={toggleMenu}>Kontak</a></li>
+          </ul>
+          <div className='sidebar-auth'>
+            {isLoggedIn ? (
+              <div className='sidebar-auth-buttons'>
+                <Link href='/dashboard' className='login-btn' onClick={toggleMenu} style={{ background: '#2563EB', color: '#fff' }}>
+                  Kembali ke Dashboard
+                </Link>
+                <button onClick={() => { handleLogout(); toggleMenu(); }} className='login-btn logout'>Log Out</button>
+              </div>
+            ) : (
+              <div className='sidebar-auth-buttons' style={{ marginTop: '0' }}>
+                <Link href='/login' className='login-btn' onClick={toggleMenu}>Login Admin</Link>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Backdrop for Mobile Sidebar */}
+        {isMenuOpen && <div className='menu-overlay' onClick={toggleMenu}></div>}
       </nav>
 
       {/* Hero Section */}
@@ -267,7 +284,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <p className='hero-subtitle'>Smart Attendance System</p>
           <h1 className='hero-title'>The Best Attendance For You.</h1>
           <p className='hero-description'>
-            FaceAttend adalah sistem absensi modern berbasis Face Recognition yang cepat, akurat, dan aman. 
+            VIDENTI adalah sistem absensi modern berbasis Face Recognition yang cepat, akurat, dan aman. 
             Kelola data kehadiran karyawan Anda dengan efisiensi tinggi tanpa ribet.
           </p>
           <div className='hero-cta'>
@@ -371,7 +388,9 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <div 
             className='carousel-track' 
             style={{ 
-              transform: `translateX(calc(50% - 160px - ${activeFeatureIndex * 368}px))`,
+              transform: windowWidth > 0 && windowWidth <= 1024 
+                ? `translateX(calc(50% - 140px - ${activeFeatureIndex * 328}px))`
+                : `translateX(calc(50% - 160px - ${activeFeatureIndex * 368}px))`,
               transition: hasTransition ? 'all 0.5s ease' : 'none'
             }}
           >
@@ -398,8 +417,8 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <div className='scrolling-divider'>
         <img src={RIBBON_PERSON_IMAGE} className='ribbon-person' alt='Ribbon User' />
         <div className='ribbon-track'>
-          <span>FACREC • FACREC • FACREC • FACREC • FACREC • FACREC • FACREC • FACREC • </span>
-          <span>FACREC • FACREC • FACREC • FACREC • FACREC • FACREC • FACREC • FACREC • </span>
+          <span>VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • </span>
+          <span>VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • VIDENTI • </span>
         </div>
       </div>
 
@@ -417,7 +436,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             <h2 className='showcase-title'>Bukan Sekedar Absensi Biasa.</h2>
             <div className='divider-yellow'></div>
             <p className='showcase-desc'>
-              FaceAttend dirancang untuk memberikan pengalaman terbaik bagi admin maupun karyawan. 
+              VIDENTI dirancang untuk memberikan pengalaman terbaik bagi admin maupun karyawan. 
               Dengan integrasi cloud, data Anda selalu aman dan dapat diakses dari mana saja tanpa kendala.
             </p>
             <a href='#contact' className='btn-showcase'>Mulai sekarang →</a>
@@ -436,50 +455,79 @@ Saya ingin menghubungi Anda dengan detail berikut:
           {/* Row 1: Moves Left */}
           <div className='marquee-row row-left'>
             <div className='marquee-content'>
-              {(testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials] : []).map((testi, idx) => (
-                <div key={idx} className='testimonial-card'>
-                  <div className='testi-quote'>“</div>
-                  <p className='testi-desc'>{testi.description}</p>
-                  <div className='testi-user'>
-                    <img 
-                      src={testi.photo_url ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` : 'https://img.icons8.com/bubbles/100/user.png'} 
-                      className='testi-avatar' 
-                      alt={testi.name} 
-                    />
-                    <div className='testi-meta'>
-                      <h4>{testi.name}</h4>
-                      <div className='testi-stars'>
-                        {Array.from({ length: testi.rating }).map((_, i) => <span key={i}>⭐</span>)}
+              {/* Row 1: Tripled for infinite loop */}
+              {(() => {
+                const tripled = testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials] : [];
+                return tripled.map((testi, idx) => {
+                  const originalIndex = idx % testimonials.length;
+                  const avatarSrc = testi.photo_url 
+                    ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
+                    : `/images/avatars/${(originalIndex % 8) + 1}.png`;
+
+                  return (
+                    <div key={idx} className='testimonial-card'>
+                      <div className='testi-quote'>“</div>
+                      <p className='testi-desc'>{testi.description}</p>
+                      <div className='testi-user'>
+                        <img 
+                          src={avatarSrc} 
+                          className='testi-avatar' 
+                          alt={testi.name} 
+                        />
+                        <div className='testi-meta'>
+                          <h4>{testi.name}</h4>
+                          <div className='testi-stars'>
+                            {Array.from({ length: testi.rating }).map((_, i) => <span key={i}>⭐</span>)}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                });
+              })()}
             </div>
           </div>
 
           {/* Row 2: Moves Right */}
           <div className='marquee-row row-right'>
             <div className='marquee-content'>
-              {(testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials].reverse() : []).map((testi, idx) => (
-                <div key={idx} className='testimonial-card'>
-                  <div className='testi-quote'>“</div>
-                  <p className='testi-desc'>{testi.description}</p>
-                  <div className='testi-user'>
-                    <img 
-                      src={testi.photo_url ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` : 'https://img.icons8.com/bubbles/100/user.png'} 
-                      className='testi-avatar' 
-                      alt={testi.name} 
-                    />
-                    <div className='testi-meta'>
-                      <h4>{testi.name}</h4>
-                      <div className='testi-stars'>
-                        {Array.from({ length: testi.rating }).map((_, i) => <span key={i}>⭐</span>)}
+              {/* Row 2: Tripled and Reversed for visual variety */}
+              {(() => {
+                const tripled = testimonials.length > 0 ? [...testimonials, ...testimonials, ...testimonials] : [];
+                const reversed = [...tripled].reverse();
+                
+                return reversed.map((testi, idx) => {
+                  // To keep avatar consistent, we find the index of this item in the ORIGINAL testimonials list
+                  // Since 'tripled' is [T1, T2, T3, T1, T2, T3...], we need the original index.
+                  // For a reversed list of length 3L, the original index of what was at 'tripled[j]' is j % L.
+                  // j here is (3L - 1 - idx).
+                  const L = testimonials.length;
+                  const originalIndex = (L * 3 - 1 - idx) % L;
+                  const avatarSrc = testi.photo_url 
+                    ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
+                    : `/images/avatars/${(originalIndex % 8) + 1}.png`;
+
+                  return (
+                    <div key={idx} className='testimonial-card'>
+                      <div className='testi-quote'>“</div>
+                      <p className='testi-desc'>{testi.description}</p>
+                      <div className='testi-user'>
+                        <img 
+                          src={avatarSrc} 
+                          className='testi-avatar' 
+                          alt={testi.name} 
+                        />
+                        <div className='testi-meta'>
+                          <h4>{testi.name}</h4>
+                          <div className='testi-stars'>
+                            {Array.from({ length: testi.rating }).map((_, i) => <span key={i}>⭐</span>)}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
@@ -552,7 +600,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                 <a href='https://wa.me/62881080811110' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/whatsapp.png' alt='WhatsApp' />
                 </a>
-                <a href='mailto:support@faceattend.com' className='social-icon'>
+                <a href='mailto:support@videnti.com' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/gmail-new.png' alt='Email' />
                 </a>
                 <a href='#' className='social-icon'>
@@ -567,6 +615,10 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </div>
               
               <div className='footer-bottom-links'>
+                <a href='https://oktovaaaaa.cloud' target='_blank' rel='noopener noreferrer' style={{ fontWeight: '700', color: '#fff' }}>
+                  © {new Date().getFullYear()} Oktovaaaaa
+                </a>
+                <span>•</span>
                 <a href='#'>Pemberitahuan Privasi</a>
                 <span>•</span>
                 <a href='#'>Ketentuan Layanan</a>
@@ -577,8 +629,8 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <div className='contact-form-container'>
             <div className='form-header-row'>
               <div className='form-logo-box'>
-                <img src='https://img.icons8.com/fluency/48/face-id.png' alt='Logo' />
-                <span className='form-brand-name'>FaceAttend</span>
+                <img src='/images/videnti.png' alt='Logo' width={48} height={48} />
+                <span className='form-brand-name'>VIDENTI</span>
               </div>
               <button className='btn-close-form' onClick={() => setShowContactForm(false)}>✕ Close</button>
             </div>
@@ -586,7 +638,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             <div className='form-layout-grid'>
               <div className='form-info-side'>
                 <h2 className='form-title'>Butuh Bantuan? Silahkan Hubungi Tim</h2>
-                <div className='form-highlight-text'>FaceAttend</div>
+                <div className='form-highlight-text'>VIDENTI</div>
               </div>
               
               <form className='form-inputs-side' onSubmit={handleWhatsAppSubmit}>

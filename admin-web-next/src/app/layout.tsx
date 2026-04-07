@@ -15,8 +15,8 @@ import Providers from '@components/Providers'
 const outfit = Outfit({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
 export const metadata = {
-  title: 'Login | Face Recognition Admin',
-  description: 'Face Recognition Attendance Management System'
+  title: 'VIDENTI | Admin Dashboard',
+  description: 'Smart Attendance Management System'
 }
 
 const RootLayout = ({ children }: ChildrenType) => {

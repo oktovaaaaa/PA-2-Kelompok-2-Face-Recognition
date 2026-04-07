@@ -133,7 +133,7 @@ const Login = ({ mode }: { mode: Mode }) => {
       handleShowNotification('Login berhasil! Mengalihkan...', 'success')
       
       setTimeout(() => {
-        router.push('/')
+        router.push('/dashboard')
       }, 1000)
     } catch (error: any) {
       if (error.message) {
@@ -209,18 +209,23 @@ const Login = ({ mode }: { mode: Mode }) => {
           <div className='absolute bg-white/5 rounded-full w-[150px] h-[150px] bottom-[100px] right-[50px] z-1' />
           
           <h1 className='text-[48px] font-extrabold leading-tight mb-2 z-10'>WELCOME</h1>
-          <h2 className='text-[24px] font-bold uppercase tracking-[2px] mb-6 z-10'>FACE RECOGNITION ADMIN</h2>
+          <h2 className='text-[24px] font-bold uppercase tracking-[2px] mb-6 z-10'>VIDENTI ADMIN</h2>
           <p className='text-[14px] text-white/80 leading-relaxed max-w-[320px] z-10'>
-            Sistem manajemen absensi cerdas berbasis pemindaian wajah. Kelola data karyawan dan laporan kehadiran dengan mudah.
+            Sistem manajemen absensi cerdas berbasis pemindaian wajah. Kelola data karyawan dan laporan kehadiran dengan mudah bersama VIDENTI.
           </p>
         </div>
 
         {/* FORM PANE (RIGHT) */}
         <div className='form-pane flex-1 p-10 md:p-[80px] flex flex-col justify-center relative bg-white'>
+          <Link href='/landing' className='absolute top-8 left-8 md:left-12 flex items-center gap-2 text-[14px] font-bold text-[#64748B] hover:text-[#2563EB] transition-colors'>
+            <i className='bx bx-left-arrow-alt text-[20px]' />
+            Kembali ke Beranda
+          </Link>
+
           {step === 'login' ? (
             <div className='view-container animate-fade-in'>
-              <h2 className='text-[32px] font-extrabold mb-2 text-[#0F172A]'>Masuk Admin</h2>
-              <p className='text-[#64748B] text-[14px] mb-8'>Kelola sistem Face Recognition.</p>
+              <h2 className='text-[32px] font-extrabold mb-2 text-[#0F172A]'>Masuk VIDENTI</h2>
+              <p className='text-[#64748B] text-[14px] mb-8'>Kelola sistem absensi VIDENTI.</p>
               
               <form onSubmit={handleLoginSubmit} className='flex flex-col gap-4'>
                 {/* Email Input */}
@@ -275,7 +280,7 @@ const Login = ({ mode }: { mode: Mode }) => {
                   disabled={loading}
                   className='w-full py-4 bg-[#0F172A] text-white rounded-full text-[16px] font-extrabold transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-70 flex justify-center items-center gap-2 mt-2'
                 >
-                  {loading ? <CircularProgress size={20} color='inherit' /> : 'Masuk Admin'}
+                  {loading ? <CircularProgress size={20} color='inherit' /> : 'Masuk Dashboard'}
                 </button>
               </form>
 
