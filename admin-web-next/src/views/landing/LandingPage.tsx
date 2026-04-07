@@ -7,10 +7,13 @@ import { googleLogout } from '@react-oauth/google'
 import './landing.css'
 
 // Image path as generated earlier
-const HERO_IMAGE = '/attendance_app_hero_1775490992311.png'
-const FACE_ID_ICON = 'https://img.icons8.com/fluency/240/facial-recognition.png'
-const REALTIME_ICON = 'https://img.icons8.com/fluency/240/clock.png'
-const ANALYTICS_ICON = 'https://img.icons8.com/fluency/240/bar-chart.png'
+const HERO_IMAGE = '/videntiprofile.png'
+const FACE_ID_ICON = '/images/landing/face_recognition.png'
+const REALTIME_ICON = '/images/landing/real_time.png'
+const ANALYTICS_ICON = '/images/landing/chart.png'
+const MOBILE_ICON = '/images/landing/mobile.png'
+const PAYROLL_ICON = '/images/landing/gaji.png'
+const DASHBOARD_ICON = '/images/landing/dashboard_web.png'
 const RIBBON_PERSON_IMAGE = '/mockupvidenti1.png'
 const ABOUT_IMAGE_MAIN = '/professional_man_holding_card_about_1775493818834.png'
 const ABOUT_IMAGE_SUB = '/woman_laptop_office_about_small_1775493849199.png'
@@ -126,11 +129,12 @@ const LandingPage = () => {
 
   // Raw features array stays same...
   const rawFeatures = [
-    { title: 'Auto Payroll', desc: 'Penghitungan gaji otomatis berdasarkan data absensi real-time.', icon: 'https://img.icons8.com/fluency/240/money-transfer.png' },
+    { title: 'Auto Payroll', desc: 'Penghitungan gaji otomatis berdasarkan data absensi real-time.', icon: PAYROLL_ICON },
     { title: 'Face Recognition', desc: 'Teknologi pengenalan wajah tercanggih untuk mencegah kecurangan.', icon: FACE_ID_ICON },
     { title: 'Real-time Tracking', desc: 'Pantau kehadiran secara langsung dari dashboard administratif.', icon: REALTIME_ICON },
     { title: 'Advanced Analytics', desc: 'Laporan absensi otomatis yang mendalam untuk membantu keputusan.', icon: ANALYTICS_ICON },
-    { title: 'Mobile Access', desc: 'Akses dashboard dan lapor kehadiran langsung dari smartphone.', icon: 'https://img.icons8.com/fluency/240/smartphone.png' }
+    { title: 'Mobile Access', desc: 'Akses dashboard dan lapor kehadiran langsung dari smartphone.', icon: MOBILE_ICON },
+    { title: 'Admin Dashboard', desc: 'Kelola seluruh data kehadiran, laporan, dan pengaturan karyawan secara tersentralisasi.', icon: DASHBOARD_ICON }
   ]
 
   // Triple set for loop
@@ -392,7 +396,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             <p>Pengguna Aktif</p>
           </div>
           <div className='stat-item reveal reveal-scale delay-2'>
-            <h3>592 +</h3>
+            <h3>{testimonials.length} +</h3>
             <p>Ulasan Positif</p>
           </div>
         </div>
@@ -535,7 +539,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   const originalIndex = idx % displayData.length;
                   const avatarSrc = testi.photo_url 
                     ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
-                    : `https://i.pravatar.cc/150?u=${testi.name}`;
+                    : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
 
                   return (
                     <div key={idx} className='testimonial-card'>
@@ -579,7 +583,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   const originalIndex = (L * 3 - 1 - idx) % L;
                   const avatarSrc = testi.photo_url 
                     ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
-                    : `https://i.pravatar.cc/155?u=${testi.name}`;
+                    : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
 
                   return (
                     <div key={idx} className='testimonial-card'>
