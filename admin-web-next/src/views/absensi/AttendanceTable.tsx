@@ -26,6 +26,7 @@ import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
 import * as XLSX from 'xlsx'
 import { attendanceService } from '@/libs/attendanceService'
+import { formatFullDate } from '@/utils/dateFormatter'
 import { useNotification } from '@/contexts/NotificationContext'
 
 interface AttendanceTableProps {
@@ -107,12 +108,6 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     }
   }
 
-  const _formatFullDate = (dateStr: string) => {
-    try {
-        const date = new Date(dateStr)
-        return date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    } catch (_) { return dateStr }
-  }
 
   const handleExport = async () => {
     const ExcelJS = (await import('exceljs')).default
@@ -222,7 +217,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
         const values = [
             index + 1,
             r.user_name,
-            _formatFullDate(r.date),
+            formatFullDate(r.date),
             checkIn,
             checkOut,
             _translateStatus(r.status)
@@ -384,7 +379,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>{row.date}</TableCell>
+                    <TableCell>{formatFullDate(row.date)}</TableCell>
                     <TableCell>{formatTime(row.check_in_time)}</TableCell>
                     <TableCell>{formatTime(row.check_out_time)}</TableCell>
                     <TableCell>

@@ -4,6 +4,7 @@ import '../../../../../core/storage/session_storage.dart';
 import '../../../../../core/utils/currency_formatter.dart';
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/providers/notification_provider.dart';
+import '../../../../../core/utils/date_formatter.dart';
 import '../../../../common/presentation/screens/notification_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -163,7 +164,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _todayData?['date'] ?? '-',
+                          AppDateFormatter.formatFullDate(_todayData?['date'] ?? '-'),
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.white.withOpacity(0.75),

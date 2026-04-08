@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:front_end/core/network/api_client.dart';
+import 'package:front_end/core/utils/date_formatter.dart';
 import 'package:front_end/core/utils/error_mapper.dart';
 import '../../../common/widgets/app_dialog.dart';
 
@@ -391,7 +392,7 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(r['date'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(AppDateFormatter.formatFullDate(r['date'] ?? '-'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 4),
               Text(
                 '${r['check_in_time']?.toString().substring(11, 16) ?? '--:--'} - ${r['check_out_time']?.toString().substring(11, 16) ?? '--:--'}',

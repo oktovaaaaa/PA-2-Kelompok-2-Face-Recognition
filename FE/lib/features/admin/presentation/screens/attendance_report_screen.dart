@@ -6,6 +6,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../../common/widgets/app_dialog.dart';
 
 class AttendanceReportScreen extends StatefulWidget {
@@ -1147,7 +1148,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(r['user_name'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
-                Text(r['date'] ?? '-', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                Text(AppDateFormatter.formatFullDate(r['date'] ?? '-'), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
               ],
             ),
           ),

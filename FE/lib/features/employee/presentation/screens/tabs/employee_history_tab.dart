@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../../core/network/api_client.dart';
 import 'package:flutter/services.dart';
+import '../../../../../core/utils/date_formatter.dart';
 
 class EmployeeHistoryTab extends StatefulWidget {
   const EmployeeHistoryTab({super.key});
@@ -442,7 +443,7 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
                                   decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                                   child: Icon(Icons.event_available_rounded, color: color, size: 22),
                                 ),
-                                title: Text(rec['date'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
+                                title: Text(AppDateFormatter.formatFullDate(rec['date'] ?? ''), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [

@@ -17,7 +17,7 @@ import Box from '@mui/material/Box'
 import Avatar from '@mui/material/Avatar'
 import TablePagination from '@mui/material/TablePagination'
 import { LeaveRequest } from '@/libs/leaveService'
-import { format } from 'date-fns'
+import { formatFullDate } from '@/utils/dateFormatter'
 
 interface Props {
   leaves: LeaveRequest[]
@@ -108,7 +108,7 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
                     <Typography variant='body2' noWrap sx={{ maxWidth: 200 }}>{row.title}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant='body2'>{format(new Date(row.created_at), 'dd MMM yyyy')}</Typography>
+                    <Typography variant='body2'>{formatFullDate(row.created_at)}</Typography>
                   </TableCell>
                   <TableCell align="center">
                     <Chip 

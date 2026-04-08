@@ -15,8 +15,8 @@ const MOBILE_ICON = '/images/landing/mobile.png'
 const PAYROLL_ICON = '/images/landing/gaji.png'
 const DASHBOARD_ICON = '/images/landing/dashboard_web.png'
 const RIBBON_PERSON_IMAGE = '/mockupvidenti1.png'
-const ABOUT_IMAGE_MAIN = '/professional_man_holding_card_about_1775493818834.png'
-const ABOUT_IMAGE_SUB = '/woman_laptop_office_about_small_1775493849199.png'
+const ABOUT_IMAGE_MAIN = '/vidientiprofile2.png'
+const ABOUT_IMAGE_SUB = '/videntiprofile3.png'
 
 const LandingPage = () => {
   const router = useRouter()
@@ -342,7 +342,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               <img src={ABOUT_IMAGE_SUB} alt='Modern Working' className='collage-sub-img' />
             </div>
             <div className='about-badge reveal reveal-scale delay-2'>
-              <div className='badge-number'>1.485 +</div>
+              <div className='badge-number'>{testimonials.length} +</div>
               <div className='badge-text'>Klien Terpercaya</div>
             </div>
           </div>
@@ -392,7 +392,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
         <div className='stats-bar'>
           <div className='stat-item reveal reveal-scale delay-1'>
-            <h3>751 +</h3>
+            <h3>50 +</h3>
             <p>Pengguna Aktif</p>
           </div>
           <div className='stat-item reveal reveal-scale delay-2'>
