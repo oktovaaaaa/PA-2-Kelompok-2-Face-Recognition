@@ -58,11 +58,25 @@ const NotificationList = () => {
       await settingService.markNotificationRead(id)
       fetchNotifs()
       
-      // Potential navigation logic
-      if (type === 'LEAVE_REQUEST') {
+      // Comprehensive navigation logic
+      switch (type) {
+        case 'LEAVE_REQUEST':
+        case 'LEAVE_APPROVED':
+        case 'LEAVE_REJECTED':
           router.push('/cuti')
-      } else if (type === 'PAYROLL_PAID') {
+          break
+        case 'PAYROLL_PAID':
           router.push('/payroll')
+          break
+        case 'EMPLOYEE_REGISTERED':
+          router.push('/persetujuan')
+          break
+        case 'POSITION_UPDATE':
+          router.push('/jabatan')
+          break
+        default:
+          // No specific navigation for other types
+          break
       }
     } catch (err) {
       console.error(err)

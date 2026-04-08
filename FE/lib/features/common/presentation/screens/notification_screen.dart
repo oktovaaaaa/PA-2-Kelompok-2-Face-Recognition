@@ -4,6 +4,9 @@ import '../../../../core/providers/notification_provider.dart';
 import '../../../../core/utils/date_formatter.dart';
 import 'package:intl/intl.dart';
 
+import '../../../auth/presentation/screens/pending_employees_screen.dart';
+import '../../../admin/presentation/screens/admin_payroll_screen.dart';
+
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -167,7 +170,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
         if (!isRead) {
           provider.markAsRead(notif['id']);
         }
-        // Potential navigation based on type...
+        
+        switch (type) {
+          case 'EMPLOYEE_REGISTERED':
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PendingEmployeesScreen()));
+            break;
+          case 'PAYROLL_PAID':
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPayrollScreen()));
+            break;
+          case 'LEAVE_REQUEST':
+          case 'LEAVE_APPROVED':
+          case 'LEAVE_REJECTED':
+            // Go back to dashboard where Leave Tab is accessible
+            Navigator.pop(context);
+            break;
+          default:
+            // Just mark as read
+            break;
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
