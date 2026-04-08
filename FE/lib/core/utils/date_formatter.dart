@@ -35,4 +35,20 @@ class AppDateFormatter {
       return dateStr;
     }
   }
+
+  /// Detects YYYY-MM-DD patterns in a string and replaces them with full Indonesian format
+  static String formatInString(String text) {
+    if (text.isEmpty) return text;
+    
+    final dateRegex = RegExp(r'\b\d{4}-\d{2}-\d{2}\b');
+    return text.replaceAllMapped(dateRegex, (match) {
+      final matchStr = match.group(0)!;
+      try {
+        final dateTime = DateFormat('yyyy-MM-dd').parse(matchStr);
+        return DateFormat('EEEE d MMMM yyyy', 'id').format(dateTime);
+      } catch (e) {
+        return matchStr;
+      }
+    });
+  }
 }

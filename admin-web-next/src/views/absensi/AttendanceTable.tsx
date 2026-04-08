@@ -82,13 +82,13 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
   const _translateStatus = (status: string) => {
     switch (status) {
-      case 'PRESENT': return 'Hadir Tepat Waktu'
+      case 'PRESENT': return 'Hadir'
       case 'LATE': return 'Terlambat'
       case 'ABSENT': return 'Alpha'
       case 'WORKING': return 'Sedang Bekerja'
       case 'NOT_YET': return 'Belum Hadir'
-      case 'EARLY_LEAVE': return 'Pulang di Jam Kerja'
-      case 'LATE_EARLY_LEAVE': return 'Terlambat & Pulang di Jam Kerja'
+      case 'EARLY_LEAVE': return 'Pulang di jam kerja'
+      case 'LATE_EARLY_LEAVE': return 'Terlambat & Pulang di jam kerja'
       case 'LEAVE': return 'Izin'
       case 'SICK': return 'Sakit'
       default: return status
@@ -156,13 +156,13 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
     const totalForChart = filteredData.length || 1
     const summaryKeys = [
-        { key: 'PRESENT', label: 'Hadir Tepat Waktu' },
+        { key: 'PRESENT', label: 'Hadir' },
         { key: 'LATE', label: 'Terlambat' },
         { key: 'ABSENT', label: 'Alpha' },
         { key: 'WORKING', label: 'Sedang Bekerja' },
         { key: 'NOT_YET', label: 'Belum Hadir' },
-        { key: 'EARLY_LEAVE', label: 'Pulang di Jam Kerja' },
-        { key: 'LATE_EARLY_LEAVE', label: 'Terlambat & Pulang di Jam Kerja' },
+        { key: 'EARLY_LEAVE', label: 'Pulang di jam kerja' },
+        { key: 'LATE_EARLY_LEAVE', label: 'Terlambat & Pulang di jam kerja' },
     ]
 
     summaryKeys.forEach(s => {
@@ -329,8 +329,8 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
                         { val: 'LEAVE', label: 'Izin' },
                         { val: 'SICK', label: 'Sakit' },
                         { val: 'WORKING', label: 'Sedang Bekerja' },
-                        { val: 'EARLY_LEAVE', label: 'Pulang di Jam Kerja' },
-                        { val: 'LATE_EARLY_LEAVE', label: 'Terlambat & Pulang di Jam Kerja' }
+                        { val: 'EARLY_LEAVE', label: 'Pulang di jam kerja' },
+                        { val: 'LATE_EARLY_LEAVE', label: 'Terlambat & Pulang di jam kerja' }
                     ].map((s) => (
                         <Chip 
                             key={s.val}
@@ -391,8 +391,8 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
                             row.status === 'LEAVE' ? 'Izin' : 
                             row.status === 'SICK' ? 'Sakit' : 
                             row.status === 'WORKING' ? 'Sedang Bekerja' : 
-                            row.status === 'EARLY_LEAVE' ? 'Pulang di Jam Kerja' : 
-                            row.status === 'LATE_EARLY_LEAVE' ? 'Terlambat & Pulang di Jam Kerja' : 
+                            row.status === 'EARLY_LEAVE' ? 'Pulang di jam kerja' : 
+                            row.status === 'LATE_EARLY_LEAVE' ? 'Terlambat & Pulang di jam kerja' : 
                             row.status === 'NOT_YET' ? 'Belum Hadir' : row.status
                         } 
                         size='small' 

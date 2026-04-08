@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../../../../core/network/api_client.dart';
 import '../../../common/widgets/app_dialog.dart';
+import '../../../../core/utils/date_formatter.dart';
 
 class HolidayManagementScreen extends StatefulWidget {
   const HolidayManagementScreen({super.key});
@@ -165,7 +166,7 @@ class _HolidayManagementScreenState extends State<HolidayManagementScreen> {
                         const Icon(Icons.calendar_month_rounded, size: 20, color: Color(0xFF64748B)),
                         const SizedBox(width: 12),
                         Text(
-                          '${DateFormat('dd MMM yyyy').format(startDate)} - ${DateFormat('dd MMM yyyy').format(endDate)}',
+                          '${AppDateFormatter.formatFullDate(startDate.toString())} - ${AppDateFormatter.formatFullDate(endDate.toString())}',
                           style: const TextStyle(fontSize: 14),
                         ),
                       ],
@@ -536,8 +537,8 @@ class _HolidayManagementScreenState extends State<HolidayManagementScreen> {
                 const SizedBox(height: 4),
                 Text(
                   isRange 
-                    ? '${DateFormat('dd MMM').format(start)} - ${DateFormat('dd MMM yyyy').format(end)}'
-                    : DateFormat('dd MMMM yyyy').format(start),
+                    ? '${AppDateFormatter.formatFullDate(h['start_date'])} - ${AppDateFormatter.formatFullDate(h['end_date'])}'
+                    : AppDateFormatter.formatFullDate(h['start_date']),
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 ),
               ],

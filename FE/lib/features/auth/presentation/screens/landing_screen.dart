@@ -26,6 +26,7 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
   late Animation<double> _logoScaleAnimation;
   late Animation<Offset> _contentSlideAnimation;
   late Animation<Offset> _buttonPanelAnimation;
+  late Animation<double> _panelFadeAnimation;
 
   @override
   void initState() {
@@ -67,8 +68,11 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
     );
 
     // 4. Button Panel Slide Up (0.6 - 1.0)
-    _buttonPanelAnimation = Tween<Offset>(begin: const Offset(0, 1.2), end: Offset.zero).animate(
+    _buttonPanelAnimation = Tween<Offset>(begin: const Offset(0, 1.5), end: Offset.zero).animate(
       CurvedAnimation(parent: _mainController, curve: const Interval(0.6, 1.0, curve: Curves.easeOutBack)),
+    );
+    _panelFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _mainController, curve: const Interval(0.6, 0.8, curve: Curves.easeIn)),
     );
 
     _mainController.forward();
@@ -136,7 +140,7 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
           // Main Content
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
               child: Column(
                 children: [
                   Expanded(
@@ -158,18 +162,18 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
                                 ),
                                 child: ClipOval(
                                   child: Image.asset(
-                                    'assets/images/facrec.png',
-                                    width: 120, height: 120,
+                                    'assets/images/videnti.png',
+                                    width: 180, height: 180,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.person_search_rounded, size: 88, color: Colors.white),
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.person_search_rounded, size: 100, color: Colors.white),
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 32),
                             const Text(
-                              'Face Recognition',
-                              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
+                              'VIDENTI',
+                              style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2.0),
                             ),
                             const SizedBox(height: 12),
                             Text(
@@ -184,9 +188,11 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
                   ),
                   
                   // Bottom Action Panel
-                  SlideTransition(
-                    position: _buttonPanelAnimation,
-                    child: Container(
+                  FadeTransition(
+                    opacity: _panelFadeAnimation,
+                    child: SlideTransition(
+                      position: _buttonPanelAnimation,
+                      child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -220,6 +226,7 @@ class _LandingScreenState extends State<LandingScreen> with TickerProviderStateM
                             ],
                           ),
                         ],
+                      ),
                       ),
                     ),
                   ),

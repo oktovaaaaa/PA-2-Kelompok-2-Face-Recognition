@@ -36,7 +36,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
   bool _loadingInvite = false;
   String _generatedToken = '';
   Timer? _inviteTimer;
-  int _countdown = 30;
+  int _countdown = 0;
   final GlobalKey _qrKey = GlobalKey();
   String? _userName;
   final _statusLabels = {'PENDING': 'Menunggu', 'APPROVED': 'Disetujui', 'REJECTED': 'Ditolak'};
@@ -390,7 +390,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             Expanded(
                               child: Column(
                                 children: [
-                                  _summaryItem(const Color(0xFF22C55E), 'Hadir Tepat Waktu', _summary['present'] ?? 0),
+                                  _summaryItem(const Color(0xFF22C55E), 'Hadir', _summary['present'] ?? 0),
                                   const SizedBox(height: 8),
                                   _summaryItem(const Color(0xFFFBBF24), 'Terlambat', _summary['late'] ?? 0),
                                   const SizedBox(height: 8),
@@ -402,9 +402,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                                   const SizedBox(height: 8),
                                   _summaryItem(const Color(0xFFEF4444), 'Alpha', _summary['absent'] ?? 0),
                                   const SizedBox(height: 8),
-                                  _summaryItem(const Color(0xFFF97316), 'Pulang di Jam Kerja', _summary['early_leave'] ?? 0),
+                                  _summaryItem(const Color(0xFFF97316), 'Pulang di jam kerja', _summary['early_leave'] ?? 0),
                                   const SizedBox(height: 8),
-                                  _summaryItem(const Color(0xFFD946EF), 'Terlambat & Pulang di Jam Kerja', _summary['late_early_leave'] ?? 0),
+                                  _summaryItem(const Color(0xFFD946EF), 'Terlambat & Pulang di jam kerja', _summary['late_early_leave'] ?? 0),
                                 ],
                               ),
                             ),
@@ -581,12 +581,13 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                                     : const Icon(Icons.refresh_rounded),
                                   label: Text(
                                     _countdown > 0 ? 'Tunggu (${_countdown}s)' : 'Segarkan Barcode',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF0F172A),
                                     foregroundColor: Colors.white,
-                                    disabledBackgroundColor: Colors.grey.shade200,
+                                    disabledBackgroundColor: Colors.grey.shade100,
+                                    disabledForegroundColor: Colors.grey.shade400,
                                     padding: const EdgeInsets.symmetric(vertical: 16),
                                     minimumSize: const Size(double.infinity, 54),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

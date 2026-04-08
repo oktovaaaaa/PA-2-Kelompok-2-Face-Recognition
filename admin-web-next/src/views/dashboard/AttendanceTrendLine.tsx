@@ -77,13 +77,83 @@ const AttendanceTrendLine = ({ trend }: Props) => {
     }
   }
 
+  // Preprocess data: if all categories for a day are 0, set them to null to create a gap in the chart
+  const processedData = {
+    present: trend?.present.map((v, i) => {
+      const isHoliday = (
+        (trend?.present?.[i] ?? 0) === 0 && 
+        (trend?.late?.[i] ?? 0) === 0 && 
+        (trend?.absent?.[i] ?? 0) === 0 && 
+        (trend?.leave_sick?.[i] ?? 0) === 0 && 
+        (trend?.early_leave?.[i] ?? 0) === 0 && 
+        (trend?.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    late: trend?.late.map((v, i) => {
+      const isHoliday = (
+        (trend?.present?.[i] ?? 0) === 0 && 
+        (trend?.late?.[i] ?? 0) === 0 && 
+        (trend?.absent?.[i] ?? 0) === 0 && 
+        (trend?.leave_sick?.[i] ?? 0) === 0 && 
+        (trend?.early_leave?.[i] ?? 0) === 0 && 
+        (trend?.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    absent: trend?.absent.map((v, i) => {
+      const isHoliday = (
+        (trend?.present?.[i] ?? 0) === 0 && 
+        (trend?.late?.[i] ?? 0) === 0 && 
+        (trend?.absent?.[i] ?? 0) === 0 && 
+        (trend?.leave_sick?.[i] ?? 0) === 0 && 
+        (trend?.early_leave?.[i] ?? 0) === 0 && 
+        (trend?.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    leave_sick: trend?.leave_sick.map((v, i) => {
+      const isHoliday = (
+        (trend?.present?.[i] ?? 0) === 0 && 
+        (trend?.late?.[i] ?? 0) === 0 && 
+        (trend?.absent?.[i] ?? 0) === 0 && 
+        (trend?.leave_sick?.[i] ?? 0) === 0 && 
+        (trend?.early_leave?.[i] ?? 0) === 0 && 
+        (trend?.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    early_leave: trend?.early_leave.map((v, i) => {
+      const isHoliday = (
+        (trend?.present?.[i] ?? 0) === 0 && 
+        (trend?.late?.[i] ?? 0) === 0 && 
+        (trend?.absent?.[i] ?? 0) === 0 && 
+        (trend?.leave_sick?.[i] ?? 0) === 0 && 
+        (trend?.early_leave?.[i] ?? 0) === 0 && 
+        (trend?.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    late_early_leave: trend?.late_early_leave.map((v, i) => {
+      const isHoliday = (
+        (trend?.present?.[i] ?? 0) === 0 && 
+        (trend?.late?.[i] ?? 0) === 0 && 
+        (trend?.absent?.[i] ?? 0) === 0 && 
+        (trend?.leave_sick?.[i] ?? 0) === 0 && 
+        (trend?.early_leave?.[i] ?? 0) === 0 && 
+        (trend?.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || []
+  };
+
   const trendSeries = [
-    { name: 'Hadir Tepat Waktu', data: trend?.present || [] },
-    { name: 'Terlambat', data: trend?.late || [] },
-    { name: 'Alpha', data: trend?.absent || [] },
-    { name: 'Izin/Sakit', data: trend?.leave_sick || [] },
-    { name: 'Pulang di jam kerja', data: trend?.early_leave || [] },
-    { name: 'Terlambat & Pulang di jam kerja', data: trend?.late_early_leave || [] }
+    { name: 'Hadir Tepat Waktu', data: processedData.present },
+    { name: 'Terlambat', data: processedData.late },
+    { name: 'Alpha', data: processedData.absent },
+    { name: 'Izin/Sakit', data: processedData.leave_sick },
+    { name: 'Pulang di jam kerja', data: processedData.early_leave },
+    { name: 'Terlambat & Pulang di jam kerja', data: processedData.late_early_leave }
   ]
 
   return (

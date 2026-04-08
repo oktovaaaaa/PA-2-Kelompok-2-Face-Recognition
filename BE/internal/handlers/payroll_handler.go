@@ -19,7 +19,6 @@ import (
 )
 
 // Helper: Format Rupiah dengan titik (Misal: 1000000 -> 1.000.000)
-// Helper: Format Rupiah dengan titik (Misal: 1000000 -> 1.000.000)
 func formatRupiah(amount float64) string {
 	// Bulatkan ke int untuk nominal denda
 	n := int64(amount)
@@ -37,6 +36,28 @@ func formatRupiah(amount float64) string {
 		res = append(res, s[i])
 	}
 	return string(res)
+}
+
+// Helper: Format Date ke Indonesia (Misal: 2026-04-01 -> Rabu 1 April 2026)
+func formatDateIndo(dateStr string) string {
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return dateStr
+	}
+
+	days := []string{"Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"}
+	months := []string{"Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"}
+
+	return fmt.Sprintf("%s %d %s %d", days[t.Weekday()], t.Day(), months[t.Month()-1], t.Year())
+}
+
+// Helper: Get Month Name in Indo
+func getMonthNameIndo(m int) string {
+	months := []string{"Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"}
+	if m < 1 || m > 12 {
+		return "-"
+	}
+	return months[m-1]
 }
 
 type LateTier struct {
@@ -279,7 +300,7 @@ func AdminPaySalary(c *gin.Context) {
 	var user models.User
 	database.DB.Select("company_id").First(&user, "id = ?", salary.UserID)
 
-	monthName := time.Month(salary.Month).String()
+	monthName := getMonthNameIndo(salary.Month)
 	services.CreateNotification(salary.UserID, user.CompanyID, "Gaji Dibayarkan",
 		fmt.Sprintf("Gaji kamu untuk bulan %s %d telah dibayarkan sebesar Rp %.0f.", monthName, salary.Year, payAmount),
 		"PAYROLL_PAID", salary.ID)
@@ -411,7 +432,12 @@ func generateSalary(userID string, month int, year int) {
 
 	salary.BaseSalary = baseSalary
 	salary.Deductions = deductions
-	salary.DeductionsDetail = "DEBUG: " + details
+	
+	// Trim trailing semicolon and space from details
+	if len(details) > 2 && details[len(details)-2:] == "; " {
+		details = details[:len(details)-2]
+	}
+	salary.DeductionsDetail = details
 	salary.TotalSalary = baseSalary - deductions
 	if salary.TotalSalary < 0 {
 		salary.TotalSalary = 0
@@ -510,17 +536,17 @@ func CalculateDeductions(userID string, month int, year int) (float64, string) {
 			// Tambahkan ke total dan detail
 			if lateDeduction > 0 && isEarly {
 				totalDeduction += lateDeduction + earlyDeduction
-				details += "Terlambat & Pulang di jam kerja pada " + dateStr + " (Rp " + formatRupiah(lateDeduction+earlyDeduction) + "); "
+				details += "Terlambat & Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(lateDeduction+earlyDeduction) + "); "
 			} else if lateDeduction > 0 {
 				totalDeduction += lateDeduction
-				details += "Terlambat pada " + dateStr + " (Rp " + formatRupiah(lateDeduction) + "); "
+				details += "Terlambat pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(lateDeduction) + "); "
 			} else if isEarly {
 				totalDeduction += earlyDeduction
-				details += "Pulang di jam kerja pada " + dateStr + " (Rp " + formatRupiah(earlyDeduction) + "); "
+				details += "Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(earlyDeduction) + "); "
 			} else if att.Status == "ABSENT" || (att.SalaryDeduction > 0 && att.Status != "LATE" && att.Status != "EARLY_LEAVE" && att.Status != "LATE_EARLY_LEAVE") {
 				// Cover manual penalties or custom status (jangan denda ganda jika status sudah LATE/EARLY_LEAVE)
 				totalDeduction += att.SalaryDeduction
-				details += att.Status + " pada " + dateStr + " (Rp " + formatRupiah(att.SalaryDeduction) + "); "
+				details += att.Status + " pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(att.SalaryDeduction) + "); "
 			}
 		} else {
 			// Tidak ada record: Cek apakah hari kerja atau libur
@@ -538,7 +564,7 @@ func CalculateDeductions(userID string, month int, year int) (float64, string) {
 				// Hari kerja tanpa absen = ALPHA
 				if settings.AlphaPenalty > 0 {
 					totalDeduction += settings.AlphaPenalty
-					details += "Alpha pada " + dateStr + " (Rp " + formatRupiah(settings.AlphaPenalty) + "); "
+					details += "Alpha pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(settings.AlphaPenalty) + "); "
 				}
 			}
 		}

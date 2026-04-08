@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../../../core/network/api_client.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_constants.dart';
+import '../../../../../core/utils/date_formatter.dart';
 
 class EmployeeSalaryTab extends StatefulWidget {
   const EmployeeSalaryTab({super.key});
@@ -202,7 +203,7 @@ class _EmployeeSalaryTabState extends State<EmployeeSalaryTab> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(_formatCurrency(amount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                Text(DateFormat('dd MMM yyyy, HH:mm').format(date.toLocal()), style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                                Text(AppDateFormatter.formatFullDate(p['paid_at'] ?? ''), style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
                               ],
                             ),
                           ),
@@ -252,7 +253,7 @@ class _EmployeeSalaryTabState extends State<EmployeeSalaryTab> {
                       children: [
                         const Icon(Icons.info_outline_rounded, color: Color(0xFFDC2626), size: 16),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(item, style: const TextStyle(fontSize: 13, color: Color(0xFFB91C1C)))),
+                        Expanded(child: Text(AppDateFormatter.formatInString(item), style: const TextStyle(fontSize: 13, color: Color(0xFFB91C1C)))),
                       ],
                     ),
                   )).toList(),

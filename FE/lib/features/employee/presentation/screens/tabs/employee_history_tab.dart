@@ -95,6 +95,8 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
       case 'SICK': return const Color(0xFF2563EB);
       case 'EARLY_LEAVE': return const Color(0xFFF97316); // Orange
       case 'LATE_EARLY_LEAVE': return const Color(0xFFD946EF); // Magenta
+      case 'WORKING': return const Color(0xFF818CF8); // Indigo
+      case 'NOT_YET': return Colors.grey;
       default: return Colors.grey;
     }
   }
@@ -108,6 +110,8 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
       case 'SICK': return 'Sakit';
       case 'EARLY_LEAVE': return 'Pulang di jam kerja';
       case 'LATE_EARLY_LEAVE': return 'Terlambat & Pulang di jam kerja';
+      case 'WORKING': return 'Sedang Bekerja';
+      case 'NOT_YET': return 'Belum Hadir';
       default: return status;
     }
   }
@@ -176,6 +180,8 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
     final leave = _stats?['leave'] ?? 0;
     final sick = _stats?['sick'] ?? 0;
     final earlyLeave = _stats?['early_leave'] ?? 0;
+    final working = _stats?['working'] ?? 0;
+    final notYet = _stats?['not_yet'] ?? 0;
     final total = _stats?['total'] ?? 0;
     final lateEarlyLeave = _stats?['late_early_leave'] ?? 0;
 
@@ -385,6 +391,8 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
                                         if (sick > 0) PieChartSectionData(value: sick.toDouble(), color: const Color(0xFF2563EB), title: '$sick', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                         if (earlyLeave > 0) PieChartSectionData(value: earlyLeave.toDouble(), color: const Color(0xFFF97316), title: '$earlyLeave', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                         if (lateEarlyLeave > 0) PieChartSectionData(value: lateEarlyLeave.toDouble(), color: const Color(0xFFD946EF), title: '$lateEarlyLeave', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        if (working > 0) PieChartSectionData(value: working.toDouble(), color: const Color(0xFF818CF8), title: '$working', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        if (notYet > 0) PieChartSectionData(value: notYet.toDouble(), color: Colors.grey, title: '$notYet', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                   ),
@@ -399,8 +407,10 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
                                     _legendItem(const Color(0xFFFBBF24), 'Terlambat', lateCount),
                                     _legendItem(const Color(0xFFEF4444), 'Alpha', absent),
                                     _legendItem(const Color(0xFF3B82F6), 'Izin/Sakit', leave + sick),
-                                    _legendItem(const Color(0xFFF97316), 'Pulang JK', earlyLeave),
-                                    _legendItem(const Color(0xFFD946EF), 'Terlambat & Pulang di Jam Kerja', lateEarlyLeave),
+                                    _legendItem(const Color(0xFF818CF8), 'Sedang Bekerja', working),
+                                    _legendItem(const Color(0xFF94A3B8), 'Belum Hadir', notYet),
+                                    _legendItem(const Color(0xFFF97316), 'Pulang di jam kerja', earlyLeave),
+                                    _legendItem(const Color(0xFFD946EF), 'Terlambat & Pulang di jam kerja', lateEarlyLeave),
                                   ],
                                 ),
                               ],

@@ -12,6 +12,7 @@ import { settingService, ManualPenalty } from '@/libs/settingService'
 import { employeeService, Employee } from '@/libs/employeeService'
 import { format } from 'date-fns'
 import { useNotification } from '@/contexts/NotificationContext'
+import { formatFullDate } from '@/utils/dateFormatter'
 import ConfirmDialog from '@/components/ConfirmDialog'
 
 const PenaltyManager = () => {
@@ -271,7 +272,7 @@ const PenaltyManager = () => {
                     </TableCell>
                     <TableCell>
                         <Typography variant="body2" color="text.secondary">
-                            {row.date ? format(new Date(row.date), 'dd MMM yyyy') : '-'}
+                            {row.date ? formatFullDate(row.date) : '-'}
                         </Typography>
                     </TableCell>
                     <TableCell align="right">

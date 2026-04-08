@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { dashboardService, DashboardSummary, AttendanceTrend } from '@/libs/dashboardService'
 import InviteQRModal from './InviteQRModal'
 import { formatImageUrl, settingService, Profile } from '@/libs/settingService'
+import { formatFullDate } from '@/utils/dateFormatter'
 
 // Component Imports
 import AttendanceSummaryPie from './AttendanceSummaryPie'
@@ -92,7 +93,7 @@ const MainAdminDashboard = () => {
                         <Box className='flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10'>
                             <i className='ri-time-line text-blue-300' />
                             <Typography className='text-sm font-medium uppercase'>
-                                {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                {formatFullDate(new Date())}
                             </Typography>
                         </Box>
                     </CardContent>

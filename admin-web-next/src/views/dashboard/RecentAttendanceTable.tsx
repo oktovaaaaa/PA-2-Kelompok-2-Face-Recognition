@@ -77,13 +77,13 @@ const RecentAttendanceTable = () => {
     const getStatusChip = (status: string) => {
         switch (status) {
             case 'PRESENT':
-                return <Chip label='Datang Tepat Waktu' size='small' color='success' variant='tonal' className='font-bold uppercase text-[10px]' />
+                return <Chip label='Hadir' size='small' color='success' variant='tonal' className='font-bold uppercase text-[10px]' />
             case 'LATE':
                 return <Chip label='Terlambat' size='small' color='warning' variant='tonal' className='font-bold uppercase text-[10px]' />
             case 'WORKING':
                 return <Chip label='Sedang Bekerja' size='small' color='info' variant='tonal' className='font-bold uppercase text-[10px]' />
             case 'ABSENT':
-                return <Chip label='Alpa' size='small' color='error' variant='tonal' className='font-bold uppercase text-[10px]' />
+                return <Chip label='Alpha' size='small' color='error' variant='tonal' className='font-bold uppercase text-[10px]' />
             case 'LEAVE':
             case 'SICK':
             case 'LEAVE_SICK':

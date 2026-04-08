@@ -20,6 +20,7 @@ import {
 } from '@mui/material'
 import { payrollService, Salary } from '@/libs/payrollService'
 import { useNotification } from '@/contexts/NotificationContext'
+import { formatFullDate, formatDateInString } from '@/utils/dateFormatter'
 
 interface Props {
   open: boolean
@@ -49,7 +50,9 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
 
   const parseDeductions = (detail: string) => {
     if (!detail) return []
-    return detail.split(';').filter(d => d.trim() !== '')
+    // Also use the date formatting utility to clean up any nested dates
+    const formattedDetail = formatDateInString(detail)
+    return formattedDetail.split(';').filter(d => d.trim() !== '')
   }
 
   const handlePay = async () => {
@@ -150,7 +153,7 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
                 <Typography variant="overline" color="text.secondary" fontWeight="700">Riwayat Cicilan</Typography>
                 {salary.payments.map((p, i) => (
                   <Box key={p.id} sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                     <Typography variant="caption">Cicilan ke-{i+1} ({new Date(p.paid_at).toLocaleDateString('id-ID')})</Typography>
+                     <Typography variant="caption">Cicilan ke-{i+1} ({formatFullDate(p.paid_at)})</Typography>
                      <Typography variant="caption" fontWeight="700">{formatIDR(p.amount)}</Typography>
                   </Box>
                 ))}

@@ -375,6 +375,10 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
       case 'ABSENT': statusColor = Colors.red; statusLabel = 'Alpha'; break;
       case 'LEAVE': statusColor = Colors.blue; statusLabel = 'Izin'; break;
       case 'SICK': statusColor = Colors.purple; statusLabel = 'Sakit'; break;
+      case 'WORKING': statusColor = const Color(0xFF818CF8); statusLabel = 'Sedang Bekerja'; break;
+      case 'NOT_YET': statusColor = Colors.grey; statusLabel = 'Belum Hadir'; break;
+      case 'EARLY_LEAVE': statusColor = const Color(0xFFF97316); statusLabel = 'Pulang di jam kerja'; break;
+      case 'LATE_EARLY_LEAVE': statusColor = const Color(0xFFD946EF); statusLabel = 'Terlambat & Pulang di jam kerja'; break;
       default: statusColor = Colors.grey; statusLabel = status;
     }
 

@@ -41,13 +41,14 @@ interface Props {
 }
 
 const statusColors = {
-  PRESENT: '#4CAF50',        // Hadir Tepat Waktu (Green)
+  PRESENT: '#4CAF50',        // Hadir (Green)
   LATE: '#FF9800',           // Terlambat (Orange)
   WORKING: '#3F51B5',        // Sedang Bekerja (Indigo/Blue)
   LEAVE_SICK: '#03A9F4',     // Izin/Sakit (Light Blue)
   NOT_YET: '#9E9E9E',        // Belum Hadir (Grey)
   ABSENT: '#F44336',         // Alpha (Red)
-  EARLY_LEAVE: '#9C27B0'     // Pulang di Jam Kerja (Purple)
+  EARLY_LEAVE: '#F97316',    // Pulang di jam kerja (Orange)
+  LATE_EARLY_LEAVE: '#D946EF' // Terlambat & Pulang di jam kerja (Magenta)
 }
 
 const months = [
@@ -132,6 +133,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
           else if (s === 'LEAVE') newStats.leave++
           else if (s === 'SICK') newStats.sick++
           else if (s === 'EARLY_LEAVE') newStats.early_leave++
+          else if (s === 'LATE_EARLY_LEAVE') newStats.late_early_leave++
           else if (s === 'WORKING') newStats.working++
           else if (s === 'NOT_YET') newStats.not_yet++
       })
@@ -152,14 +154,15 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
   // --- PREPARE CHART DATA ---
 
   // EXCLUDE Working & Not Yet if not today
-  const donutLabels = ['Hadir', 'Terlambat', 'Izin/Sakit', 'Alpha', 'Pulang Awal']
-  const donutColors = [statusColors.PRESENT, statusColors.LATE, statusColors.LEAVE_SICK, statusColors.ABSENT, statusColors.EARLY_LEAVE]
+  const donutLabels = ['Hadir', 'Terlambat', 'Izin/Sakit', 'Alpha', 'Pulang di jam kerja', 'Terlambat & Pulang di jam kerja']
+  const donutColors = [statusColors.PRESENT, statusColors.LATE, statusColors.LEAVE_SICK, statusColors.ABSENT, statusColors.EARLY_LEAVE, statusColors.LATE_EARLY_LEAVE]
   const donutSeries = stats ? [
     stats.present || 0,
     stats.late || 0,
     (stats.leave || 0) + (stats.sick || 0),
     stats.absent || 0,
-    stats.early_leave || 0
+    stats.early_leave || 0,
+    stats.late_early_leave || 0
   ] : []
 
   if (isTodayFilter && stats) {
@@ -202,6 +205,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
       if (s === 'LATE') return statusColors.LATE;
       if (s === 'LEAVE' || s === 'SICK') return statusColors.LEAVE_SICK;
       if (s === 'EARLY_LEAVE') return statusColors.EARLY_LEAVE;
+      if (s === 'LATE_EARLY_LEAVE') return statusColors.LATE_EARLY_LEAVE;
       if (s === 'WORKING') return statusColors.WORKING;
       if (s === 'NOT_YET') return statusColors.NOT_YET;
       return statusColors.ABSENT;
@@ -221,9 +225,10 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
           data: lineData.map(r => {
               const s = r.status.toUpperCase();
               if (s === 'PRESENT') return 100;
-              if (s === 'LATE') return 75;
-              if (s === 'LEAVE' || s === 'SICK') return 50;
-              if (s === 'EARLY_LEAVE') return 25;
+              if (s === 'LATE') return 80;
+              if (s === 'LEAVE' || s === 'SICK') return 60;
+              if (s === 'EARLY_LEAVE') return 40;
+              if (s === 'LATE_EARLY_LEAVE') return 20;
               return 0; // ABSENT / WORKING / NOT_YET
           })
       }
@@ -248,9 +253,10 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
             style: { fontWeight: '600' },
             formatter: (val) => {
                 if (val >= 100) return 'Hadir';
-                if (val >= 75) return 'Telat';
-                if (val >= 50) return 'Izin';
-                if (val >= 25) return 'Plg Awal';
+                if (val >= 80) return 'Telat';
+                if (val >= 60) return 'Izin';
+                if (val >= 40) return 'Plg Kerja';
+                if (val >= 20) return 'Telat&Plg';
                 return 'Alpha';
             }
         }
@@ -361,7 +367,8 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
                         <StatLegend color={statusColors.LATE} label='Terlambat' count={stats?.late} />
                         <StatLegend color={statusColors.LEAVE_SICK} label='Izin/Sakit' count={(stats?.leave || 0) + (stats?.sick || 0)} />
                         <StatLegend color={statusColors.ABSENT} label='Alpha' count={stats?.absent} />
-                        <StatLegend color={statusColors.EARLY_LEAVE} label='Pulang Awal' count={stats?.early_leave} />
+                        <StatLegend color={statusColors.EARLY_LEAVE} label='Pulang di jam kerja' count={stats?.early_leave} />
+                        <StatLegend color={statusColors.LATE_EARLY_LEAVE} label='Terlambat & Pulang di jam kerja' count={stats?.late_early_leave} />
                         
                         {/* CONDITIONAL LEGEND */}
                         {isTodayFilter && (

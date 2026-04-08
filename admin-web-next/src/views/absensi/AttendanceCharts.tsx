@@ -66,26 +66,26 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
 
   // Detailed rows for the "Ringkasan Kehadiran" sidebar
   const detailedStats = [
-    { label: 'Hadir Tepat Waktu', count: stats?.present || 0, color: statusColors.present },
+    { label: 'Hadir', count: stats?.present || 0, color: statusColors.present },
     { label: 'Terlambat', count: stats?.late || 0, color: statusColors.late },
     { label: 'Sedang Bekerja', count: stats?.working || 0, color: statusColors.working },
     { label: 'Izin/Sakit', count: stats?.leave_sick || 0, color: statusColors.leave_sick },
     { label: 'Belum Hadir', count: stats?.not_yet || 0, color: statusColors.not_yet },
     { label: 'Alpha', count: stats?.absent || 0, color: statusColors.absent },
-    { label: 'Pulang di Jam Kerja', count: stats?.early_leave || 0, color: statusColors.early_leave },
-    { label: 'Terlambat & Pulang di Jam Kerja', count: stats?.late_early_leave || 0, color: statusColors.late_early_leave },
+    { label: 'Pulang di jam kerja', count: stats?.early_leave || 0, color: statusColors.early_leave },
+    { label: 'Terlambat & Pulang di jam kerja', count: stats?.late_early_leave || 0, color: statusColors.late_early_leave },
   ]
 
   const donutOptions = {
     labels: [
-      'Hadir Tepat Waktu', 
+      'Hadir', 
       'Terlambat', 
       'Sedang Bekerja', 
       'Izin/Sakit', 
       'Belum Hadir', 
       'Alpha', 
-      'Pulang di Jam Kerja',
-      'Terlambat & Pulang di Jam Kerja'
+      'Pulang di jam kerja',
+      'Terlambat & Pulang di jam kerja'
     ],
     colors: [
         statusColors.present,
@@ -149,13 +149,83 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
     stats?.late_early_leave || 0
   ]
 
+  // Preprocess data: if all categories for a day are 0, set them to null to create a gap in the chart
+  const processedTrendData = {
+    present: trendData.present?.map((v: number, i: number) => {
+      const isHoliday = (
+        (trendData.present?.[i] ?? 0) === 0 && 
+        (trendData.late?.[i] ?? 0) === 0 && 
+        (trendData.absent?.[i] ?? 0) === 0 && 
+        (trendData.leave_sick?.[i] ?? 0) === 0 && 
+        (trendData.early_leave?.[i] ?? 0) === 0 && 
+        (trendData.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    late: trendData.late?.map((v: number, i: number) => {
+      const isHoliday = (
+        (trendData.present?.[i] ?? 0) === 0 && 
+        (trendData.late?.[i] ?? 0) === 0 && 
+        (trendData.absent?.[i] ?? 0) === 0 && 
+        (trendData.leave_sick?.[i] ?? 0) === 0 && 
+        (trendData.early_leave?.[i] ?? 0) === 0 && 
+        (trendData.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    absent: trendData.absent?.map((v: number, i: number) => {
+      const isHoliday = (
+        (trendData.present?.[i] ?? 0) === 0 && 
+        (trendData.late?.[i] ?? 0) === 0 && 
+        (trendData.absent?.[i] ?? 0) === 0 && 
+        (trendData.leave_sick?.[i] ?? 0) === 0 && 
+        (trendData.early_leave?.[i] ?? 0) === 0 && 
+        (trendData.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    leave_sick: trendData.leave_sick?.map((v: number, i: number) => {
+      const isHoliday = (
+        (trendData.present?.[i] ?? 0) === 0 && 
+        (trendData.late?.[i] ?? 0) === 0 && 
+        (trendData.absent?.[i] ?? 0) === 0 && 
+        (trendData.leave_sick?.[i] ?? 0) === 0 && 
+        (trendData.early_leave?.[i] ?? 0) === 0 && 
+        (trendData.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    early_leave: trendData.early_leave?.map((v: number, i: number) => {
+      const isHoliday = (
+        (trendData.present?.[i] ?? 0) === 0 && 
+        (trendData.late?.[i] ?? 0) === 0 && 
+        (trendData.absent?.[i] ?? 0) === 0 && 
+        (trendData.leave_sick?.[i] ?? 0) === 0 && 
+        (trendData.early_leave?.[i] ?? 0) === 0 && 
+        (trendData.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || [],
+    late_early_leave: trendData.late_early_leave?.map((v: number, i: number) => {
+      const isHoliday = (
+        (trendData.present?.[i] ?? 0) === 0 && 
+        (trendData.late?.[i] ?? 0) === 0 && 
+        (trendData.absent?.[i] ?? 0) === 0 && 
+        (trendData.leave_sick?.[i] ?? 0) === 0 && 
+        (trendData.early_leave?.[i] ?? 0) === 0 && 
+        (trendData.late_early_leave?.[i] ?? 0) === 0
+      );
+      return isHoliday ? null : v;
+    }) || []
+  };
+
   const lineSeries = [
-    { name: 'Hadir Tepat Waktu', data: trendData.present || [] },
-    { name: 'Terlambat', data: trendData.late || [] },
-    { name: 'Alpha', data: trendData.absent || [] },
-    { name: 'Izin/Sakit', data: trendData.leave_sick || [] },
-    { name: 'Pulang di Jam Kerja', data: trendData.early_leave || [] },
-    { name: 'Terlambat & Pulang di Jam Kerja', data: trendData.late_early_leave || [] }
+    { name: 'Hadir', data: processedTrendData.present },
+    { name: 'Terlambat', data: processedTrendData.late },
+    { name: 'Alpha', data: processedTrendData.absent },
+    { name: 'Izin/Sakit', data: processedTrendData.leave_sick },
+    { name: 'Pulang di jam kerja', data: processedTrendData.early_leave },
+    { name: 'Terlambat & Pulang di jam kerja', data: processedTrendData.late_early_leave }
   ]
 
   const lineOptions = {

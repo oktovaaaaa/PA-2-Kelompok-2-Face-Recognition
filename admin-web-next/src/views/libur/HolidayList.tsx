@@ -12,6 +12,7 @@ import Grid from '@mui/material/Grid'
 import Tooltip from '@mui/material/Tooltip'
 import { Holiday } from '@/libs/holidayService'
 import { format, isPast } from 'date-fns'
+import { formatFullDate } from '@/utils/dateFormatter'
 
 interface Props {
   holidays: Holiday[]
@@ -45,7 +46,7 @@ const HolidayList = ({ holidays, onEdit, onDelete }: Props) => {
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
               <Typography variant='subtitle1' fontWeight='700' noWrap>{h.name}</Typography>
               <Typography variant='caption' color='text.secondary'>
-                {format(startDate, 'dd MMM yyyy')} - {format(endDate, 'dd MMM yyyy')}
+                {formatFullDate(h.start_date)} - {formatFullDate(h.end_date)}
               </Typography>
             </Box>
 

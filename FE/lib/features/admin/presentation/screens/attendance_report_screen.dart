@@ -1003,7 +1003,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               _legendItem(const Color(0xFF818CF8), 'Aktif', size: 10),
               _legendItem(Colors.red, 'Alpha', size: 10),
               _legendItem(Colors.grey.shade400, 'Mangkir', size: 10),
-              _legendItem(const Color(0xFFD946EF), 'Telat & PJK', size: 10),
+              _legendItem(const Color(0xFFD946EF), 'Terlambat & Pulang di jam kerja', size: 10),
             ],
           ),
         ],
@@ -1076,18 +1076,46 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
-          _lineData(dates, data, 'PRESENT', Colors.green),
-          _lineData(dates, data, 'LATE', Colors.orange),
-          _lineData(dates, data, 'ABSENT', Colors.red),
-          _lineData(dates, data, 'OTHER', Colors.blue),
+          ..._lineData(dates, data, 'PRESENT', Colors.green),
+          ..._lineData(dates, data, 'LATE', Colors.orange),
+          ..._lineData(dates, data, 'ABSENT', Colors.red),
+          ..._lineData(dates, data, 'OTHER', Colors.blue),
         ],
       ),
     );
   }
 
-  LineChartBarData _lineData(List<String> dates, Map<String, Map<String, int>> data, String key, Color color) {
+  List<LineChartBarData> _lineData(List<String> dates, Map<String, Map<String, int>> data, String key, Color color) {
+    List<LineChartBarData> segments = [];
+    List<FlSpot> currentSegment = [];
+
+    for (int i = 0; i < dates.length; i++) {
+      final d = dates[i];
+      final s = data[d]!;
+      // Check if it's a holiday (all major categories are 0 or null)
+      bool isHoliday = (s['PRESENT'] ?? 0) == 0 && (s['LATE'] ?? 0) == 0 && (s['ABSENT'] ?? 0) == 0 && 
+                       (s['WORKING'] ?? 0) == 0 && (s['EARLY_LEAVE'] ?? 0) == 0 && (s['OTHER'] ?? 0) == 0;
+
+      if (isHoliday) {
+        if (currentSegment.isNotEmpty) {
+          segments.add(_createLineBarData(currentSegment, color));
+          currentSegment = [];
+        }
+      } else {
+        currentSegment.add(FlSpot(i.toDouble(), (s[key] ?? 0).toDouble()));
+      }
+    }
+
+    if (currentSegment.isNotEmpty) {
+      segments.add(_createLineBarData(currentSegment, color));
+    }
+
+    return segments;
+  }
+
+  LineChartBarData _createLineBarData(List<FlSpot> spots, Color color) {
     return LineChartBarData(
-      spots: List.generate(dates.length, (i) => FlSpot(i.toDouble(), data[dates[i]]![key]!.toDouble())),
+      spots: spots,
       isCurved: true,
       color: color,
       barWidth: 3,
@@ -1120,8 +1148,8 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
       case 'ABSENT': statusColor = Colors.red; statusLabel = 'Alpha'; break;
       case 'NOT_YET': statusColor = Colors.grey; statusLabel = 'Belum Hadir'; break;
       case 'WORKING': statusColor = Color(0xFF818CF8); statusLabel = 'Sedang Bekerja'; break; // Indigo shade
-      case 'EARLY_LEAVE': statusColor = const Color(0xFFF97316); statusLabel = 'Pulang di Jam Kerja'; break;
-      case 'LATE_EARLY_LEAVE': statusColor = const Color(0xFFD946EF); statusLabel = 'Terlambat & Pulang di Jam Kerja'; break;
+      case 'EARLY_LEAVE': statusColor = const Color(0xFFF97316); statusLabel = 'Pulang di jam kerja'; break;
+      case 'LATE_EARLY_LEAVE': statusColor = const Color(0xFFD946EF); statusLabel = 'Terlambat & Pulang di jam kerja'; break;
       case 'LEAVE': 
       case 'IZIN': statusColor = Colors.blue; statusLabel = 'Izin'; break;
       case 'SICK': 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/notification_provider.dart';
+import '../../../../core/utils/date_formatter.dart';
 import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -130,7 +131,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final bool isRead = notif['is_read'] ?? false;
     final String type = notif['type'] ?? 'DEFAULT';
     final DateTime createdAt = DateTime.parse(notif['created_at']);
-    final String timeStr = DateFormat('dd MMM, HH:mm').format(createdAt);
+    final String timeStr = AppDateFormatter.formatFullDate(notif['created_at']);
 
     IconData icon;
     Color color;

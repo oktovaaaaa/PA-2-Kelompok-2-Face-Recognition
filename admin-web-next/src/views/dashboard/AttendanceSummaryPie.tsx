@@ -26,7 +26,7 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
     setIsMounted(true)
   }, [])
   const pieOptions: ApexOptions = {
-    labels: ['Hadir Tepat Waktu', 'Terlambat', 'Alpha', 'Izin/Sakit', 'Sedang Bekerja', 'Pulang di jam kerja', 'Terlambat & Pulang di Jam Kerja', 'Belum Hadir'],
+    labels: ['Hadir', 'Terlambat', 'Alpha', 'Izin/Sakit', 'Sedang Bekerja', 'Pulang di jam kerja', 'Terlambat & Pulang di jam kerja', 'Belum Hadir'],
     colors: ['#22C55E', '#FBBF24', '#EF4444', '#0EA5E9', '#6366F1', '#F97316', '#D946EF', '#94A3B8'],
     legend: { show: false },
     dataLabels: { enabled: false },
@@ -97,7 +97,7 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
                         { color: '#0EA5E9', label: 'Izin', val: (summary?.leave || 0) + (summary?.sick || 0) },
                         { color: '#6366F1', label: 'Bekerja', val: summary?.working },
                         { color: '#F97316', label: 'Pulang JK', val: summary?.early_leave },
-                        { color: '#D946EF', label: 'Telat & Pulang', val: summary?.late_early_leave },
+                        { color: '#D946EF', label: 'Telat & PJK', val: summary?.late_early_leave },
                         { color: '#94A3B8', label: 'Belum Hadir', val: summary?.not_yet }
                     ].map((item, idx) => (
                         <Grid item xs={6} key={idx}>
