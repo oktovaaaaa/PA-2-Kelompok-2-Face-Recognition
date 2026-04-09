@@ -207,7 +207,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hi, ${_getShortName(_userName ?? 'Admin')} 👋',
+                        'Hi, ${_getShortName(_userName ?? 'Admin')}',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,

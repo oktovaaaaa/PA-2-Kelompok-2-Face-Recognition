@@ -9,18 +9,31 @@ import (
 )
 
 func VerifyGoogleToken(token string) (*idtoken.Payload, error) {
-
-	payload, err := idtoken.Validate(
-		context.Background(),
-		token,
+	// Daftar Client ID yang diijinkan (Web & Android)
+	audiences := []string{
 		os.Getenv("GOOGLE_CLIENT_ID"),
-	)
-
-	if err != nil {
-		return nil, err
+		os.Getenv("GOOGLE_CLIENT_ID_ANDROID"),
 	}
 
-	return payload, nil
+	var lastErr error
+	for _, aud := range audiences {
+		if aud == "" {
+			continue
+		}
+
+		payload, err := idtoken.Validate(
+			context.Background(),
+			token,
+			aud,
+		)
+
+		if err == nil {
+			return payload, nil
+		}
+		lastErr = err
+	}
+
+	return nil, lastErr
 }
 
 // untuk memferivikasi id_token dari google 

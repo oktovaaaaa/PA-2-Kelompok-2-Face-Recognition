@@ -282,15 +282,21 @@ func GetTodayAttendance(c *gin.Context) {
 	// Ini akan menghitung semua denda absensi + denda manual + denda Alpha otomatis + Bonus
 	totalDeductionMonth, totalBonusMonth, _, _ = CalculateAdjustments(emp.ID, int(now.Month()), now.Year())
 
+	// [NEW] Terakhir, ambil TotalSalary final dari tabel salaries agar dashboard 100% konsisten
+	var salary models.Salary
+	database.DB.Where("user_id = ? AND month = ? AND year = ?", emp.ID, int(now.Month()), now.Year()).First(&salary)
+	estimatedTotalSalary := salary.TotalSalary
+
 	utils.Success(c, "Status absensi hari ini", gin.H{
-		"date":                  today,
-		"attendance":            att,
-		"has_record":            err == nil,
-		"settings":              settings,
-		"current_time":          now.Format("15:04:05"),
-		"display_status":        displayStatus,
-		"total_deduction_month": totalDeductionMonth,
-		"total_bonus_month":     totalBonusMonth,
+		"date":                   today,
+		"attendance":             att,
+		"has_record":             err == nil,
+		"settings":               settings,
+		"current_time":           now.Format("15:04:05"),
+		"display_status":         displayStatus,
+		"total_deduction_month":  totalDeductionMonth,
+		"total_bonus_month":      totalBonusMonth,
+		"estimated_total_salary": estimatedTotalSalary,
 	})
 }
 

@@ -110,7 +110,9 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     
     final baseSalary = (_profileData?['salary'] as num?)?.toDouble() ?? 0.0;
     final totalDeductionMonth = (_todayData?['total_deduction_month'] as num?)?.toDouble() ?? 0.0;
-    final estimatedSalary = baseSalary - totalDeductionMonth;
+    final totalBonusMonth = (_todayData?['total_bonus_month'] as num?)?.toDouble() ?? 0.0;
+    // [NEW] Gunakan angka final dari server agar 100% sinkron
+    final estimatedSalary = (_todayData?['estimated_total_salary'] as num?)?.toDouble() ?? (baseSalary + totalBonusMonth - totalDeductionMonth);
 
     final position = (_profileData?['position_name'] ?? 'Karyawan').toString();
     final isDoneForDay = hasCheckedIn && hasCheckedOut;
@@ -155,7 +157,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hi, ${_getShortName(_userName ?? 'Karyawan')} 👋',
+                          'Hi, ${_getShortName(_userName ?? 'Karyawan')}',
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -245,7 +247,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                     // Wallet Card Premium
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)],
@@ -312,12 +314,12 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                             _isSalaryVisible ? _formatRp(estimatedSalary.toInt()) : 'Rp •••••••',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 32,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.end,
@@ -332,10 +334,10 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                                   const SizedBox(height: 4),
                                   Text(
                                     () {
-                                      if (isHoliday) return 'HARI LIBUR ✨';
-                                      if (isDoneForDay) return 'HADIR TEPAT WAKTU ✔️';
-                                      if (displayStatus == 'LATE') return 'TERLAMBAT ⚠️';
-                                      if (displayStatus == 'ABSENT') return 'ALPHA ❌';
+                                      if (isHoliday) return 'HARI LIBUR';
+                                      if (isDoneForDay) return 'HADIR TEPAT WAKTU';
+                                      if (displayStatus == 'LATE') return 'TERLAMBAT';
+                                      if (displayStatus == 'ABSENT') return 'ALPHA';
                                       if (displayStatus == 'NOT_STARTED') return 'BELUM MULAI';
                                       if (displayStatus == 'EARLY_LEAVE') return 'PULANG DI JAM KERJA';
                                       if (hasCheckedIn && !hasCheckedOut) return 'SEDANG BEKERJA';

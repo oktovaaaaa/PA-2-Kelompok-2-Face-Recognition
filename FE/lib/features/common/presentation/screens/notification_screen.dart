@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../../auth/presentation/screens/pending_employees_screen.dart';
 import '../../../admin/presentation/screens/admin_payroll_screen.dart';
+import '../../../employee/presentation/screens/employee_dashboard_screen.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -153,6 +155,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         color = const Color(0xFFEF4444);
         break;
       case 'PAYROLL_PAID':
+      case 'BONUS_RECEIVED':
         icon = Icons.payments_rounded;
         color = const Color(0xFF2563EB);
         break;
@@ -176,7 +179,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PendingEmployeesScreen()));
             break;
           case 'PAYROLL_PAID':
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPayrollScreen()));
+          case 'BONUS_RECEIVED':
+            final role = context.read<AuthProvider>().currentUser?['role'];
+            if (role == 'ADMIN') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPayrollScreen()));
+            } else {
+              // Navigate to Employee Dashboard at Salary Tab (Index 3)
+              Navigator.pushAndRemoveUntil(
+                context, 
+                MaterialPageRoute(builder: (_) => const EmployeeDashboardScreen(initialIndex: 3)),
+                (route) => false
+              );
+            }
             break;
           case 'LEAVE_REQUEST':
           case 'LEAVE_APPROVED':

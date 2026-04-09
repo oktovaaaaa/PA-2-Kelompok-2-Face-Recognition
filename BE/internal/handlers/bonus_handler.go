@@ -10,6 +10,7 @@ import (
 
 	"employee-system/internal/database"
 	"employee-system/internal/models"
+	"employee-system/internal/services"
 	"employee-system/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -49,7 +50,26 @@ func AdminCreateBonus(c *gin.Context) {
 	t, _ := time.Parse("2006-01-02", input.Date)
 	generateSalary(input.UserID, int(t.Month()), t.Year())
 
-	utils.Success(c, "Bonus berhasil dicatat", bonus)
+	// Kirim Notifikasi ke Karyawan
+	var employee models.User
+	if err := database.DB.Select("id, company_id, fcm_token").Where("id = ?", input.UserID).First(&employee).Error; err == nil {
+		notif := models.Notification{
+			ID:        uuid.New().String(),
+			UserID:    input.UserID,
+			CompanyID: employee.CompanyID,
+			Title:     "Bonus Baru!",
+			Body:      fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title),
+			Type:      "BONUS_RECEIVED",
+			IsRead:    false,
+			CreatedAt: time.Now(),
+		}
+		database.DB.Create(&notif)
+
+		// Push Notification via FCM
+		services.SendPushNotification(employee.ID, notif.Title, notif.Body)
+	}
+
+	utils.Success(c, "Bonus berhasil dicatat dan notifikasi dikirim", bonus)
 }
 
 // AdminGetBonuses - Ambil riwayat bonus dengan filter

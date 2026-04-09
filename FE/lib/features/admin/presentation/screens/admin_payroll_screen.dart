@@ -105,7 +105,7 @@ class _AdminPayrollScreenState extends State<AdminPayrollScreen> {
                     const SizedBox(height: 8),
                     _summaryRow('Sudah Dibayar', _formatCurrency(alreadyPaid), color: Colors.green),
                     const Divider(height: 24),
-                    _summaryRow('Sisa Saldo', _formatCurrency(balance), isBold: true, color: const Color(0xFF1E3A8A)),
+                    _summaryRow('Sisa Gaji', _formatCurrency(balance), isBold: true, color: const Color(0xFF1E3A8A)),
                   ],
                 ),
               ),
@@ -464,19 +464,23 @@ class _AdminPayrollScreenState extends State<AdminPayrollScreen> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(_formatCurrency(paid), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isPaid ? Colors.green : (isPartial ? Colors.blue : const Color(0xFF0F172A)))),
-                                                  Text(' / ${_formatCurrency(total)}', style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(isPaid ? 'Sudah Lunas' : (isPartial ? 'Sisa: ${_formatCurrency(total - paid)}' : 'Total Gaji'), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                                            ],
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Wrap(
+                                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                                  children: [
+                                                    Text(_formatCurrency(paid), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isPaid ? Colors.green : (isPartial ? Colors.blue : const Color(0xFF0F172A)))),
+                                                    Text(' / ${_formatCurrency(total)}', style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(isPaid ? 'Sudah Lunas' : (isPartial ? 'Sisa: ${_formatCurrency(total - paid)}' : 'Total Gaji'), style: TextStyle(color: Colors.grey.shade500, fontSize: 12), softWrap: true),
+                                              ],
+                                            ),
                                           ),
+                                          const SizedBox(width: 8),
                                           if (!isPaid)
                                             ElevatedButton(
                                               onPressed: () => _showPaymentDialog(s),

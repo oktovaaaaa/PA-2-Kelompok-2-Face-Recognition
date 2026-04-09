@@ -11,19 +11,21 @@ import 'tabs/employee_profile_tab.dart';
 import 'tabs/employee_salary_tab.dart';
 
 class EmployeeDashboardScreen extends StatefulWidget {
-  const EmployeeDashboardScreen({super.key});
+  final int initialIndex;
+  const EmployeeDashboardScreen({super.key, this.initialIndex = 0});
 
   @override
   State<EmployeeDashboardScreen> createState() => _EmployeeDashboardScreenState();
 }
 
 class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   late final List<Widget> _tabs;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
     _tabs = [
       EmployeeAttendanceTab(onNavigate: (i) => setState(() => _currentIndex = i)),
       const EmployeeHistoryTab(),

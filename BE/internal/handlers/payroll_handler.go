@@ -18,26 +18,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Helper: Format Rupiah dengan titik (Misal: 1000000 -> 1.000.000)
-func formatRupiah(amount float64) string {
-	// Bulatkan ke int untuk nominal denda
-	n := int64(amount)
-	s := strconv.FormatInt(n, 10)
-	
-	if len(s) <= 3 {
-		return s
-	}
-
-	var res []byte
-	for i := 0; i < len(s); i++ {
-		if i > 0 && (len(s)-i)%3 == 0 {
-			res = append(res, '.')
-		}
-		res = append(res, s[i])
-	}
-	return string(res)
-}
-
 // Helper: Format Date ke Indonesia (Misal: 2026-04-01 -> Rabu 1 April 2026)
 func formatDateIndo(dateStr string) string {
 	t, err := time.Parse("2006-01-02", dateStr)
@@ -225,7 +205,7 @@ func AdminPaySalary(c *gin.Context) {
 			return
 		}
 		if payAmount > balance {
-			utils.Error(c, "Nominal melebihi sisa saldo (Sisa: Rp "+strconv.FormatFloat(balance, 'f', 0, 64)+")")
+			utils.Error(c, "Nominal melebihi sisa gaji (Sisa: "+utils.FormatRupiah(balance)+")")
 			return
 		}
 	}
@@ -302,10 +282,10 @@ func AdminPaySalary(c *gin.Context) {
 
 	monthName := getMonthNameIndo(salary.Month)
 	services.CreateNotification(salary.UserID, user.CompanyID, "Gaji Dibayarkan",
-		fmt.Sprintf("Gaji kamu untuk bulan %s %d telah dibayarkan sebesar Rp %.0f.", monthName, salary.Year, payAmount),
+		fmt.Sprintf("Gaji kamu untuk bulan %s %d telah dibayarkan sebesar %s.", monthName, salary.Year, utils.FormatRupiah(payAmount)),
 		"PAYROLL_PAID", salary.ID)
 	services.SendPushNotification(salary.UserID, "Gaji Dibayarkan",
-		fmt.Sprintf("Gaji bulan %s kamu telah dibayarkan. Silakan cek detailnya!", monthName))
+		fmt.Sprintf("Gaji bulan %s kamu telah dibayarkan sebesar %s. Silakan cek detailnya!", monthName, utils.FormatRupiah(payAmount)))
 
 	utils.Success(c, "Pembayaran berhasil dicatat", salary)
 }
@@ -403,6 +383,9 @@ func generateSalary(userID string, month int, year int) {
 		database.DB.Where("user_id = ? AND month = ? AND year = ?", userID, month, year).Delete(&models.Salary{})
 		return
 	}
+
+	// [NEW] Perbaiki record ganda sebelum memproses update
+	repairDuplicates(userID, month, year)
 
 	// Gaji dasar dari Position
 	baseSalary := 0.0
@@ -539,16 +522,16 @@ func CalculateAdjustments(userID string, month int, year int) (float64, float64,
 
 			if lateDeduction > 0 && isEarly {
 				totalDeduction += lateDeduction + earlyDeduction
-				deductionDetails += "Terlambat & Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(lateDeduction+earlyDeduction) + "); "
+				deductionDetails += "Terlambat & Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(lateDeduction+earlyDeduction) + "); "
 			} else if lateDeduction > 0 {
 				totalDeduction += lateDeduction
-				deductionDetails += "Terlambat pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(lateDeduction) + "); "
+				deductionDetails += "Terlambat pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(lateDeduction) + "); "
 			} else if isEarly {
 				totalDeduction += earlyDeduction
-				deductionDetails += "Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(earlyDeduction) + "); "
-			} else if att.Status == "ABSENT" || (att.SalaryDeduction > 0 && att.Status != "LATE" && att.Status != "EARLY_LEAVE" && att.Status != "LATE_EARLY_LEAVE") {
+				deductionDetails += "Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(earlyDeduction) + "); "
+			} else if att.SalaryDeduction > 0 && att.Status != "LATE" && att.Status != "EARLY_LEAVE" && att.Status != "LATE_EARLY_LEAVE" {
 				totalDeduction += att.SalaryDeduction
-				deductionDetails += att.Status + " pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(att.SalaryDeduction) + "); "
+				deductionDetails += att.Status + " pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(att.SalaryDeduction) + "); "
 			}
 		} else {
 			isHold, _ := isHoliday(user.CompanyID, d)
@@ -563,7 +546,7 @@ func CalculateAdjustments(userID string, month int, year int) (float64, float64,
 
 				if settings.AlphaPenalty > 0 {
 					totalDeduction += settings.AlphaPenalty
-					deductionDetails += "Alpha pada " + formatDateIndo(dateStr) + " (Rp " + formatRupiah(settings.AlphaPenalty) + "); "
+					deductionDetails += "Alpha pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(settings.AlphaPenalty) + "); "
 				}
 			}
 		}
@@ -575,7 +558,7 @@ func CalculateAdjustments(userID string, month int, year int) (float64, float64,
 
 	for _, p := range manualPenalties {
 		totalDeduction += p.Amount
-		deductionDetails += p.Title + " (Rp " + formatRupiah(p.Amount) + "); "
+		deductionDetails += p.Title + " (" + utils.FormatRupiah(p.Amount) + "); "
 	}
 
 	// 4. Tambahkan Bonus Manual [NEW]
@@ -584,7 +567,7 @@ func CalculateAdjustments(userID string, month int, year int) (float64, float64,
 
 	for _, b := range bonuses {
 		totalBonus += b.Amount
-		bonusDetails += b.Title + " (Rp " + formatRupiah(b.Amount) + "); "
+		bonusDetails += b.Title + " (" + utils.FormatRupiah(b.Amount) + "); "
 	}
 
 	return totalDeduction, totalBonus, deductionDetails, bonusDetails

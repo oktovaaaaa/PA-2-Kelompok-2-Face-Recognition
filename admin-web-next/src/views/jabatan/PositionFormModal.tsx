@@ -58,14 +58,14 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
       if (isEdit) {
         await employeeService.updatePosition(position.id, { 
           name, 
-          salary: Number(salary),
+          salary: Number(salary.replace(/\./g, '')),
           description: description 
         })
         showNotification('Jabatan berhasil diperbarui', 'success')
       } else {
         await employeeService.createPosition({ 
           name, 
-          salary: Number(salary),
+          salary: Number(salary.replace(/\./g, '')),
           description: description 
         })
         showNotification('Jabatan baru berhasil ditambahkan', 'success')
@@ -109,10 +109,18 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
                 <TextField
                     fullWidth
                     size='small'
-                    type='number'
-                    placeholder='Contoh: 5000000'
-                    value={salary}
-                    onChange={(e) => setSalary(e.target.value)}
+                    type='text'
+                    placeholder='Contoh: 5.000.000'
+                    value={salary === '0' ? '' : salary}
+                    onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, '')
+                        if (!raw) {
+                            setSalary('')
+                            return
+                        }
+                        const num = parseInt(raw, 10)
+                        setSalary(num.toLocaleString('id-ID'))
+                    }}
                     InputProps={{
                         startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
                     }}

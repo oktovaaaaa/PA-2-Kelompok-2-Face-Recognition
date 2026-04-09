@@ -154,7 +154,7 @@ class _EmployeeSalaryTabState extends State<EmployeeSalaryTab> {
                     _buildDetailRow('Sudah Diterima', _formatCurrency(paid), color: Colors.green),
                     if (!isPaid) ...[
                       const Divider(height: 24),
-                      _buildDetailRow('Sisa Saldo', _formatCurrency(balance), color: const Color(0xFF1E3A8A), isBold: true),
+                      _buildDetailRow('Sisa Gaji', _formatCurrency(balance), color: const Color(0xFF1E3A8A), isBold: true),
                     ],
                   ],
                 ),
@@ -202,7 +202,7 @@ class _EmployeeSalaryTabState extends State<EmployeeSalaryTab> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(_formatCurrency(amount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                Text(_formatCurrency(amount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), softWrap: true),
                                 Text(AppDateFormatter.formatFullDate(p['paid_at'] ?? ''), style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
                               ],
                             ),
@@ -316,16 +316,27 @@ class _EmployeeSalaryTabState extends State<EmployeeSalaryTab> {
   }
 
   Widget _buildDetailRow(String label, String value, {bool isBold = false, Color? color}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-        Text(value, style: TextStyle(
-          fontSize: isBold ? 15 : 14, 
-          fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-          color: color ?? const Color(0xFF0F172A),
-        )),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value, 
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: isBold ? 15 : 14, 
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+                color: color ?? const Color(0xFF0F172A),
+              ),
+              softWrap: true,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -836,7 +836,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     if (!mounted) return;
     final confirm2 = await AppDialog.showConfirm(
       context,
-      title: '⚠️ TINDAKAN KRUSIAL',
+      title: 'TINDAKAN KRUSIAL',
       message: 'Data ini sangat penting dan tidak dapat dikembalikan setelah dihapus. Hal ini juga akan mempengaruhi perhitungan gaji karyawan. Lanjutkan dengan risiko Anda sendiri?',
       confirmText: 'Sangat Yakin',
       confirmColor: Colors.red.shade700,

@@ -39,7 +39,8 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
 
   useEffect(() => {
     if (open && salary) {
-        setPayAmount((salary.total_salary - salary.paid_amount).toString())
+        const remaining = salary.total_salary - salary.paid_amount
+        setPayAmount(remaining.toLocaleString('id-ID'))
         setProofFile(null)
     }
   }, [open, salary])
@@ -57,13 +58,14 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
 
   const handlePay = async () => {
     if (!salary || !payAmount) return
-    const amountNum = parseFloat(payAmount)
+    const rawAmount = payAmount.replace(/\./g, '')
+    const amountNum = parseFloat(rawAmount)
     if (isNaN(amountNum) || amountNum <= 0) return showNotification('Nominal bayar tidak valid.', 'error')
-    if (amountNum > balance) return showNotification('Nominal melebihi sisa sisa saldo.', 'error')
+    if (amountNum > balance) return showNotification('Nominal melebihi sisa gaji.', 'error')
 
     setLoading(true)
     try {
-      await payrollService.paySalary(salary.id, payAmount, proofFile || undefined)
+      await payrollService.paySalary(salary.id, rawAmount, proofFile || undefined)
       showNotification('Pembayaran berhasil dicatatkan!', 'success')
       onSuccess()
       onClose()
@@ -185,13 +187,22 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
              <Typography variant="subtitle2" fontWeight="700" sx={{ mb: 2 }}>Proses Pembayaran</Typography>
              <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
                 <TextField 
-                    fullWidth size="small" label="Nominal Bayar" type="number"
-                    value={payAmount} onChange={(e) => setPayAmount(e.target.value)}
+                    fullWidth size="small" label="Nominal Bayar" type="text"
+                    value={payAmount === '0' ? '' : payAmount}
+                    onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, '')
+                        if (!raw) {
+                            setPayAmount('')
+                            return
+                        }
+                        const num = parseInt(raw, 10)
+                        setPayAmount(num.toLocaleString('id-ID'))
+                    }}
                     InputProps={{ startAdornment: <Typography sx={{ mr: 2, fontSize: '0.875rem' }}>Rp</Typography> }}
                 />
                 <Button 
                     variant="outlined" size="small" sx={{ whiteSpace: 'nowrap' }}
-                    onClick={() => setPayAmount(balance.toString())}
+                    onClick={() => setPayAmount(balance.toLocaleString('id-ID'))}
                 >
                     Penuh
                 </Button>
@@ -217,9 +228,9 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
         {salary.status !== 'PAID' && (
           <Button 
             variant="contained" onClick={handlePay} disabled={loading}
-            color={parseFloat(payAmount) >= balance ? 'success' : 'primary'}
+            color={parseFloat(payAmount.replace(/\./g, '')) >= balance ? 'success' : 'primary'}
           >
-            {loading ? 'Memproses...' : (parseFloat(payAmount) >= balance ? 'Konfirmasi Pelunasan' : 'Konfirmasi Cicilan')}
+            {loading ? 'Memproses...' : (parseFloat(payAmount.replace(/\./g, '')) >= balance ? 'Konfirmasi Pelunasan' : 'Konfirmasi Cicilan')}
           </Button>
         )}
       </DialogActions>

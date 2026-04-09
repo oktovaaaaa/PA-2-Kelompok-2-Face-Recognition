@@ -390,15 +390,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                             const SizedBox(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildSocialBtn(Icons.g_mobiledata, Colors.red, _loading ? null : _loginGoogle),
-                                const SizedBox(width: 16),
-                                _buildSocialBtn(Icons.apple, Colors.black, () {}),
-                                const SizedBox(width: 16),
-                                _buildSocialBtn(Icons.facebook, const Color(0xFF1877F2), () {}),
-                              ],
+                            // Hapus Facebook & Apple, hanya simpan Google Login di tengah
+                            Center(
+                              child: _buildSocialBtn(Icons.g_mobiledata, Colors.red, _loading ? null : _loginGoogle),
                             ),
                           ],
                         ),
