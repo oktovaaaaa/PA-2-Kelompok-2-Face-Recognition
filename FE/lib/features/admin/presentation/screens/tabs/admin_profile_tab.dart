@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../location_management_screen.dart';
 import '../../../../common/widgets/premium_bottom_nav.dart';
 import '../holiday_management_screen.dart';
 import 'dart:convert';
@@ -744,6 +745,19 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                       _infoRow('Nama', _val(_company, ['Name', 'name'])),
                       _infoRow('Instansi', _val(_company, ['Address', 'address'])),
                       _infoRow('Kontak', _val(_company, ['Phone', 'phone'])),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildDataCard(
+                    title: 'Lokasi Kantor',
+                    icon: Icons.location_on_outlined,
+                    color: const Color(0xFF2563EB),
+                    onEdit: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminLocationManagementScreen()));
+                    },
+                    rows: [
+                      _infoRow('Status', 'Kelola titik geofencing kantor'),
+                      _infoRow('Peta', 'Pilih koordinat & radius'),
                     ],
                   ),
                   const SizedBox(height: 20),

@@ -9,8 +9,10 @@ import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
+import Box from '@mui/material/Box'
 import { settingService, Company } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
+import LocationSettings from './LocationSettings'
 
 const CompanyTab = () => {
   const [formData, setFormData] = useState<Company | null>(null)
@@ -62,7 +64,8 @@ const CompanyTab = () => {
   if (loading) return <CircularProgress sx={{ display: 'block', m: 'auto', mt: 10 }} />
 
   return (
-    <Card>
+    <Box>
+      <Card>
       <CardContent>
         <Typography variant='h5' fontWeight='800' className='mbe-5'>Informasi Instansi</Typography>
         <form onSubmit={handleSave}>
@@ -113,7 +116,12 @@ const CompanyTab = () => {
           </Grid>
         </form>
       </CardContent>
-    </Card>
+      </Card>
+
+      <Box sx={{ mt: 8 }}>
+        <LocationSettings />
+      </Box>
+    </Box>
   )
 }
 

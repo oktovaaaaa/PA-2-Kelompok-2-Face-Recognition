@@ -24,5 +24,10 @@ type AttendanceSettings struct {
 
 	WorkDays         string  `json:"work_days" gorm:"default:'Monday,Tuesday,Wednesday,Thursday,Friday'"`
 
+	// Geofencing
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	Radius    float64 `json:"radius"` // in meters
+
 	UpdatedAt time.Time `json:"updated_at"`
 }

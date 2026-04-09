@@ -27,22 +27,62 @@ class EmployeeStatsScreen extends StatefulWidget {
 class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
   bool _loading = false;
   List<dynamic> _records = [];
-  Map<String, int> _stats = {'PRESENT': 0, 'LATE': 0, 'ABSENT': 0, 'LEAVE': 0, 'SICK': 0};
+  Map<String, int> _stats = {
+    'PRESENT': 0, 
+    'LATE': 0, 
+    'ABSENT': 0, 
+    'LEAVE': 0, 
+    'SICK': 0, 
+    'EARLY_LEAVE': 0, 
+    'LATE_EARLY_LEAVE': 0,
+  };
   String _filter = 'month';
+  int _selectedMonth = DateTime.now().month;
+  int _selectedYear = DateTime.now().year;
+  List<int> _availableYears = [DateTime.now().year];
   DateTime? _startDate;
   DateTime? _endDate;
+
+  final List<String> _months = [
+    'Semua Bulan', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
 
   @override
   void initState() {
     super.initState();
+    _fetchAvailableYears();
     _loadStats();
+  }
+
+  Future<void> _fetchAvailableYears() async {
+    try {
+      final res = await ApiClient.get('/api/admin/attendance/years?user_id=${widget.userId}');
+      if (res.success && res.data != null) {
+        final List<dynamic> years = res.data;
+        setState(() {
+          _availableYears = years.map((e) => int.parse(e.toString())).toList();
+          // Pastikan tahun ini ada di daftar meskipun belum ada data
+          if (!_availableYears.contains(DateTime.now().year)) {
+            _availableYears.insert(0, DateTime.now().year);
+            _availableYears.sort((a, b) => b.compareTo(a));
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadStats() async {
     setState(() => _loading = true);
     try {
       String url = '/api/admin/attendance?filter=$_filter&user_id=${widget.userId}';
-      if (_filter == 'custom' && _startDate != null && _endDate != null) {
+      
+      if (_filter == 'month' || _filter == 'year') {
+        url += '&year=$_selectedYear';
+        if (_filter == 'month' && _selectedMonth != 0) {
+          url += '&month=$_selectedMonth';
+        }
+      } else if (_filter == 'custom' && _startDate != null && _endDate != null) {
         final s = _startDate!.toString().substring(0, 10);
         final e = _endDate!.toString().substring(0, 10);
         url = '/api/admin/attendance?start_date=$s&end_date=$e&user_id=${widget.userId}';
@@ -54,7 +94,15 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
         _records = data;
         
         // Reset stats
-        _stats = {'PRESENT': 0, 'LATE': 0, 'ABSENT': 0, 'LEAVE': 0, 'SICK': 0};
+        _stats = {
+          'PRESENT': 0, 
+          'LATE': 0, 
+          'ABSENT': 0, 
+          'LEAVE': 0, 
+          'SICK': 0,
+          'EARLY_LEAVE': 0,
+          'LATE_EARLY_LEAVE': 0,
+        };
         
         for (var r in data) {
           final status = (r['status'] ?? '').toString().toUpperCase();
@@ -213,7 +261,74 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
         if (_filter == 'custom') ...[
           const SizedBox(height: 16),
           _buildDateRangePicker(),
+        ] else if (_filter == 'month' || _filter == 'year') ...[
+          const SizedBox(height: 16),
+          _buildPeriodPicker(),
         ],
+      ],
+    );
+  }
+
+  Widget _buildPeriodPicker() {
+    return Row(
+      children: [
+        if (_filter == 'month')
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: _selectedMonth,
+                  isExpanded: true,
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  items: List.generate(13, (i) => DropdownMenuItem(
+                    value: i,
+                    child: Text(_months[i], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  )),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _selectedMonth = v);
+                      _loadStats();
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
+        if (_filter == 'month') const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: _selectedYear,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                items: _availableYears.map((y) => DropdownMenuItem(
+                  value: y,
+                  child: Text(y.toString(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                )).toList(),
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _selectedYear = v);
+                    _loadStats();
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -308,7 +423,7 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
   Widget _buildStatsSummary() {
     final total = _stats.values.reduce((a, b) => a + b);
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -317,30 +432,38 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
       child: Column(
         children: [
           SizedBox(
-            height: 180,
+            height: 140, // Mengecilkan sedikit tinggi chart
             child: total == 0 
               ? const Center(child: Text('N/A'))
               : PieChart(
                   PieChartData(
                     sectionsSpace: 2,
-                    centerSpaceRadius: 40,
+                    centerSpaceRadius: 35,
                     sections: [
-                      if (_stats['PRESENT']! > 0) PieChartSectionData(value: _stats['PRESENT']!.toDouble(), color: Colors.green, radius: 25, showTitle: false),
-                      if (_stats['LATE']! > 0) PieChartSectionData(value: _stats['LATE']!.toDouble(), color: Colors.orange, radius: 25, showTitle: false),
-                      if (_stats['ABSENT']! > 0) PieChartSectionData(value: _stats['ABSENT']!.toDouble(), color: Colors.red, radius: 25, showTitle: false),
-                      if (_stats['LEAVE']! > 0 || _stats['SICK']! > 0) PieChartSectionData(value: (_stats['LEAVE']! + _stats['SICK']!).toDouble(), color: Colors.blue, radius: 25, showTitle: false),
+                      if (_stats['PRESENT']! > 0) PieChartSectionData(value: _stats['PRESENT']!.toDouble(), color: Colors.green, radius: 20, showTitle: false),
+                      if (_stats['LATE']! > 0) PieChartSectionData(value: _stats['LATE']!.toDouble(), color: Colors.orange, radius: 20, showTitle: false),
+                      if (_stats['ABSENT']! > 0) PieChartSectionData(value: _stats['ABSENT']!.toDouble(), color: Colors.red, radius: 20, showTitle: false),
+                      if (_stats['LEAVE']! > 0) PieChartSectionData(value: _stats['LEAVE']!.toDouble(), color: Colors.blue, radius: 20, showTitle: false),
+                      if (_stats['SICK']! > 0) PieChartSectionData(value: _stats['SICK']!.toDouble(), color: Colors.purple, radius: 20, showTitle: false),
+                      if (_stats['EARLY_LEAVE']! > 0) PieChartSectionData(value: _stats['EARLY_LEAVE']!.toDouble(), color: const Color(0xFFF97316), radius: 20, showTitle: false),
+                      if (_stats['LATE_EARLY_LEAVE']! > 0) PieChartSectionData(value: _stats['LATE_EARLY_LEAVE']!.toDouble(), color: const Color(0xFFD946EF), radius: 20, showTitle: false),
                     ],
                   ),
                 ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
             children: [
-              _statBit(Colors.green, 'Hadir', _stats['PRESENT']!),
-              _statBit(Colors.orange, 'Telat', _stats['LATE']!),
-              _statBit(Colors.red, 'Alpha', _stats['ABSENT']!),
-              _statBit(Colors.blue, 'Izin', (_stats['LEAVE']! + _stats['SICK']!)),
+              _statItem(Colors.green, 'Hadir', _stats['PRESENT']!),
+              _statItem(Colors.orange, 'Telat', _stats['LATE']!),
+              _statItem(Colors.red, 'Alpha', _stats['ABSENT']!),
+              _statItem(Colors.blue, 'Izin', _stats['LEAVE']!),
+              _statItem(Colors.purple, 'Sakit', _stats['SICK']!),
+              _statItem(const Color(0xFFF97316), 'Plg Awal', _stats['EARLY_LEAVE']!),
+              _statItem(const Color(0xFFD946EF), 'Kombinasi', _stats['LATE_EARLY_LEAVE']!),
             ],
           ),
         ],
@@ -348,18 +471,13 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
     );
   }
 
-  Widget _statBit(Color color, String label, int count) {
-    return Column(
+  Widget _statItem(Color color, String label, int count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(count.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A))),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-          ],
-        ),
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text('$label ($count)', style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600)),
       ],
     );
   }

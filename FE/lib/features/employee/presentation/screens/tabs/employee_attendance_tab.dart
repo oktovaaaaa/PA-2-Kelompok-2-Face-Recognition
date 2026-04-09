@@ -10,6 +10,8 @@ import '../../../../common/presentation/screens/notification_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../common/widgets/app_dialog.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 
 class EmployeeAttendanceTab extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -27,12 +29,138 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   String? _userName;
   bool _isSalaryVisible = false;
 
+  // Geofencing State
+  List<dynamic> _locations = [];
+  Position? _currentPosition;
+  double? _distanceToNearest;
+  Map<String, dynamic>? _nearestLocation;
+  StreamSubscription<Position>? _positionStream;
+  bool _locationError = false;
+  String _locationErrorMessage = '';
+
   @override
   void initState() {
     super.initState();
     _load();
+    _initLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationProvider>().fetchNotifications();
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        _locationError = true;
+        _locationErrorMessage = 'GPS tidak aktif';
+      });
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _locationError = true;
+          _locationErrorMessage = 'Izin lokasi ditolak';
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _locationError = true;
+        _locationErrorMessage = 'Izin lokasi ditolak permanen';
+      });
+      return;
+    }
+
+    // Start listening to location changes
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium, // Lebih cepat untuk deteksi awal
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _locationError = false; // Reset error jika sudah dapat sinyal
+          _calculateNearestLocation();
+        });
+      }
+    });
+
+    try {
+      // Get initial position with timeout
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+      ).timeout(const Duration(seconds: 10));
+      
+      if (mounted) {
+        setState(() {
+          _currentPosition = pos;
+          _locationError = false;
+          _calculateNearestLocation();
+        });
+      }
+    } catch (e) {
+      debugPrint('GPS Detection Error: $e');
+      if (mounted) {
+        setState(() {
+          _locationError = true;
+          _locationErrorMessage = 'GPS macet atau tidak terbaca. Tap gambar untuk segarkan.';
+        });
+      }
+    }
+  }
+
+  void _retryLocation() {
+    _positionStream?.cancel();
+    setState(() {
+      _currentPosition = null;
+      _locationError = false;
+      _locationErrorMessage = '';
+    });
+    _initLocation();
+  }
+
+  void _calculateNearestLocation() {
+    if (_currentPosition == null || _locations.isEmpty) return;
+
+    double minDistance = -1;
+    Map<String, dynamic>? nearest;
+
+    for (var loc in _locations) {
+      final double distance = Geolocator.distanceBetween(
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        (loc['latitude'] as num).toDouble(),
+        (loc['longitude'] as num).toDouble(),
+      );
+
+      if (minDistance == -1 || distance < minDistance) {
+        minDistance = distance;
+        nearest = loc;
+      }
+    }
+
+    setState(() {
+      _distanceToNearest = minDistance;
+      _nearestLocation = nearest;
+      _locationError = false;
     });
   }
 
@@ -41,14 +169,18 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     try {
       final resAtt = await ApiClient.get('/api/employee/attendance/today');
       final resProf = await ApiClient.get('/api/profile');
+      final resLocs = await ApiClient.get('/api/employee/locations');
       final name = await SessionStorage.getUserName();
       
       if (mounted) {
         setState(() {
           _todayData = resAtt.data as Map<String, dynamic>?;
+          if (resLocs.success) {
+            _locations = resLocs.data as List<dynamic>;
+            _calculateNearestLocation();
+          }
           if (resProf.success) {
              _profileData = resProf.data as Map<String, dynamic>?;
-             // Gunakan nama dari profil jika ada
              _userName = _profileData?['name'] ?? name;
           } else {
              _userName = name;
@@ -61,9 +193,17 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   }
 
   Future<void> _doAction(String action) async {
+    if (_locationError || _currentPosition == null) {
+      AppDialog.showError(context, _locationErrorMessage.isNotEmpty ? _locationErrorMessage : 'Mencari lokasi GPS...');
+      return;
+    }
+
     setState(() => _actionLoading = true);
     try {
-      final res = await ApiClient.post('/api/employee/attendance/$action', {});
+      final res = await ApiClient.post('/api/employee/attendance/$action', {
+        'latitude': _currentPosition!.latitude,
+        'longitude': _currentPosition!.longitude,
+      });
       if (!mounted) return;
       if (res.success) {
         AppDialog.showSuccess(context, action == 'checkin' ? 'Absen Masuk berhasil!' : 'Absen Keluar berhasil!');
@@ -112,20 +252,13 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     final baseSalary = (_profileData?['salary'] as num?)?.toDouble() ?? 0.0;
     final totalDeductionMonth = (_todayData?['total_deduction_month'] as num?)?.toDouble() ?? 0.0;
     final totalBonusMonth = (_todayData?['total_bonus_month'] as num?)?.toDouble() ?? 0.0;
-    // [NEW] Gunakan angka final dari server agar 100% sinkron
     final estimatedSalary = (_todayData?['estimated_total_salary'] as num?)?.toDouble() ?? (baseSalary + totalBonusMonth - totalDeductionMonth);
 
     final position = (_profileData?['position_name'] ?? 'Karyawan').toString();
     final isDoneForDay = hasCheckedIn && hasCheckedOut;
     final isHoliday = displayStatus == 'HOLIDAY';
-    final holidayName = _todayData?['holiday_name'] ?? 'Hari Libur';
 
-    // Helper untuk cek jam operasional (Frontend sync)
     bool isCheckInOpen() => !isHoliday && displayStatus != 'NOT_STARTED' && displayStatus != 'EARLY_LEAVE';
-    bool isCheckOutOpen() {
-      if (isHoliday || settings == null) return false;
-      return hasCheckedIn && !hasCheckedOut;
-    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -236,7 +369,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                 ],
               ),
             ),
-  
+            
             // Content
             Expanded(
               child: RefreshIndicator(
@@ -382,38 +515,84 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                         ],
                       ),
                     ),
-
-                    if (isHoliday) ...[
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+                    
+                    // Geofencing Status Card
+                    if (_locations.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                          border: Border.all(
+                            color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
+                                ? Colors.green.shade100
+                                : Colors.red.shade100,
+                          ),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                          ],
                         ),
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(color: const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(12)),
-                              child: const Icon(Icons.beach_access_rounded, color: Color(0xFF2563EB), size: 28),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
+                                    ? Colors.green.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
+                                    ? Icons.location_on_rounded
+                                    : Icons.location_off_rounded,
+                                color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
+                                    ? Colors.green
+                                    : Colors.red,
+                                size: 20,
+                              ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(holidayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E40AF))),
-                                  const SizedBox(height: 4),
-                                  const Text('Selamat beristirahat! Sistem absensi dinonaktifkan hari ini.', style: TextStyle(fontSize: 13, color: Color(0xFF1E40AF))),
+                                  Text(
+                                    _nearestLocation != null ? _nearestLocation!['name'] : 'Mencari Lokasi...',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _locationError 
+                                        ? _locationErrorMessage 
+                                        : (_distanceToNearest != null 
+                                            ? 'Jarak Anda: ${_distanceToNearest!.toStringAsFixed(0)}m (Radius: ${_nearestLocation?['radius']}m)'
+                                            : 'Menghitung jarak...'),
+                                    style: TextStyle(
+                                      fontSize: 12, 
+                                      color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
+                                          ? Colors.green.shade700
+                                          : Colors.red.shade700,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
+                            if (_locationError || _currentPosition == null)
+                              IconButton(
+                                onPressed: _retryLocation,
+                                icon: const Icon(Icons.refresh_rounded, color: Colors.blueAccent),
+                                tooltip: 'Segarkan Lokasi',
+                              ),
+                            if (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble())
+                              const Tooltip(
+                                message: 'Anda berada di luar radius lokasi absensi yang diizinkan',
+                                child: Icon(Icons.info_outline_rounded, color: Colors.red, size: 18),
+                              ),
                           ],
                         ),
                       ),
-                    ],
                     const SizedBox(height: 28),
   
                     // Action Buttons Grid-Style
@@ -424,14 +603,14 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                           icon: Icons.login_rounded,
                           label: 'Masuk',
                           color: const Color(0xFF2E7D32),
-                          disabled: hasCheckedIn || !isCheckInOpen(),
+                          disabled: hasCheckedIn || !isCheckInOpen() || (_distanceToNearest == null || _nearestLocation == null || _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble()),
                           onTap: () => _doAction('checkin'),
                         ),
                         _buildQuickAction(
                           icon: Icons.logout_rounded,
                           label: 'Pulang',
                           color: const Color(0xFF1E3A8A),
-                          disabled: !hasCheckedIn || hasCheckedOut, // Biarkan backend validasi jendela waktunya agar pesan error muncul
+                          disabled: !hasCheckedIn || hasCheckedOut || (_distanceToNearest == null || _nearestLocation == null || _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble()),
                           onTap: () => _doAction('checkout'),
                         ),
                         _buildQuickAction(
@@ -517,7 +696,8 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                         ],
                       ),
                     ),
-                                // -- Improved Rules & Holiday Card --
+                    
+                    // -- Improved Rules & Holiday Card --
                     if (isHoliday) ...[
                       const SizedBox(height: 24),
                       Container(

@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"sort"
+	"math"
 )
 
 // LateTier representasi denda keterlambatan berjenjang (sudah didefinisikan di payroll_handler.go)
@@ -60,6 +61,22 @@ func calculateLatePenalty(now, checkInEnd time.Time, basePenalty float64, tiersJ
 	return penalty
 }
 
+// calculateDistance menghitung jarak antara dua titik koordinat (meter) menggunakan rumus Haversine
+func calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
+	const R = 6371000 // Radius bumi dalam meter
+	phi1 := lat1 * math.Pi / 180
+	phi2 := lat2 * math.Pi / 180
+	deltaPhi := (lat2 - lat1) * math.Pi / 180
+	deltaLambda := (lon2 - lon1) * math.Pi / 180
+
+	a := math.Sin(deltaPhi/2)*math.Sin(deltaPhi/2) +
+		math.Cos(phi1)*math.Cos(phi2)*
+			math.Sin(deltaLambda/2)*math.Sin(deltaLambda/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	return R * c
+}
+
 // isHoliday mengecek apakah tanggal tertentu adalah hari libur (manual atau akhir pekan)
 func isHoliday(companyID string, t time.Time) (bool, string) {
 	var settings models.AttendanceSettings
@@ -96,6 +113,44 @@ func CheckIn(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	emp := userCtx.(models.User)
 
+	var req struct {
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Error(c, "Koordinat lokasi diperlukan")
+		return
+	}
+
+	// Cek Geofencing
+	var locations []models.CompanyLocation
+	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&locations)
+	
+	if len(locations) == 0 {
+		utils.Error(c, "Lokasi absensi belum ditentukan oleh admin")
+		return
+	}
+
+	var validLoc *models.CompanyLocation
+	var minDistance float64 = -1
+
+	for i, loc := range locations {
+		dist := calculateDistance(req.Latitude, req.Longitude, loc.Latitude, loc.Longitude)
+		if dist <= loc.Radius {
+			validLoc = &locations[i]
+			minDistance = dist
+			break // Berhasil menemukan lokasi yang valid
+		}
+		if minDistance == -1 || dist < minDistance {
+			minDistance = dist
+		}
+	}
+
+	if validLoc == nil {
+		utils.Error(c, fmt.Sprintf("Anda berada di luar radius absensi. Jarak terdekat: %.0f meter.", minDistance))
+		return
+	}
+
 	// Cek Hari Libur
 	if holiday, msg := isHoliday(emp.CompanyID, time.Now()); holiday {
 		utils.Error(c, "Hari ini libur: "+msg)
@@ -109,12 +164,12 @@ func CheckIn(c *gin.Context) {
 	var settingsList []models.AttendanceSettings
 	database.DB.Where("company_id = ?", emp.CompanyID).Limit(1).Find(&settingsList)
 	if len(settingsList) == 0 {
-		utils.Error(c, "Pengaturan absensi belum dikonfigurasi oleh admin")
+		utils.Error(c, "Pengaturan waktu absensi belum dikonfigurasi")
 		return
 	}
 	settings := settingsList[0]
 
-	// Validasi waktu check-in: Mulai setelah CheckInStart dan sebelum jam pulang berakhir (CheckOutEnd)
+	// Validasi waktu check-in
 	if now.Before(parseT(today, settings.CheckInStart, now.Location())) {
 		utils.Error(c, fmt.Sprintf("Absensi masuk belum dibuka. Mulai jam %s", settings.CheckInStart))
 		return
@@ -144,10 +199,12 @@ func CheckIn(c *gin.Context) {
 		}
 	}
 
-	upsertCheckIn(emp.ID, emp.CompanyID, today, now, status, deduction)
+	upsertCheckIn(emp.ID, emp.CompanyID, today, now, status, deduction, req.Latitude, req.Longitude, validLoc.ID, minDistance)
 	utils.Success(c, "Check-in berhasil", gin.H{
 		"check_in_time": now.Format("15:04:05"),
 		"date":          today,
+		"location":      validLoc.Name,
+		"distance":      fmt.Sprintf("%.0f m", minDistance),
 	})
 }
 
@@ -155,6 +212,44 @@ func CheckIn(c *gin.Context) {
 func CheckOut(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	emp := userCtx.(models.User)
+
+	var req struct {
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Error(c, "Koordinat lokasi diperlukan")
+		return
+	}
+
+	// Cek Geofencing
+	var locations []models.CompanyLocation
+	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&locations)
+	
+	if len(locations) == 0 {
+		utils.Error(c, "Lokasi absensi belum ditentukan oleh admin")
+		return
+	}
+
+	var validLoc *models.CompanyLocation
+	var minDistance float64 = -1
+
+	for i, loc := range locations {
+		dist := calculateDistance(req.Latitude, req.Longitude, loc.Latitude, loc.Longitude)
+		if dist <= loc.Radius {
+			validLoc = &locations[i]
+			minDistance = dist
+			break
+		}
+		if minDistance == -1 || dist < minDistance {
+			minDistance = dist
+		}
+	}
+
+	if validLoc == nil {
+		utils.Error(c, fmt.Sprintf("Anda berada di luar radius absensi. Jarak terdekat: %.0f meter.", minDistance))
+		return
+	}
 
 	now := time.Now()
 	today := now.Format("2006-01-02")
@@ -182,7 +277,6 @@ func CheckOut(c *gin.Context) {
 	}
 
 	// Validasi waktu check-out
-	// Jika pulang sebelum CheckOutStart, anggap EARLY_LEAVE dan kena denda
 	checkOutStartT := parseT(today, settings.CheckOutStart, now.Location())
 	checkOutEndT := parseT(today, settings.CheckOutEnd, now.Location())
 
@@ -220,11 +314,20 @@ func CheckOut(c *gin.Context) {
 		}
 		att.SalaryDeduction += settings.EarlyLeavePenalty
 	}
+
+	// Update audit fields for check-out
+	att.CheckOutLatitude = req.Latitude
+	att.CheckOutLongitude = req.Longitude
+	att.CheckOutLocationID = validLoc.ID
+	att.CheckOutDistance = minDistance
+
 	database.DB.Save(&att)
 
 	utils.Success(c, "Check-out berhasil", gin.H{
 		"check_out_time": now.Format("15:04:05"),
 		"date":           today,
+		"location":       validLoc.Name,
+		"distance":       fmt.Sprintf("%.0f m", minDistance),
 	})
 }
 
@@ -740,6 +843,9 @@ func GetAttendanceSettings(c *gin.Context) {
 			CheckOutEnd:   "18:00",
 			AlphaPenalty:  0,
 			LatePenalty:   0,
+			Latitude:      0,
+			Longitude:     0,
+			Radius:        100, // Default 100 meter
 		})
 		return
 	}
@@ -797,6 +903,9 @@ func UpdateAttendanceSettings(c *gin.Context) {
 		LatePenaltyTiers  interface{} `json:"late_penalty_tiers"`
 		EarlyLeavePenalty float64     `json:"early_leave_penalty"`
 		WorkDays          string      `json:"work_days"`
+		Latitude         float64     `json:"latitude"`
+		Longitude        float64     `json:"longitude"`
+		Radius           float64     `json:"radius"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		utils.Error(c, "Data tidak valid: "+err.Error())
@@ -818,6 +927,12 @@ func UpdateAttendanceSettings(c *gin.Context) {
 	settings.LatePenalty = body.LatePenalty
 	settings.EarlyLeavePenalty = body.EarlyLeavePenalty
 	settings.WorkDays = body.WorkDays
+	settings.Latitude = body.Latitude
+	settings.Longitude = body.Longitude
+	settings.Radius = body.Radius
+	settings.Latitude = body.Latitude
+	settings.Longitude = body.Longitude
+	settings.Radius = body.Radius
 
 	// Handle LatePenaltyTiers flexibly (string or array)
 	switch v := body.LatePenaltyTiers.(type) {
@@ -967,7 +1082,7 @@ func getFilterStart(filter string) string {
 }
 
 // upsertCheckIn membuat atau update record check-in
-func upsertCheckIn(userID, companyID, date string, checkInTime time.Time, status string, deduction float64) {
+func upsertCheckIn(userID, companyID, date string, checkInTime time.Time, status string, deduction float64, lat, lon float64, locID string, dist float64) {
 	var att models.Attendance
 	err := database.DB.Where("user_id = ? AND date = ?", userID, date).First(&att).Error
 	if err != nil {
@@ -979,12 +1094,20 @@ func upsertCheckIn(userID, companyID, date string, checkInTime time.Time, status
 			CheckInTime:     &checkInTime,
 			Status:          status,
 			SalaryDeduction: deduction,
+			CheckInLatitude:  lat,
+			CheckInLongitude: lon,
+			CheckInLocationID: locID,
+			CheckInDistance:  dist,
 		}
 		database.DB.Create(&att)
 	} else {
 		att.CheckInTime = &checkInTime
 		att.Status = status
 		att.SalaryDeduction = deduction
+		att.CheckInLatitude = lat
+		att.CheckInLongitude = lon
+		att.CheckInLocationID = locID
+		att.CheckInDistance = dist
 		database.DB.Save(&att)
 	}
 }
@@ -1000,11 +1123,14 @@ func AdminGetAttendanceYears(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
+	user_id := c.Query("user_id")
 	var years []string
 	// Mengambil 4 karakter pertama dari kolom date (YYYY)
-	err := database.DB.Model(&models.Attendance{}).
-		Where("company_id = ?", adminUser.CompanyID).
-		Select("DISTINCT(SUBSTRING(date, 1, 4)) as year").
+	query := database.DB.Model(&models.Attendance{}).Where("company_id = ?", adminUser.CompanyID)
+	if user_id != "" {
+		query = query.Where("user_id = ?", user_id)
+	}
+	err := query.Select("DISTINCT(SUBSTRING(date, 1, 4)) as year").
 		Order("year desc").
 		Pluck("year", &years).Error
 
@@ -1468,4 +1594,109 @@ func PardonAttendance(c *gin.Context) {
 	}
 
 	utils.Success(c, "Sanksi absensi berhasil dihapus", nil)
+}
+
+// CreateCompanyLocation — admin menambah titik lokasi absensi
+func CreateCompanyLocation(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
+	var body struct {
+		Name      string  `json:"name" binding:"required"`
+		Latitude  float64 `json:"latitude" binding:"required"`
+		Longitude float64 `json:"longitude" binding:"required"`
+		Radius    float64 `json:"radius" binding:"required"`
+		IsActive  bool    `json:"is_active"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		utils.Error(c, "Data tidak valid")
+		return
+	}
+
+	newLocation := models.CompanyLocation{
+		ID:        uuid.New().String(),
+		CompanyID: admin.CompanyID,
+		Name:      body.Name,
+		Latitude:  body.Latitude,
+		Longitude: body.Longitude,
+		Radius:    body.Radius,
+		IsActive:  true,
+	}
+
+	if err := database.DB.Create(&newLocation).Error; err != nil {
+		utils.Error(c, "Gagal menambah lokasi")
+		return
+	}
+
+	utils.Success(c, "Lokasi berhasil ditambahkan", newLocation)
+}
+
+// GetCompanyLocations — admin mendapatkan semua lokasi perusahaan
+func GetCompanyLocations(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
+	var locations []models.CompanyLocation
+	database.DB.Where("company_id = ?", admin.CompanyID).Find(&locations)
+
+	utils.Success(c, "Daftar lokasi absensi", locations)
+}
+
+// GetActiveCompanyLocations — karyawan mendapatkan lokasi absensi aktif (untuk validasi frontend)
+func GetActiveCompanyLocations(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	emp := userCtx.(models.User)
+
+	var locations []models.CompanyLocation
+	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&locations)
+
+	utils.Success(c, "Daftar lokasi absensi aktif", locations)
+}
+
+// UpdateCompanyLocation — admin mengubah data lokasi
+func UpdateCompanyLocation(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+	id := c.Param("id")
+
+	var loc models.CompanyLocation
+	if err := database.DB.Where("id = ? AND company_id = ?", id, admin.CompanyID).First(&loc).Error; err != nil {
+		utils.Error(c, "Lokasi tidak ditemukan")
+		return
+	}
+
+	var body struct {
+		Name      string  `json:"name"`
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+		Radius    float64 `json:"radius"`
+		IsActive  *bool   `json:"is_active"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		utils.Error(c, "Data tidak valid")
+		return
+	}
+
+	if body.Name != "" { loc.Name = body.Name }
+	if body.Latitude != 0 { loc.Latitude = body.Latitude }
+	if body.Longitude != 0 { loc.Longitude = body.Longitude }
+	if body.Radius != 0 { loc.Radius = body.Radius }
+	if body.IsActive != nil { loc.IsActive = *body.IsActive }
+
+	database.DB.Save(&loc)
+	utils.Success(c, "Lokasi berhasil diperbarui", loc)
+}
+
+// DeleteCompanyLocation — admin menghapus lokasi
+func DeleteCompanyLocation(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+	id := c.Param("id")
+
+	if err := database.DB.Where("id = ? AND company_id = ?", id, admin.CompanyID).Delete(&models.CompanyLocation{}).Error; err != nil {
+		utils.Error(c, "Gagal menghapus lokasi")
+		return
+	}
+
+	utils.Success(c, "Lokasi berhasil dihapus", nil)
 }

@@ -145,6 +145,12 @@ func SetupRouter() *gin.Engine {
 		admin.GET("/testimonials", handlers.AdminGetTestimonials)
 		admin.PUT("/testimonials/:id/approve", handlers.ApproveTestimonial)
 		admin.DELETE("/testimonials/:id", handlers.DeleteTestimonial)
+
+		// Lokasi Perusahaan
+		admin.GET("/locations", handlers.GetCompanyLocations)
+		admin.POST("/locations", handlers.CreateCompanyLocation)
+		admin.PUT("/locations/:id", handlers.UpdateCompanyLocation)
+		admin.DELETE("/locations/:id", handlers.DeleteCompanyLocation)
 	}
 
 	// Protected Employee Routes
@@ -156,6 +162,7 @@ func SetupRouter() *gin.Engine {
 		employee.POST("/attendance/checkout", handlers.CheckOut)
 		employee.GET("/attendance/today", handlers.GetTodayAttendance)
 		employee.GET("/attendance/history", handlers.GetMyAttendanceHistory)
+		employee.GET("/locations", handlers.GetActiveCompanyLocations)
 
 		// Pengajuan izin / sakit
 		employee.POST("/leaves", handlers.EmployeeCreateLeave)

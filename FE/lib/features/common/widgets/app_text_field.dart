@@ -14,6 +14,7 @@ class AppTextField extends StatefulWidget {
   final int maxLines;
   final bool enabled;
   final String? hint;
+  final Function(String)? onChanged;
 
   const AppTextField({
     super.key,
@@ -29,6 +30,7 @@ class AppTextField extends StatefulWidget {
     this.maxLines = 1,
     this.enabled = true,
     this.hint,
+    this.onChanged,
   });
 
   @override
@@ -56,6 +58,7 @@ class _AppTextFieldState extends State<AppTextField> {
       onTap: widget.onTap,
       maxLines: widget.maxLines,
       enabled: widget.enabled,
+      onChanged: widget.onChanged,
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
       decoration: InputDecoration(
         labelText: widget.label,

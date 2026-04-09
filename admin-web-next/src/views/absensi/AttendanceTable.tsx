@@ -359,6 +359,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
                   <TableCell>Tanggal</TableCell>
                   <TableCell>Check-In</TableCell>
                   <TableCell>Check-Out</TableCell>
+                  <TableCell>Jarak (Audit)</TableCell>
                   <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
@@ -382,6 +383,22 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
                     <TableCell>{formatFullDate(row.date)}</TableCell>
                     <TableCell>{formatTime(row.check_in_time)}</TableCell>
                     <TableCell>{formatTime(row.check_out_time)}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {row.check_in_time && (
+                          <Chip 
+                            label={`In: ${row.check_in_distance ? Math.round(row.check_in_distance) : 0}m`} 
+                            size="small" variant="outlined" color="primary" sx={{ fontSize: '10px', height: 20 }}
+                          />
+                        )}
+                        {row.check_out_time && (
+                          <Chip 
+                            label={`Out: ${row.check_out_distance ? Math.round(row.check_out_distance) : 0}m`} 
+                            size="small" variant="outlined" color="secondary" sx={{ fontSize: '10px', height: 20 }}
+                          />
+                        )}
+                      </Box>
+                    </TableCell>
                     <TableCell>
                       <Chip 
                         label={

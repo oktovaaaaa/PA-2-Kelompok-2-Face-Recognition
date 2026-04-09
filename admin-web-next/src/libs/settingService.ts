@@ -62,6 +62,18 @@ export interface AttendanceSettings {
     work_days: string;
 }
 
+export interface CompanyLocation {
+    id: string;
+    company_id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    radius: number;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface ManualPenalty {
     id: string;
     user_id: string;
@@ -315,6 +327,49 @@ export const settingService = {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus akun.');
+        return data;
+    },
+
+    // 9. Location Methods
+    async getLocations() {
+        const response = await fetch(`${API_URL}/admin/locations`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar lokasi.');
+        return data.data as CompanyLocation[];
+    },
+
+    async createLocation(data: Omit<CompanyLocation, 'id' | 'company_id'>) {
+        const response = await fetch(`${API_URL}/admin/locations`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(data),
+        });
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.message || 'Gagal menambah lokasi.');
+        return resData.data as CompanyLocation;
+    },
+
+    async updateLocation(id: string, data: Partial<CompanyLocation>) {
+        const response = await fetch(`${API_URL}/admin/locations/${id}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(data),
+        });
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui lokasi.');
+        return resData.data as CompanyLocation;
+    },
+
+    async deleteLocation(id: string) {
+        const response = await fetch(`${API_URL}/admin/locations/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menghapus lokasi.');
         return data;
     }
 };

@@ -57,5 +57,6 @@ func AutoMigrate() {
 		&models.Penalty{},
 		&models.Bonus{},
 		&models.Testimonial{},
+		&models.CompanyLocation{},
 	)
 }
