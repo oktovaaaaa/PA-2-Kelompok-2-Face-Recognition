@@ -63,7 +63,7 @@ func calculateLatePenalty(now, checkInEnd time.Time, basePenalty float64, tiersJ
 // isHoliday mengecek apakah tanggal tertentu adalah hari libur (manual atau akhir pekan)
 func isHoliday(companyID string, t time.Time) (bool, string) {
 	var settings models.AttendanceSettings
-	database.DB.Where("company_id = ?", companyID).First(&settings)
+	database.DB.Where("company_id = ?", companyID).Limit(1).Find(&settings)
 
 	// Cek Hari Kerja (WorkDays)
 	// Format: "Monday,Tuesday,Wednesday,Thursday,Friday"
@@ -79,13 +79,13 @@ func isHoliday(companyID string, t time.Time) (bool, string) {
 	}
 
 	// Cek Tabel Hari Libur
-	var holiday models.Holiday
+	var holidays []models.Holiday
 	// Cari libur yang mencakup tanggal t (Start <= t <= End)
 	err := database.DB.Where("company_id = ? AND ? >= start_date AND ? <= end_date",
-		companyID, t.Format("2006-01-02"), t.Format("2006-01-02")).First(&holiday).Error
+		companyID, t.Format("2006-01-02"), t.Format("2006-01-02")).Limit(1).Find(&holidays).Error
 
-	if err == nil {
-		return true, holiday.Name
+	if err == nil && len(holidays) > 0 {
+		return true, holidays[0].Name
 	}
 
 	return false, ""
@@ -106,11 +106,13 @@ func CheckIn(c *gin.Context) {
 	today := now.Format("2006-01-02")
 
 	// Ambil pengaturan jam absensi
-	var settings models.AttendanceSettings
-	if err := database.DB.Where("company_id = ?", emp.CompanyID).First(&settings).Error; err != nil {
+	var settingsList []models.AttendanceSettings
+	database.DB.Where("company_id = ?", emp.CompanyID).Limit(1).Find(&settingsList)
+	if len(settingsList) == 0 {
 		utils.Error(c, "Pengaturan absensi belum dikonfigurasi oleh admin")
 		return
 	}
+	settings := settingsList[0]
 
 	// Validasi waktu check-in: Mulai setelah CheckInStart dan sebelum jam pulang berakhir (CheckOutEnd)
 	if now.Before(parseT(today, settings.CheckInStart, now.Location())) {
@@ -133,9 +135,10 @@ func CheckIn(c *gin.Context) {
 	}
 
 	// Cek apakah sudah check-in hari ini
-	var existing models.Attendance
-	if err := database.DB.Where("user_id = ? AND date = ?", emp.ID, today).First(&existing).Error; err == nil {
-		if existing.CheckInTime != nil {
+	var existingList []models.Attendance
+	database.DB.Where("user_id = ? AND date = ?", emp.ID, today).Limit(1).Find(&existingList)
+	if len(existingList) > 0 {
+		if existingList[0].CheckInTime != nil {
 			utils.Error(c, "Kamu sudah melakukan check-in hari ini")
 			return
 		}
@@ -163,8 +166,13 @@ func CheckOut(c *gin.Context) {
 	}
 
 	// Ambil pengaturan jam absensi
+	var settingsList []models.AttendanceSettings
+	database.DB.Where("company_id = ?", emp.CompanyID).Limit(1).Find(&settingsList)
+	
 	var settings models.AttendanceSettings
-	if err := database.DB.Where("company_id = ?", emp.CompanyID).First(&settings).Error; err != nil {
+	if len(settingsList) > 0 {
+		settings = settingsList[0]
+	} else {
 		settings = models.AttendanceSettings{
 			CheckInStart:  "07:00",
 			CheckInEnd:    "09:00",
@@ -226,12 +234,22 @@ func GetTodayAttendance(c *gin.Context) {
 	emp := userCtx.(models.User)
 
 	today := time.Now().Format("2006-01-02")
+	var attList []models.Attendance
+	database.DB.Where("user_id = ? AND date = ?", emp.ID, today).Limit(1).Find(&attList)
+	
 	var att models.Attendance
-	err := database.DB.Where("user_id = ? AND date = ?", emp.ID, today).First(&att).Error
+	if len(attList) > 0 {
+		att = attList[0]
+	}
 
 	// Ambil pengaturan jam absensi (dengan fallback)
+	var settingsList []models.AttendanceSettings
+	database.DB.Where("company_id = ?", emp.CompanyID).Limit(1).Find(&settingsList)
+	
 	var settings models.AttendanceSettings
-	if err := database.DB.Where("company_id = ?", emp.CompanyID).First(&settings).Error; err != nil {
+	if len(settingsList) > 0 {
+		settings = settingsList[0]
+	} else {
 		settings = models.AttendanceSettings{
 			CheckInStart:  "07:00",
 			CheckInEnd:    "09:00",
@@ -254,7 +272,7 @@ func GetTodayAttendance(c *gin.Context) {
 		return
 	}
 
-	if err != nil { // Belum ada record absensi hari ini
+	if len(attList) == 0 { // Belum ada record absensi hari ini
 		if now.Before(parseT(today, settings.CheckInStart, loc)) {
 			displayStatus = "NOT_STARTED" // Label: Belum Mulai
 		} else if now.After(parseT(today, settings.CheckOutEnd, loc)) {
@@ -290,7 +308,7 @@ func GetTodayAttendance(c *gin.Context) {
 	utils.Success(c, "Status absensi hari ini", gin.H{
 		"date":                   today,
 		"attendance":             att,
-		"has_record":             err == nil,
+		"has_record":             len(attList) > 0,
 		"settings":               settings,
 		"current_time":           now.Format("15:04:05"),
 		"display_status":         displayStatus,

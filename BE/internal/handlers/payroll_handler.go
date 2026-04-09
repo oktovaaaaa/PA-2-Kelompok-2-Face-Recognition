@@ -452,8 +452,12 @@ func CalculateAdjustments(userID string, month int, year int) (float64, float64,
 	var user models.User
 	database.DB.First(&user, "id = ?", userID)
 
+	var settingsList []models.AttendanceSettings
+	database.DB.Where("company_id = ?", user.CompanyID).Limit(1).Find(&settingsList)
 	var settings models.AttendanceSettings
-	database.DB.Where("company_id = ?", user.CompanyID).First(&settings)
+	if len(settingsList) > 0 {
+		settings = settingsList[0]
+	}
 
 	// Parse Tiers
 	var tiers []LateTier

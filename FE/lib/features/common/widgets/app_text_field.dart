@@ -13,6 +13,7 @@ class AppTextField extends StatefulWidget {
   final IconData? prefixIcon;
   final int maxLines;
   final bool enabled;
+  final String? hint;
 
   const AppTextField({
     super.key,
@@ -27,6 +28,7 @@ class AppTextField extends StatefulWidget {
     this.prefixIcon,
     this.maxLines = 1,
     this.enabled = true,
+    this.hint,
   });
 
   @override
@@ -57,6 +59,8 @@ class _AppTextFieldState extends State<AppTextField> {
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
       decoration: InputDecoration(
         labelText: widget.label,
+        hintText: widget.hint,
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13, fontWeight: FontWeight.normal),
         labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500),
         floatingLabelStyle: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
         prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: const Color(0xFF64748B), size: 20) : null,

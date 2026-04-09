@@ -22,6 +22,9 @@ func RegisterEmployee(c *gin.Context) {
 		PhotoURL    string
 		InviteToken string
 
+		BankName          string
+		BankAccountNumber string
+
 		GoogleIDToken string
 		OTPCode       string
 	}
@@ -33,15 +36,17 @@ func RegisterEmployee(c *gin.Context) {
 	}
 
 	user := models.User{
-		Name:       body.Name,
-		Email:      body.Email,
-		Password:   body.Password,
-		Pin:        body.Pin,
-		Phone:      body.Phone,
-		BirthPlace: body.BirthPlace,
-		BirthDate:  body.BirthDate,
-		Address:    body.Address,
-		PhotoURL:   body.PhotoURL,
+		Name:              body.Name,
+		Email:             body.Email,
+		Password:          body.Password,
+		Pin:               body.Pin,
+		Phone:             body.Phone,
+		BirthPlace:        body.BirthPlace,
+		BirthDate:         body.BirthDate,
+		Address:           body.Address,
+		PhotoURL:          body.PhotoURL,
+		BankName:          body.BankName,
+		BankAccountNumber: body.BankAccountNumber,
 	}
 
 	if body.GoogleIDToken != "" {

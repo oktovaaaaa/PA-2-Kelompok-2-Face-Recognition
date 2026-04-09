@@ -257,14 +257,14 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Edit Informasi Bank', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF0F172A))),
+                  const Text('Edit Informasi Rekening', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF0F172A))),
                   IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded)),
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Pastikan nomor rekening sudah benar untuk kelancaran penggajian.', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+              Text('Pastikan nomor rekening atau ID E-Wallet sudah benar untuk kelancaran penggajian.', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
               const SizedBox(height: 24),
-              AppTextField(controller: bankNameCtrl, label: 'Nama Bank', prefixIcon: Icons.account_balance_rounded),
+              AppTextField(controller: bankNameCtrl, label: 'Nama Bank atau E-Wallet', prefixIcon: Icons.account_balance_rounded, hint: "BCA, Mandiri, Dana, OVO, dll"),
               const SizedBox(height: 16),
               AppTextField(controller: accountNumberCtrl, label: 'Nomor Rekening', prefixIcon: Icons.numbers_rounded, keyboardType: TextInputType.number),
               const SizedBox(height: 24),
@@ -298,7 +298,7 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                       AppDialog.showError(context, res.message ?? 'Gagal memperbarui informasi bank');
                     }
                   },
-                  child: const Text('Simpan Rekening', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: const Text('Simpan Data Rekening', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ],
@@ -486,14 +486,14 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                   ),
                   const SizedBox(height: 20),
                   _buildDataCard(
-                    title: 'Informasi Gaji & Bank',
+                    title: 'Informasi Bank atau E-Wallet',
                     icon: Icons.account_balance_rounded,
                     color: const Color(0xFF10B981),
                     onEdit: _editBankInfo,
                     rows: [
                       _infoRow('Gaji Pokok', 'Rp ${CurrencyInputFormatter.formatNumber(salary.toInt())}'),
-                      _infoRow('Bank', _v('bank_name')),
-                      _infoRow('No. Rekening', _v('bank_account_number')),
+                      _infoRow('Rekening Bank atau E-Wallet', _v('bank_name')),
+                      _infoRow('No. Rekening / ID', _v('bank_account_number')),
                     ],
                   ),
                   const SizedBox(height: 20),

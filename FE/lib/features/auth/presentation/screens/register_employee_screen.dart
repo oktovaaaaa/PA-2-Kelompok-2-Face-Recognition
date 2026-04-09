@@ -37,6 +37,8 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
   final _birthPlace = TextEditingController();
   final _birthDate = TextEditingController();
   final _address = TextEditingController();
+  final _bankName = TextEditingController();
+  final _bankAccountNumber = TextEditingController();
   final _otpCode = TextEditingController();
 
   bool _loading = false;
@@ -120,6 +122,8 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
         birthPlace: _birthPlace.text.trim(),
         birthDate: _birthDate.text.trim(),
         address: _address.text.trim(),
+        bankName: _bankName.text.trim(),
+        bankAccountNumber: _bankAccountNumber.text.trim(),
         inviteToken: widget.inviteToken,
         photoUrl: photoUrl,
         googleIdToken: _googleIdToken,
@@ -412,6 +416,34 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
                         ),
                         const SizedBox(height: 16),
                         AppTextField(controller: _address, label: 'Alamat', validator: _required, prefixIcon: Icons.home_outlined),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF10B981), size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Informasi Bank / E-Wallet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _bankName, 
+                          label: 'Nama Bank atau E-Wallet', 
+                          validator: _required, 
+                          prefixIcon: Icons.account_balance_rounded,
+                          hint: "Contoh: BCA, Mandiri, Dana, OVO",
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _bankAccountNumber, 
+                          label: 'Nomor Rekening', 
+                          keyboardType: TextInputType.number, 
+                          validator: _required, 
+                          prefixIcon: Icons.numbers_rounded,
+                        ),
                       ],
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import '../../../../../core/network/api_client.dart';
 import '../../../../../core/storage/session_storage.dart';
 import '../../../../../core/utils/currency_formatter.dart';
@@ -516,53 +517,161 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                         ],
                       ),
                     ),
-  
+                                // -- Improved Rules & Holiday Card --
                     if (isHoliday) ...[
                       const SizedBox(height: 24),
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.orange.shade100),
+                          gradient: LinearGradient(
+                            colors: [Colors.blue.shade50, Colors.indigo.shade50],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.blue.shade100),
                         ),
-                        child: const Row(
+                        child: Column(
                           children: [
-                            Icon(Icons.info_outline_rounded, color: Colors.orange, size: 18),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Sesuai kebijakan perusahaan, hari ini ditetapkan sebagai hari libur. Silakan hubungi admin jika ada kekeliruan.',
-                                style: TextStyle(fontSize: 12, color: Colors.orange, height: 1.5),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                shape: BoxShape.circle,
                               ),
+                              child: Icon(Icons.event_available_rounded, color: Colors.blue.shade800, size: 32),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Hari ini, ${AppDateFormatter.formatFullDate(DateTime.now().toString())}",
+                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade900, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Status: Sedang Libur",
+                              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue, fontSize: 14),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              "Sesuai kebijakan instansi, hari ini ditetapkan sebagai hari libur. Selamat menikmati waktu istirahat Anda!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 13, color: Colors.blue.shade700, height: 1.5),
                             ),
                           ],
                         ),
                       ),
-                    ],
-
-                    if (!isHoliday && settings != null) ...[
+                    ] else if (settings != null) ...[
                       const SizedBox(height: 24),
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade200),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.grey.shade100),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.info_outline_rounded, color: Color(0xFF64748B), size: 18),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Jam: ${settings['check_in_start']} - ${settings['check_in_end']} (In)\n'
-                                'Jam: ${settings['check_out_start']} - ${settings['check_out_end']} (Out)\n'
-                                'Sanksi: Rp ${CurrencyInputFormatter.formatNumber((settings['alpha_penalty'] as num?)?.toInt() ?? 0)} (Alpha) / '
-                                'Rp ${CurrencyInputFormatter.formatNumber((settings['late_penalty'] as num?)?.toInt() ?? 0)} (Terlambat) / '
-                                'Rp ${CurrencyInputFormatter.formatNumber((settings['early_leave_penalty'] as num?)?.toInt() ?? 0)} (Pulang Awal)',
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.5),
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: const Color(0xFF6366f1).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                                  child: const Icon(Icons.menu_book_rounded, color: Color(0xFF6366f1), size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  "Ketentuan Absensi Hari Ini",
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                                ),
+                              ],
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Divider(height: 1),
+                            ),
+                            
+                            // Shift/Hours Section
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildRuleItem(
+                                    icon: Icons.login_rounded,
+                                    label: "Maksimal Masuk",
+                                    value: settings['check_in_end'],
+                                    subtitle: "Mulai absen: ${settings['check_in_start']}",
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                Container(width: 1, height: 45, color: Colors.grey.shade100, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                                Expanded(
+                                  child: _buildRuleItem(
+                                    icon: Icons.logout_rounded,
+                                    label: "Mulai Pulang",
+                                    value: settings['check_out_start'],
+                                    subtitle: "Hingga: ${settings['check_out_end']}",
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            const SizedBox(height: 20),
+                            Text(
+                              "DAFTAR SANKSI",
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.grey.shade500),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // Penalties List
+                            _buildPenaltyItem(
+                              label: "Tanpa Keterangan (Alpha)",
+                              value: "Rp ${CurrencyInputFormatter.formatNumber((settings['alpha_penalty'] as num?)?.toInt() ?? 0)}",
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Tiered or Constant Late Penalty
+                            ...(() {
+                              final tiersStr = settings['late_penalty_tiers'] as String?;
+                              if (tiersStr != null && tiersStr.isNotEmpty && tiersStr != "[]") {
+                                try {
+                                  final List<dynamic> tiers = jsonDecode(tiersStr);
+                                  return tiers.map((tier) {
+                                    final hours = tier['hours'] ?? 0;
+                                    final penalty = tier['penalty'] ?? 0;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8.0),
+                                      child: _buildPenaltyItem(
+                                        label: "Terlambat > $hours Jam",
+                                        value: "Rp ${CurrencyInputFormatter.formatNumber(penalty)}",
+                                      ),
+                                    );
+                                  }).toList();
+                                } catch (e) {
+                                  debugPrint("Error parsing penalty tiers: $e");
+                                }
+                              }
+                              
+                              // Fallback to constant penalty
+                              return [
+                                _buildPenaltyItem(
+                                  label: "Terlambat Masuk Kantor",
+                                  value: "Rp ${CurrencyInputFormatter.formatNumber((settings['late_penalty'] as num?)?.toInt() ?? 0)}",
+                                ),
+                                const SizedBox(height: 8),
+                              ];
+                            })(),
+                            
+                            _buildPenaltyItem(
+                              label: "Pulang Mendahului Jadwal",
+                              value: "Rp ${CurrencyInputFormatter.formatNumber((settings['early_leave_penalty'] as num?)?.toInt() ?? 0)}",
                             ),
                           ],
                         ),
@@ -665,4 +774,39 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       ),
     );
   }
+
+  Widget _buildRuleItem({required IconData icon, required String label, required String value, String? subtitle, required Color color}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              if (subtitle != null)
+                Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPenaltyItem({required String label, required String value}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF475569)))),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+      ],
+    );
+  }
 }
+
