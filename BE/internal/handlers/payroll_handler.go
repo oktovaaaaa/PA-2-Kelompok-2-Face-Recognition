@@ -483,7 +483,8 @@ func CalculateDeductions(userID string, month int, year int) (float64, string) {
 	calculationEnd := endDate
 	now := time.Now()
 	if year == now.Year() && month == int(now.Month()) {
-		calculationEnd = now.AddDate(0, 0, 1) // Cek sampai hari ini
+		// Set calculationEnd ke 00:00:00 besok agar d.Before() berhenti tepat sebelum besok
+		calculationEnd = time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()) 
 		if calculationEnd.After(endDate) {
 			calculationEnd = endDate
 		}

@@ -265,8 +265,11 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         const labels = w.globals.labels;
         const date = labels[dataPointIndex];
         
-        // All categories are null or 0 means it's a holiday
-        const isHoliday = series.every((s: any) => s[dataPointIndex] === null || s[dataPointIndex] === 0);
+        // All categories are null, 'null', undefined, 0 or NaN means it's a holiday
+        const isHoliday = series.every((s: any) => {
+          const v = s[dataPointIndex];
+          return v === null || v === 'null' || v === 0 || v === undefined || isNaN(Number(v));
+        });
         
         if (isHoliday) {
           return `<div class="p-4 shadow-xl rounded-2xl ${isDark ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E293B]'} border border-slate-100 dark:border-slate-800">
@@ -282,7 +285,8 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
           <div class="font-bold text-xs border-b border-slate-100 dark:border-slate-800 pb-2 mb-3 opacity-60">${date}</div>`;
         
         series.forEach((s: any, idx: number) => {
-          const val = s[dataPointIndex] ?? 0;
+          const v = s[dataPointIndex];
+          const val = (v === null || v === 'null' || v === undefined || isNaN(Number(v))) ? 0 : Number(v);
           const name = w.globals.seriesNames[idx];
           const color = w.globals.colors[idx];
           html += `<div class="flex items-center justify-between gap-6 py-1">

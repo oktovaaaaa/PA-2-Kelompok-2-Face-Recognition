@@ -24,6 +24,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   bool _loading = false;
   bool _actionLoading = false;
   String? _userName;
+  bool _isSalaryVisible = false;
 
   @override
   void initState() {
@@ -266,9 +267,26 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Estimasi Gaji Pokok',
-                                style: TextStyle(color: Colors.white70, fontSize: 13),
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Estimasi Gaji Pokok',
+                                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isSalaryVisible = !_isSalaryVisible;
+                                      });
+                                    },
+                                    child: Icon(
+                                      _isSalaryVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                                      color: Colors.white70,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ],
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -291,7 +309,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _formatRp(estimatedSalary.toInt()),
+                            _isSalaryVisible ? _formatRp(estimatedSalary.toInt()) : 'Rp •••••••',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 32,
