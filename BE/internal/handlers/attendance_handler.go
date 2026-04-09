@@ -274,12 +274,13 @@ func GetTodayAttendance(c *gin.Context) {
 		}
 	}
 
-	// Hitung total denda bulan ini untuk estimasi gaji
+	// Hitung total denda dan bonus bulan ini untuk estimasi gaji
 	var totalDeductionMonth float64
+	var totalBonusMonth float64
 
 	// Gunakan logika bersama agar sinkron dengan tab Gaji
-	// Ini akan menghitung semua denda absensi + denda manual + denda Alpha otomatis
-	totalDeductionMonth, _ = CalculateDeductions(emp.ID, int(now.Month()), now.Year())
+	// Ini akan menghitung semua denda absensi + denda manual + denda Alpha otomatis + Bonus
+	totalDeductionMonth, totalBonusMonth, _, _ = CalculateAdjustments(emp.ID, int(now.Month()), now.Year())
 
 	utils.Success(c, "Status absensi hari ini", gin.H{
 		"date":                  today,
@@ -289,6 +290,7 @@ func GetTodayAttendance(c *gin.Context) {
 		"current_time":          now.Format("15:04:05"),
 		"display_status":        displayStatus,
 		"total_deduction_month": totalDeductionMonth,
+		"total_bonus_month":     totalBonusMonth,
 	})
 }
 
@@ -668,6 +670,7 @@ func AdminGetAttendanceHistory(c *gin.Context) {
 							CompanyID: emp.CompanyID,
 							Date:      dateStr,
 							Status:    "ABSENT",
+							SalaryDeduction: settings.AlphaPenalty,
 						},
 						UserName:  emp.Name,
 						UserEmail: emp.Email,
@@ -1395,4 +1398,50 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 		"early_leave": earlyLeaveData,
 		"late_early_leave": lateEarlyLeaveData,
 	})
+}
+
+// PardonAttendance — admin menghapus sanksi absensi (Terlambat/Alpha/Pulang Awal)
+func PardonAttendance(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	adminUser := userCtx.(models.User)
+
+	var body struct {
+		UserID string `json:"user_id" binding:"required"`
+		Date   string `json:"date" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		utils.Error(c, "Data tidak valid")
+		return
+	}
+
+	var att models.Attendance
+	err := database.DB.Where("user_id = ? AND date = ? AND company_id = ?", body.UserID, body.Date, adminUser.CompanyID).First(&att).Error
+
+	if err != nil {
+		// Jika tidak ada di DB (berarti Virtual Alpha), buat record baru sebagai PRESENT
+		att = models.Attendance{
+			ID:              uuid.New().String(),
+			UserID:          body.UserID,
+			CompanyID:       adminUser.CompanyID,
+			Date:            body.Date,
+			Status:          "PRESENT",
+			SalaryDeduction: 0,
+			Notes:           "Sanksi dihapus secara manual oleh admin",
+		}
+		if err := database.DB.Create(&att).Error; err != nil {
+			utils.Error(c, "Gagal membuat keterangan pemutihan")
+			return
+		}
+	} else {
+		// Jika ada di DB (Late/Early Leave/Recorded Alpha), update menjadi PRESENT
+		att.Status = "PRESENT"
+		att.SalaryDeduction = 0
+		att.Notes = "Sanksi dihapus secara manual oleh admin"
+		if err := database.DB.Save(&att).Error; err != nil {
+			utils.Error(c, "Gagal memperbarui status absensi")
+			return
+		}
+	}
+
+	utils.Success(c, "Sanksi absensi berhasil dihapus", nil)
 }

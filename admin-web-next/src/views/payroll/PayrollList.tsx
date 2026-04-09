@@ -167,16 +167,17 @@ const PayrollList = () => {
               <TableHead sx={{ bgcolor: 'action.hover' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: '700' }}>Karyawan</TableCell>
-                  <TableCell sx={{ fontWeight: '700' }}>Total Gaji (Net)</TableCell>
-                  <TableCell sx={{ fontWeight: '700' }}>Terbayar</TableCell>
-                  <TableCell sx={{ fontWeight: '700' }}>Sisa Gaji</TableCell>
+                  <TableCell sx={{ fontWeight: '700' }}>Gaji Pokok</TableCell>
+                  <TableCell sx={{ fontWeight: '700' }}>Bonus</TableCell>
+                  <TableCell sx={{ fontWeight: '700' }}>Potongan</TableCell>
+                  <TableCell sx={{ fontWeight: '700' }}>Total Net</TableCell>
                   <TableCell align="center" sx={{ fontWeight: '700' }}>Status</TableCell>
                   <TableCell align="right" sx={{ fontWeight: '700' }}>Aksi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {paginatedData.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}>Tidak ada data payroll untuk periode ini.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} align="center" sx={{ py: 10 }}>Tidak ada data payroll untuk periode ini.</TableCell></TableRow>
                 ) : paginatedData.map((row) => {
                   const balance = row.total_salary - row.paid_amount
                   return (
@@ -195,11 +196,12 @@ const PayrollList = () => {
                           </Box>
                         </Box>
                       </TableCell>
-                      <TableCell><Typography variant="body2" fontWeight="600">{formatIDR(row.total_salary)}</Typography></TableCell>
-                      <TableCell><Typography variant="body2" color="success.main">{formatIDR(row.paid_amount)}</Typography></TableCell>
+                      <TableCell><Typography variant="body2">{formatIDR(row.base_salary)}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" color="success.main" fontWeight="600">+{formatIDR(row.bonuses)}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" color="error.main">-{formatIDR(row.deductions)}</Typography></TableCell>
                       <TableCell>
-                        <Typography variant="body2" color={balance > 0 ? "error.main" : "text.secondary"}>
-                          {formatIDR(balance)}
+                        <Typography variant="body2" fontWeight="800" color="primary.main">
+                          {formatIDR(row.total_salary)}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">{getStatusChip(row.status)}</TableCell>

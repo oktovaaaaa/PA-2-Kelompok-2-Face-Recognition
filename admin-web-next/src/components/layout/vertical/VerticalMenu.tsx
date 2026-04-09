@@ -96,6 +96,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
           <MenuItem href='/payroll' icon={<i className='ri-money-dollar-circle-line' />}>
             Laporan Payroll
           </MenuItem>
+          <MenuItem href='/pelanggaran-bonus' icon={<i className='ri-medal-line' />}>
+            Bonus & Sanksi
+          </MenuItem>
         </MenuSection>
 
         <MenuSection label='Aplikasi & Halaman'>

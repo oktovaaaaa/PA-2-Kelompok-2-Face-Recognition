@@ -108,6 +108,7 @@ func SetupRouter() *gin.Engine {
 		// Riwayat absensi semua karyawan
 		admin.GET("/attendance", handlers.AdminGetAttendanceHistory)
 		admin.GET("/attendance/years", handlers.AdminGetAttendanceYears)
+		admin.POST("/attendance/pardon", handlers.PardonAttendance)
 		admin.DELETE("/attendance", handlers.AdminBulkDeleteAttendance)
 		admin.GET("/dashboard/summary", handlers.AdminGetDashboardSummary)
 		admin.GET("/dashboard/detailed-summary", handlers.AdminGetDetailedDashboardSummary)
@@ -133,6 +134,12 @@ func SetupRouter() *gin.Engine {
 		admin.GET("/penalties", handlers.GetPenalties)
 		admin.DELETE("/penalties/:id", handlers.DeletePenalty)
 		admin.GET("/penalties/years", handlers.AdminGetPenaltyYears)
+
+		// Bonus & Insentif
+		admin.GET("/bonuses", handlers.AdminGetBonuses)
+		admin.GET("/bonuses/years", handlers.AdminGetBonusYears)
+		admin.POST("/bonuses", handlers.AdminCreateBonus)
+		admin.DELETE("/bonuses/:id", handlers.AdminDeleteBonus)
 
 		// Testimoni admin
 		admin.GET("/testimonials", handlers.AdminGetTestimonials)

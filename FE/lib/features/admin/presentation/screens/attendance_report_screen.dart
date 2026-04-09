@@ -1041,13 +1041,26 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
         barGroups: List.generate(dates.length, (i) {
           final d = dates[i];
           final s = data[d]!;
+          
+          bool isHoliday = (s['PRESENT'] ?? 0) == 0 && (s['LATE'] ?? 0) == 0 && (s['ABSENT'] ?? 0) == 0 && 
+                           (s['WORKING'] ?? 0) == 0 && (s['EARLY_LEAVE'] ?? 0) == 0 && (s['OTHER'] ?? 0) == 0;
+
+          if (isHoliday) {
+             return BarChartGroupData(
+                x: i,
+                barRods: [
+                   BarChartRodData(toY: 0.5, color: Colors.grey.withOpacity(0.1), width: 24, borderRadius: BorderRadius.circular(4)),
+                ],
+             );
+          }
+
           return BarChartGroupData(
             x: i,
             barRods: [
-              BarChartRodData(toY: s['PRESENT']!.toDouble(), color: Colors.green, width: 6),
-              BarChartRodData(toY: s['LATE']!.toDouble(), color: Colors.orange, width: 6),
-              BarChartRodData(toY: s['ABSENT']!.toDouble(), color: Colors.red, width: 6),
-              BarChartRodData(toY: s['OTHER']!.toDouble(), color: Colors.blue, width: 6),
+              BarChartRodData(toY: (s['PRESENT'] ?? 0).toDouble(), color: const Color(0xFF22C55E), width: 6),
+              BarChartRodData(toY: (s['LATE'] ?? 0).toDouble(), color: const Color(0xFFFBBF24), width: 6),
+              BarChartRodData(toY: (s['ABSENT'] ?? 0).toDouble(), color: const Color(0xFFEF4444), width: 6),
+              BarChartRodData(toY: (s['OTHER'] ?? 0).toDouble(), color: const Color(0xFF3B82F6), width: 6),
             ],
           );
         }),
@@ -1060,7 +1073,9 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
       LineChartData(
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (spot) => const Color(0xFF0F172A).withOpacity(0.8),
+            getTooltipColor: (spot) => Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+            tooltipBorder: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey.shade200, width: 1),
+            tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 if (spot.x.toInt() >= dates.length) return null;
@@ -1071,23 +1086,35 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                 bool isHoliday = (s['PRESENT'] ?? 0) == 0 && (s['LATE'] ?? 0) == 0 && (s['ABSENT'] ?? 0) == 0 && 
                                  (s['WORKING'] ?? 0) == 0 && (s['EARLY_LEAVE'] ?? 0) == 0 && (s['OTHER'] ?? 0) == 0;
                 
+                final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+                
                 if (isHoliday) {
                   return LineTooltipItem(
-                    'Hari Libur\n$date',
-                    const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+                    'HARI LIBUR\n$date',
+                    TextStyle(
+                      color: isDarkTheme ? const Color(0xFFFDBA74) : const Color(0xFFEA580C), 
+                      fontWeight: FontWeight.bold, 
+                      fontSize: 11
+                    ),
                   );
                 }
                 
-                // Categories match _lineData order
                 String label;
-                if (spot.barIndex % 4 == 0) label = 'Hadir';
-                else if (spot.barIndex % 4 == 1) label = 'Telat';
-                else if (spot.barIndex % 4 == 2) label = 'Alpha';
-                else label = 'Lainnya';
+                Color textColor;
+                
+                if (spot.barIndex % 4 == 0) { 
+                  label = 'Hadir'; textColor = isDarkTheme ? const Color(0xFF4ADE80) : const Color(0xFF15803D); 
+                } else if (spot.barIndex % 4 == 1) { 
+                  label = 'Telat'; textColor = isDarkTheme ? const Color(0xFFFBBF24) : const Color(0xFFB45309); 
+                } else if (spot.barIndex % 4 == 2) { 
+                  label = 'Alpha'; textColor = isDarkTheme ? const Color(0xFFF87171) : const Color(0xFFB91C1C); 
+                } else { 
+                  label = 'Izin'; textColor = isDarkTheme ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8); 
+                }
 
                 return LineTooltipItem(
                   '$label: ${spot.y.toInt()}',
-                  const TextStyle(color: Colors.white, fontSize: 10),
+                  TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold),
                 );
               }).toList();
             },

@@ -14,9 +14,11 @@ type Salary struct {
 	
 	BaseSalary   float64 `json:"base_salary"`
 	Deductions   float64 `json:"deductions"`
+	Bonuses      float64 `json:"bonuses"`
 	TotalSalary  float64 `json:"total_salary"`
 	PaidAmount   float64 `json:"paid_amount"`
 	DeductionsDetail string `json:"deductions_detail"`
+	BonusesDetail    string `json:"bonuses_detail"`
 	
 	Status       string    `json:"status"` // PENDING | PARTIAL | PAID
 	PaymentProof string    `json:"payment_proof"` // URL/Path foto bukti terbaru (Opsional)

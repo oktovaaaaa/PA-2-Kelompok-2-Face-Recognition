@@ -18,6 +18,7 @@ import '../../../../auth/data/auth_repository.dart';
 import '../../../../auth/presentation/screens/pending_employees_screen.dart';
 import '../attendance_report_screen.dart';
 import '../admin_payroll_screen.dart';
+import '../admin_adjustment_screen.dart';
 import 'admin_position_tab.dart';
 import '../../../../common/widgets/app_dialog.dart';
 import '../../../../common/presentation/screens/notification_screen.dart';
@@ -369,20 +370,27 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                                 PieChartData(
                                   sectionsSpace: 2,
                                   centerSpaceRadius: 25,
-                                  sections: [
-                                    if ((_summary['present'] ?? 0) > 0) PieChartSectionData(value: (_summary['present'] as num).toDouble(), color: Colors.green, radius: 20, showTitle: false),
-                                    if ((_summary['late'] ?? 0) > 0) PieChartSectionData(value: (_summary['late'] as num).toDouble(), color: Colors.orange, radius: 20, showTitle: false),
-                                    if ((_summary['absent'] ?? 0) > 0) PieChartSectionData(value: (_summary['absent'] as num).toDouble(), color: Colors.red, radius: 20, showTitle: false),
-                                    if (((_summary['leave'] ?? 0) + (_summary['sick'] ?? 0)) > 0) PieChartSectionData(value: ((_summary['leave'] ?? 0) + (_summary['sick'] ?? 0) as num).toDouble(), color: Colors.blue, radius: 20, showTitle: false),
-                                    if ((_summary['not_yet'] ?? 0) > 0) PieChartSectionData(value: (_summary['not_yet'] as num).toDouble(), color: Colors.grey.shade300, radius: 20, showTitle: false),
-                                    if ((_summary['working'] ?? 0) > 0) PieChartSectionData(value: (_summary['working'] as num).toDouble(), color: const Color(0xFF818CF8), radius: 20, showTitle: false),
-                                    if ((_summary['early_leave'] ?? 0) > 0) PieChartSectionData(value: (_summary['early_leave'] as num).toDouble(), color: const Color(0xFFF97316), radius: 20, showTitle: false),
-                                    if ((_summary['late_early_leave'] ?? 0) > 0) PieChartSectionData(value: (_summary['late_early_leave'] as num).toDouble(), color: const Color(0xFFD946EF), radius: 20, showTitle: false),
-                                    
-                                    // Fallback jika semua nol
-                                    if ((_summary['total'] ?? 0) == 0)
-                                      PieChartSectionData(value: 1, color: const Color(0xFFE2E8F0), radius: 20, showTitle: false),
-                                  ],
+                                  sections: (_summary['total'] ?? 0) == 0 || (_summary['present'] == 0 && _summary['late'] == 0 && _summary['absent'] == 0 && (_summary['leave'] + _summary['sick']) == 0 && _summary['working'] == 0 && _summary['not_yet'] == 0)
+                                    ? [
+                                        PieChartSectionData(
+                                          value: 1,
+                                          color: Colors.grey.shade200,
+                                          radius: 20,
+                                          showTitle: true,
+                                          title: 'LIBUR',
+                                          titleStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey.shade500),
+                                        ),
+                                      ]
+                                    : [
+                                      if ((_summary['present'] ?? 0) > 0) PieChartSectionData(value: (_summary['present'] as num).toDouble(), color: const Color(0xFF22C55E), radius: 20, showTitle: false),
+                                      if ((_summary['late'] ?? 0) > 0) PieChartSectionData(value: (_summary['late'] as num).toDouble(), color: const Color(0xFFFBBF24), radius: 20, showTitle: false),
+                                      if ((_summary['absent'] ?? 0) > 0) PieChartSectionData(value: (_summary['absent'] as num).toDouble(), color: const Color(0xFFEF4444), radius: 20, showTitle: false),
+                                      if (((_summary['leave'] ?? 0) + (_summary['sick'] ?? 0)) > 0) PieChartSectionData(value: ((_summary['leave'] ?? 0) + (_summary['sick'] ?? 0) as num).toDouble(), color: const Color(0xFF3B82F6), radius: 20, showTitle: false),
+                                      if ((_summary['not_yet'] ?? 0) > 0) PieChartSectionData(value: (_summary['not_yet'] as num).toDouble(), color: const Color(0xFF94A3B8), radius: 20, showTitle: false),
+                                      if ((_summary['working'] ?? 0) > 0) PieChartSectionData(value: (_summary['working'] as num).toDouble(), color: const Color(0xFF818CF8), radius: 20, showTitle: false),
+                                      if ((_summary['early_leave'] ?? 0) > 0) PieChartSectionData(value: (_summary['early_leave'] as num).toDouble(), color: const Color(0xFFF97316), radius: 20, showTitle: false),
+                                      if ((_summary['late_early_leave'] ?? 0) > 0) PieChartSectionData(value: (_summary['late_early_leave'] as num).toDouble(), color: const Color(0xFFD946EF), radius: 20, showTitle: false),
+                                    ],
                                 ),
                               ),
                             ),
@@ -430,6 +438,15 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                       label: 'Karyawan',
                       color: const Color(0xFF2563EB),
                       onTap: () => widget.onNavigate?.call(3),
+                    ),
+                    _buildQuickAction(
+                      icon: Icons.stars_rounded,
+                      label: 'Bonus',
+                      color: const Color(0xFF10B981),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminAdjustmentScreen()),
+                      ),
                     ),
                     _buildQuickAction(
                       icon: Icons.work_rounded,
@@ -485,6 +502,18 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const PendingEmployeesScreen()),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildMenuCard(
+                  context,
+                  icon: Icons.military_tech_rounded,
+                  color: Colors.orange.shade700,
+                  title: 'Bonus & Sanksi',
+                  subtitle: 'Input bonus atau denda manual',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminAdjustmentScreen()),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -653,7 +682,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: Color.lerp(color, Colors.white, 0.82),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -715,7 +744,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                      color: Color.lerp(color, Colors.white, 0.82),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(icon, color: color, size: 26),

@@ -25,9 +25,20 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
   useEffect(() => {
     setIsMounted(true)
   }, [])
+  const isDataEmpty = !summary || (
+    (summary.present || 0) === 0 &&
+    (summary.late || 0) === 0 &&
+    (summary.absent || 0) === 0 &&
+    ((summary.leave || 0) + (summary.sick || 0)) === 0 &&
+    (summary.working || 0) === 0 &&
+    (summary.early_leave || 0) === 0 &&
+    (summary.late_early_leave || 0) === 0 &&
+    (summary.not_yet || 0) === 0
+  );
+
   const pieOptions: ApexOptions = {
-    labels: ['Hadir', 'Terlambat', 'Alpha', 'Izin/Sakit', 'Sedang Bekerja', 'Pulang di jam kerja', 'Terlambat & Pulang di jam kerja', 'Belum Hadir'],
-    colors: ['#22C55E', '#FBBF24', '#EF4444', '#0EA5E9', '#6366F1', '#F97316', '#D946EF', '#94A3B8'],
+    labels: isDataEmpty ? ['Hari Libur'] : ['Hadir', 'Terlambat', 'Alpha', 'Izin/Sakit', 'Sedang Bekerja', 'Pulang di jam kerja', 'Terlambat & Pulang di jam kerja', 'Belum Hadir'],
+    colors: isDataEmpty ? ['#E2E8F0'] : ['#22C55E', '#FBBF24', '#EF4444', '#0EA5E9', '#6366F1', '#F97316', '#D946EF', '#94A3B8'],
     legend: { show: false },
     dataLabels: { enabled: false },
     stroke: { width: 0 },
@@ -42,14 +53,14 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
               color: 'var(--mui-palette-text-primary)'
             },
             value: {
-              show: true,
+              show: !isDataEmpty,
               color: 'var(--mui-palette-text-primary)'
             },
             total: {
               show: true,
-              label: 'Karyawan',
-              color: 'var(--mui-palette-text-secondary)',
-              formatter: () => summary?.total.toString() || '0'
+              label: isDataEmpty ? 'STATUS' : 'Karyawan',
+              color: isDataEmpty ? '#EA580C' : 'var(--mui-palette-text-secondary)',
+              formatter: () => isDataEmpty ? 'HARI LIBUR' : (summary?.total.toString() || '0')
             }
           }
         }
@@ -57,16 +68,18 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
     }
   }
 
-  const pieSeries = summary ? [
-    summary.present,
-    summary.late,
-    summary.absent,
-    (summary.leave || 0) + (summary.sick || 0),
-    summary.working,
-    summary.early_leave,
-    summary.late_early_leave,
-    summary.not_yet
-  ] : []
+  const pieSeries = summary ? (
+    isDataEmpty ? [1] : [
+      summary.present,
+      summary.late,
+      summary.absent,
+      (summary.leave || 0) + (summary.sick || 0),
+      summary.working,
+      summary.early_leave,
+      summary.late_early_leave,
+      summary.not_yet
+    ]
+  ) : []
 
   return (
     <Card className='shadow-lg rounded-3xl h-full border-none'>

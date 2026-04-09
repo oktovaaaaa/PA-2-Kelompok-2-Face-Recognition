@@ -272,29 +272,43 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         });
         
         if (isHoliday) {
-          return `<div class="p-4 shadow-xl rounded-2xl ${isDark ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E293B]'} border border-slate-100 dark:border-slate-800">
-            <div class="font-bold text-xs mb-2 opacity-60">${date}</div>
-            <div class="flex items-center gap-2 text-amber-600 font-bold text-xs bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
-              <span class="flex h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-              HARI LIBUR ✨
+          return `
+          <div class="p-4 shadow-2xl rounded-2xl ${isDark ? 'bg-[#0F172A] text-white' : 'bg-white text-slate-800'} border border-slate-100 dark:border-slate-800">
+            <div class="font-bold text-[10px] mb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider">${date}</div>
+            <div style="
+              display: flex; 
+              align-items: center; 
+              gap: 8px; 
+              color: ${isDark ? '#FDBA74' : '#EA580C'} !important; 
+              font-weight: 800; 
+              font-size: 11px; 
+              background-color: ${isDark ? 'rgba(234, 88, 12, 0.1)' : 'rgba(251, 191, 36, 0.1)'} !important; 
+              border: 1.5px solid ${isDark ? '#EA580C' : '#F59E0B'}; 
+              padding: 6px 14px; 
+              border-radius: 9999px;
+              box-shadow: 0 0 12px ${isDark ? 'rgba(234, 88, 12, 0.4)' : 'rgba(245, 158, 11, 0.2)'};
+              backdrop-filter: blur(4px);
+            ">
+              <span style="display: block; height: 6px; width: 6px; border-radius: 50%; background-color: ${isDark ? '#EA580C' : '#F59E0B'}; box-shadow: 0 0 8px ${isDark ? '#EA580C' : '#F59E0B'};"></span>
+              HARI LIBUR
             </div>
           </div>`;
         }
         
-        let html = `<div class="p-4 shadow-xl rounded-2xl ${isDark ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E293B]'} border border-slate-100 dark:border-slate-800">
-          <div class="font-bold text-xs border-b border-slate-100 dark:border-slate-800 pb-2 mb-3 opacity-60">${date}</div>`;
+        let html = `<div class="p-4 shadow-2xl rounded-2xl ${isDark ? 'bg-[#0F172A] text-white' : 'bg-white text-slate-800'} border border-slate-100 dark:border-slate-800">
+          <div class="font-bold text-[10px] border-b border-slate-100 dark:border-slate-800 pb-2 mb-3 text-slate-500 dark:text-slate-400 uppercase tracking-wider">${date}</div>`;
         
         series.forEach((s: any, idx: number) => {
           const v = s[dataPointIndex];
           const val = (v === null || v === 'null' || v === undefined || isNaN(Number(v))) ? 0 : Number(v);
           const name = w.globals.seriesNames[idx];
           const color = w.globals.colors[idx];
-          html += `<div class="flex items-center justify-between gap-6 py-1">
+          html += `<div class="flex items-center justify-between gap-8 py-1.5">
             <div class="flex items-center gap-2.5">
               <span class="h-2.5 w-2.5 rounded-full shadow-sm" style="background-color: ${color}"></span>
-              <span class="text-[11px] font-medium">${name}</span>
+              <span class="text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}">${name}</span>
             </div>
-            <span class="text-[11px] font-bold">${val} Karyawan</span>
+            <span class="text-[11px] font-bold ${isDark ? 'text-white' : 'text-slate-900'}">${val} Karyawan</span>
           </div>`;
         });
         

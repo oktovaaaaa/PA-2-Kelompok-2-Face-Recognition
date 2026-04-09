@@ -113,5 +113,18 @@ export const attendanceService = {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Gagal mengambil pengaturan absensi.');
     return data.data;
+  },
+  
+  // 6. Pardon/Excuse Attendance Violation
+  async pardonAttendance(userId: string, date: string) {
+    const response = await fetch(`${API_URL}/admin/attendance/pardon`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ user_id: userId, date })
+    });
+    
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Gagal menghapus sanksi absensi.');
+    return data.data;
   }
 };

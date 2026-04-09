@@ -105,6 +105,10 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
                 <Typography variant="body2" fontWeight="600">{formatIDR(salary.base_salary)}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                <Typography variant="body2" color="success.main">Total Bonus (+)</Typography>
+                <Typography variant="body2" color="success.main" fontWeight="600">{formatIDR(salary.bonuses)}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
                 <Typography variant="body2" color="error">Total Potongan (-)</Typography>
                 <Typography variant="body2" color="error" fontWeight="600">{formatIDR(salary.deductions)}</Typography>
             </Box>
@@ -124,10 +128,24 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
             </Box>
         </Box>
 
-        {/* 2. Deductions Detail */}
+        {/* 2. Bonus Detail */}
+        {salary.bonuses > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="overline" color="text.secondary" fontWeight="700">Detail Bonus & Insentif</Typography>
+            <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'success.main' }}>
+                {parseDeductions(salary.bonuses_detail).map((item, i) => (
+                    <Typography key={i} variant="caption" display="block" color="success.dark" sx={{ mb: 0.5 }}>
+                        • {item.trim()}
+                    </Typography>
+                ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* 3. Deductions Detail */}
         {salary.deductions > 0 && (
           <Box sx={{ mb: 4 }}>
-            <Typography variant="overline" color="text.secondary" fontWeight="700">Detail Pelanggaran</Typography>
+            <Typography variant="overline" color="text.secondary" fontWeight="700">Detail Sanksi & Pelanggaran</Typography>
             <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'error.main' }}>
                 {parseDeductions(salary.deductions_detail).map((item, i) => (
                     <Typography key={i} variant="caption" display="block" color="error.dark" sx={{ mb: 0.5 }}>
@@ -138,7 +156,7 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
           </Box>
         )}
 
-        {/* 3. Bank & Payment History */}
+        {/* 4. Bank & Payment History */}
         <Grid container spacing={4} sx={{ mb: 4 }}>
             <Grid item xs={12}>
                 <Alert icon={<i className="ri-bank-line" />} severity="info" variant="outlined" sx={{ borderRadius: 2 }}>

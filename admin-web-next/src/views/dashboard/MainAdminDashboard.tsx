@@ -52,10 +52,10 @@ const MainAdminDashboard = () => {
     }, [])
 
     const quickActions = [
-        { icon: 'ri-calendar-check-line', label: 'Perizinan', color: 'bg-amber-100 text-amber-600', url: '/cuti' },
-        { icon: 'ri-team-line', label: 'Karyawan', color: 'bg-blue-100 text-blue-600', url: '/karyawan' },
-        { icon: 'ri-briefcase-line', label: 'Jabatan', color: 'bg-indigo-100 text-indigo-600', url: '/jabatan' },
-        { icon: 'ri-settings-4-line', label: 'Pengaturan', color: 'bg-slate-100 text-slate-600', url: '/operasional' }
+        { icon: 'ri-calendar-check-line', label: 'Perizinan', color: 'bg-[#FEF3C7] text-[#D97706]', url: '/cuti' },
+        { icon: 'ri-team-line', label: 'Karyawan', color: 'bg-[#DBEAFE] text-[#2563EB]', url: '/karyawan' },
+        { icon: 'ri-briefcase-line', label: 'Jabatan', color: 'bg-[#E0E7FF] text-[#4F46E5]', url: '/jabatan' },
+        { icon: 'ri-settings-4-line', label: 'Pengaturan', color: 'bg-[#F1F5F9] text-[#475569]', url: '/operasional' }
     ]
 
     if (loading) return (
@@ -132,14 +132,14 @@ const MainAdminDashboard = () => {
                     {/* Management & Invites */}
                     <Grid item xs={12} sm={6}>
                          <Link href='/absensi' className='block no-underline h-full'>
-                            <Card className='shadow-sm rounded-xl border-none h-full hover:shadow-md transition-all cursor-pointer'>
+                            <Card className='shadow-sm rounded-xl border-none bg-card h-full hover:shadow-md transition-all cursor-pointer'>
                                 <CardContent className='flex items-center gap-4 p-4'>
-                                    <Box className='bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg text-purple-600 dark:text-purple-400'>
+                                    <Box className='bg-[#F5F3FF] border border-[#DDD6FE] p-3 rounded-xl text-[#7C3AED]'>
                                         <i className='ri-file-list-3-line text-xl' />
                                     </Box>
                                     <Box>
-                                        <Typography variant='subtitle2' className='font-bold'>Laporan Kehadiran</Typography>
-                                        <Typography variant='caption' color='text.secondary' className='text-[10px]'>Ekspor Excel & Riwayat</Typography>
+                                        <Typography variant='subtitle2' className='font-bold' color='text.primary'>Laporan Kehadiran</Typography>
+                                        <Typography variant='caption' className='text-[10px] font-medium' color='text.secondary'>Ekspor Excel & Riwayat</Typography>
                                     </Box>
                                 </CardContent>
                             </Card>
@@ -147,14 +147,14 @@ const MainAdminDashboard = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                          <Link href='/payroll' className='block no-underline h-full'>
-                            <Card className='shadow-sm rounded-xl border-none h-full hover:shadow-md transition-all cursor-pointer'>
+                            <Card className='shadow-sm rounded-xl border-none bg-card h-full hover:shadow-md transition-all cursor-pointer'>
                                 <CardContent className='flex items-center gap-4 p-4'>
-                                    <Box className='bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-lg text-emerald-600 dark:text-emerald-400'>
+                                    <Box className='bg-[#ECFDF5] border border-[#A7F3D0] p-3 rounded-xl text-[#059669]'>
                                         <i className='ri-money-dollar-box-line text-xl' />
                                     </Box>
                                     <Box>
-                                        <Typography variant='subtitle2' className='font-bold'>Manajemen Gaji</Typography>
-                                        <Typography variant='caption' color='text.secondary' className='text-[10px]'>Proses & Potongan</Typography>
+                                        <Typography variant='subtitle2' className='font-bold' color='text.primary'>Manajemen Gaji</Typography>
+                                        <Typography variant='caption' className='text-[10px] font-medium' color='text.secondary'>Proses & Potongan</Typography>
                                     </Box>
                                 </CardContent>
                             </Card>

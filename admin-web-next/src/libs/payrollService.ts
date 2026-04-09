@@ -28,9 +28,11 @@ export interface Salary {
   year: number
   base_salary: number
   deductions: number
-  deductions_detail: string
+  bonuses: number
   total_salary: number
   paid_amount: number
+  deductions_detail: string
+  bonuses_detail: string
   status: 'PENDING' | 'PARTIAL' | 'PAID'
   payment_proof?: string
   paid_at?: string
