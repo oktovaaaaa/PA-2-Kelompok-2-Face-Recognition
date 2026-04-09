@@ -1058,6 +1058,41 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
   Widget _buildLineChart(List<String> dates, Map<String, Map<String, int>> data) {
     return LineChart(
       LineChartData(
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (spot) => const Color(0xFF0F172A).withOpacity(0.8),
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                if (spot.x.toInt() >= dates.length) return null;
+                final date = dates[spot.x.toInt()];
+                final s = data[date]!;
+                
+                // Detection logic matches _lineData
+                bool isHoliday = (s['PRESENT'] ?? 0) == 0 && (s['LATE'] ?? 0) == 0 && (s['ABSENT'] ?? 0) == 0 && 
+                                 (s['WORKING'] ?? 0) == 0 && (s['EARLY_LEAVE'] ?? 0) == 0 && (s['OTHER'] ?? 0) == 0;
+                
+                if (isHoliday) {
+                  return LineTooltipItem(
+                    'Hari Libur\n$date',
+                    const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+                  );
+                }
+                
+                // Categories match _lineData order
+                String label;
+                if (spot.barIndex % 4 == 0) label = 'Hadir';
+                else if (spot.barIndex % 4 == 1) label = 'Telat';
+                else if (spot.barIndex % 4 == 2) label = 'Alpha';
+                else label = 'Lainnya';
+
+                return LineTooltipItem(
+                  '$label: ${spot.y.toInt()}',
+                  const TextStyle(color: Colors.white, fontSize: 10),
+                );
+              }).toList();
+            },
+          ),
+        ),
         gridData: const FlGridData(show: false),
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(

@@ -327,7 +327,35 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                                   ),
                                 ],
                               ),
-                              const Icon(Icons.fingerprint_rounded, color: Colors.white24, size: 40),
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Blur/Shadow Effect
+                                  Transform.translate(
+                                    offset: const Offset(2, 2),
+                                    child: Opacity(
+                                      opacity: 0.2,
+                                      child: Image.asset(
+                                        'assets/images/videnti.png',
+                                        width: 72,
+                                        height: 72,
+                                        color: Colors.black,
+                                        colorBlendMode: BlendMode.srcIn,
+                                      ),
+                                    ),
+                                  ),
+                                  // Main Logo
+                                  Opacity(
+                                    opacity: 0.6,
+                                    child: Image.asset(
+                                      'assets/images/videnti.png',
+                                      width: 70,
+                                      height: 70,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ],

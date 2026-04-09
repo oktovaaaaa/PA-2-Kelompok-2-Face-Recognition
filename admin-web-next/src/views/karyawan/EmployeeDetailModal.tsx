@@ -260,6 +260,18 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
                 return 'Alpha';
             }
         }
+    },
+    tooltip: {
+        y: {
+            formatter: (val: number) => {
+                if (val >= 100) return 'Hadir';
+                if (val >= 80) return 'Terlambat';
+                if (val >= 60) return 'Izin/Sakit';
+                if (val >= 40) return 'Pulang Awal';
+                if (val >= 20) return 'Telat & Pulang Awal';
+                return 'Alpha';
+            }
+        }
     }
   }
 

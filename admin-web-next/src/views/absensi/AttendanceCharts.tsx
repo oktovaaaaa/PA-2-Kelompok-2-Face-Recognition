@@ -261,7 +261,42 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
     },
     tooltip: { 
       theme: isDark ? 'dark' : 'light',
-      y: { formatter: (val: number) => `${val} Karyawan` } 
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const labels = w.globals.labels;
+        const date = labels[dataPointIndex];
+        
+        // All categories are null or 0 means it's a holiday
+        const isHoliday = series.every((s: any) => s[dataPointIndex] === null || s[dataPointIndex] === 0);
+        
+        if (isHoliday) {
+          return `<div class="p-4 shadow-xl rounded-2xl ${isDark ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E293B]'} border border-slate-100 dark:border-slate-800">
+            <div class="font-bold text-xs mb-2 opacity-60">${date}</div>
+            <div class="flex items-center gap-2 text-amber-600 font-bold text-xs bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+              <span class="flex h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              HARI LIBUR ✨
+            </div>
+          </div>`;
+        }
+        
+        let html = `<div class="p-4 shadow-xl rounded-2xl ${isDark ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E293B]'} border border-slate-100 dark:border-slate-800">
+          <div class="font-bold text-xs border-b border-slate-100 dark:border-slate-800 pb-2 mb-3 opacity-60">${date}</div>`;
+        
+        series.forEach((s: any, idx: number) => {
+          const val = s[dataPointIndex] ?? 0;
+          const name = w.globals.seriesNames[idx];
+          const color = w.globals.colors[idx];
+          html += `<div class="flex items-center justify-between gap-6 py-1">
+            <div class="flex items-center gap-2.5">
+              <span class="h-2.5 w-2.5 rounded-full shadow-sm" style="background-color: ${color}"></span>
+              <span class="text-[11px] font-medium">${name}</span>
+            </div>
+            <span class="text-[11px] font-bold">${val} Karyawan</span>
+          </div>`;
+        });
+        
+        html += `</div>`;
+        return html;
+      }
     },
     legend: { 
       position: 'top', 

@@ -72,8 +72,42 @@ const AttendanceTrendLine = ({ trend }: Props) => {
     },
     tooltip: {
       theme: theme.palette.mode as 'light' | 'dark',
-      x: { show: true },
-      y: { formatter: (val: number) => `${val} Karyawan` }
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const labels = w.globals.labels;
+        const date = labels[dataPointIndex];
+        
+        // All categories are null or 0 means it's a holiday
+        const isHoliday = series.every((s: any) => s[dataPointIndex] === null || s[dataPointIndex] === 0);
+        
+        if (isHoliday) {
+          return `<div class="p-4 shadow-xl rounded-2xl ${theme.palette.mode === 'dark' ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E1717]'} border border-slate-100 dark:border-slate-800">
+            <div class="font-extrabold text-sm mb-2 opacity-60">${date}</div>
+            <div class="flex items-center gap-2 text-amber-500 font-bold text-xs bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-xl">
+              <span class="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+              HARI LIBUR ✨
+            </div>
+          </div>`;
+        }
+        
+        let html = `<div class="p-4 shadow-xl rounded-2xl ${theme.palette.mode === 'dark' ? 'bg-[#1E293B] text-white' : 'bg-white text-[#1E1717]'} border border-slate-100 dark:border-slate-800">
+          <div class="font-extrabold text-sm border-b border-slate-100 dark:border-slate-800 pb-2 mb-3 opacity-60">${date}</div>`;
+        
+        series.forEach((s: any, idx: number) => {
+          const val = s[dataPointIndex] ?? 0;
+          const name = w.globals.seriesNames[idx];
+          const color = w.globals.colors[idx];
+          html += `<div class="flex items-center justify-between gap-6 py-1">
+            <div class="flex items-center gap-2.5">
+              <span class="h-3 w-3 rounded-full shadow-sm" style="background-color: ${color}"></span>
+              <span class="text-[11px] font-medium">${name}</span>
+            </div>
+            <span class="text-[11px] font-bold">${val} Karyawan</span>
+          </div>`;
+        });
+        
+        html += `</div>`;
+        return html;
+      }
     }
   }
 
