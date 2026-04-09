@@ -151,6 +151,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         color = const Color(0xFF10B981);
         break;
       case 'LEAVE_REJECTED':
+      case 'PENALTY_RECEIVED':
         icon = Icons.cancel_rounded;
         color = const Color(0xFFEF4444);
         break;
@@ -180,6 +181,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             break;
           case 'PAYROLL_PAID':
           case 'BONUS_RECEIVED':
+          case 'PENALTY_RECEIVED':
             final role = context.read<AuthProvider>().currentUser?['role'];
             if (role == 'ADMIN') {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPayrollScreen()));

@@ -11,6 +11,7 @@ import (
 
 	"employee-system/internal/database"
 	"employee-system/internal/models"
+	"employee-system/internal/services"
 	"employee-system/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -19,23 +20,26 @@ import (
 
 // CreatePenalty - Admin creates a new penalty for an employee
 func CreatePenalty(c *gin.Context) {
-	userID := c.PostForm("user_id")
-	title := c.PostForm("title")
-	description := c.PostForm("description")
-	amountStr := c.PostForm("amount")
-	penaltyType := c.PostForm("type")
-	dateStr := c.PostForm("date")
+	var input struct {
+		UserID      string  `json:"user_id" binding:"required"`
+		Title       string  `json:"title" binding:"required"`
+		Description string  `json:"description"`
+		Amount      float64 `json:"amount" binding:"required"`
+		Type        string  `json:"type"`
+		Date        string  `json:"date"`
+	}
 
-	if userID == "" || title == "" || amountStr == "" {
-		utils.Error(c, "Data tidak lengkap")
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.Error(c, "Data tidak lengkap atau format salah: "+err.Error())
 		return
 	}
 
-	amount, err := strconv.ParseFloat(amountStr, 64)
-	if err != nil || amount <= 0 {
-		utils.Error(c, "Nominal denda tidak valid")
-		return
-	}
+	userID := input.UserID
+	title := input.Title
+	description := input.Description
+	amount := input.Amount
+	penaltyType := input.Type
+	dateStr := input.Date
 
 	if dateStr == "" {
 		dateStr = time.Now().Format("2006-01-02")
@@ -79,7 +83,26 @@ func CreatePenalty(c *gin.Context) {
 	t, _ := time.Parse("2006-01-02", dateStr)
 	generateSalary(userID, int(t.Month()), t.Year())
 
-	utils.Success(c, "Denda berhasil dicatatkan", penalty)
+	// Kirim Notifikasi ke Karyawan [NEW]
+	var employee models.User
+	if err := database.DB.Select("id, company_id, fcm_token").Where("id = ?", userID).First(&employee).Error; err == nil {
+		notif := models.Notification{
+			ID:        uuid.New().String(),
+			UserID:    userID,
+			CompanyID: employee.CompanyID,
+			Title:     "Sanksi Baru",
+			Body:      fmt.Sprintf("Anda menerima sanksi sebesar %s untuk: %s", utils.FormatRupiah(amount), title),
+			Type:      "PENALTY_RECEIVED",
+			IsRead:    false,
+			CreatedAt: time.Now(),
+		}
+		database.DB.Create(&notif)
+
+		// Push Notification via FCM
+		services.SendPushNotification(employee.ID, notif.Title, notif.Body)
+	}
+
+	utils.Success(c, "Denda berhasil dicatatkan dan notifikasi dikirim", penalty)
 }
 
 // GetPenalties - List penalties (Admin: All / Filtered, Employee: Only theirs)
