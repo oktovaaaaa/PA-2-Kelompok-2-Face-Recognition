@@ -104,10 +104,20 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     });
 
     try {
-      // Get initial position with timeout
+      // Try last known position first (instant on many emulators)
+      Position? lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        setState(() {
+          _currentPosition = lastPos;
+          _locationError = false;
+          _calculateNearestLocation();
+        });
+      }
+
+      // Get fresh initial position with timeout
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 15)); // Increased to 15s
       
       if (mounted) {
         setState(() {
@@ -121,7 +131,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       if (mounted) {
         setState(() {
           _locationError = true;
-          _locationErrorMessage = 'GPS macet atau tidak terbaca. Tap gambar untuk segarkan.';
+          _locationErrorMessage = 'GPS macet: $e. Tap segarkan.';
         });
       }
     }
@@ -563,6 +573,16 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                                   ),
                                   const SizedBox(height: 2),
+                                  if (_currentPosition == null)
+                                    Text(
+                                      'Diagnostik: GPS Belum Masuk (${_locations.length} Lokasi Terload)',
+                                      style: TextStyle(fontSize: 10, color: Colors.orange.shade700, fontWeight: FontWeight.bold),
+                                    ),
+                                  if (_currentPosition != null && _nearestLocation == null)
+                                    Text(
+                                      'Raw GPS: ${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
+                                      style: const TextStyle(fontSize: 10, color: Colors.blue),
+                                    ),
                                   Text(
                                     _locationError 
                                         ? _locationErrorMessage 
@@ -604,14 +624,34 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                           label: 'Masuk',
                           color: const Color(0xFF2E7D32),
                           disabled: hasCheckedIn || !isCheckInOpen() || (_distanceToNearest == null || _nearestLocation == null || _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble()),
-                          onTap: () => _doAction('checkin'),
+                          onTap: () async {
+                            final confirmed = await AppDialog.showConfirm(
+                              context,
+                              title: 'Konfirmasi Masuk',
+                              message: 'Apakah Anda yakin ingin melakukan absensi masuk sekarang?',
+                              confirmColor: const Color(0xFF2E7D32),
+                            );
+                            if (confirmed == true) {
+                              _doAction('checkin');
+                            }
+                          },
                         ),
                         _buildQuickAction(
                           icon: Icons.logout_rounded,
                           label: 'Pulang',
                           color: const Color(0xFF1E3A8A),
                           disabled: !hasCheckedIn || hasCheckedOut || (_distanceToNearest == null || _nearestLocation == null || _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble()),
-                          onTap: () => _doAction('checkout'),
+                          onTap: () async {
+                            final confirmed = await AppDialog.showConfirm(
+                              context,
+                              title: 'Konfirmasi Pulang',
+                              message: 'Apakah Anda yakin ingin melakukan absensi pulang sekarang?',
+                              confirmColor: const Color(0xFF1E3A8A),
+                            );
+                            if (confirmed == true) {
+                              _doAction('checkout');
+                            }
+                          },
                         ),
                         _buildQuickAction(
                           icon: Icons.assignment_late_rounded,

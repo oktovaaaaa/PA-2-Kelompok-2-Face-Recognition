@@ -973,15 +973,16 @@ func AdminGetDashboardSummary(c *gin.Context) {
 	}
 	checkOutEndT := parseT(today, settings.CheckOutEnd, loc)
 
-	var present, late, leave, sick, working, lateEarlyLeave int64
+	var present, late, leave, sick, working, lateEarlyLeave, earlyLeave int64
 
 	// 1. Hitung yang sudah SELESAI (sudah check-out)
 	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "PRESENT").Count(&present)
 	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "LATE").Count(&late)
+	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "EARLY_LEAVE").Count(&earlyLeave)
 	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "LATE_EARLY_LEAVE").Count(&lateEarlyLeave)
 
 	// 2. Hitung yang SEDANG BEKERJA (sudah check-in tapi belum check-out)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND (status = ? OR status = ? OR status = ?) AND check_out_time IS NULL", admin.CompanyID, today, "PRESENT", "LATE", "LATE_EARLY_LEAVE").Count(&working)
+	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND (status = ? OR status = ?) AND check_out_time IS NULL", admin.CompanyID, today, "PRESENT", "LATE").Count(&working)
 
 	// 3. Izin & Sakit
 	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "LEAVE").Count(&leave)
@@ -993,7 +994,7 @@ func AdminGetDashboardSummary(c *gin.Context) {
 
 	// 5. Logika Alpha vs Belum Absen vs Pulang di Jam Kerja
 	var absentCount, notYetCount, earlyLeaveCount, lateEarlyLeaveCount, displayWorking int64
-	totalCheckedIn := present + late + working + leave + sick + lateEarlyLeave
+	totalCheckedIn := present + late + working + leave + sick + lateEarlyLeave + earlyLeave
 	notCheckedInYet := totalEmployees - totalCheckedIn
 	if notCheckedInYet < 0 {
 		notCheckedInYet = 0
@@ -1003,32 +1004,30 @@ func AdminGetDashboardSummary(c *gin.Context) {
 
 	if now.After(checkOutEndT) {
 		// Jika sudah lewat jam pulang:
-		// Yang tidak absen sama sekali = ALPHA (HANYA JIKA BUKAN HARI LIBUR)
 		if isHold {
 			absentCount = 0
 		} else {
 			absentCount = notCheckedInYet
 		}
-		// Dinamis: Yang LATE tapi belum check-out = LATE_EARLY_LEAVE
-		// Kita perlu memisahkan 'working' yang asalnya 'PRESENT' vs 'LATE'
+		// Dinamis: Yang masih 'working' dianggap Pulang di Jam Kerja (karena jam operasional sudah habis)
 		var workingLate int64
 		database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NULL", admin.CompanyID, today, "LATE").Count(&workingLate)
 		
-		earlyLeaveCount = working - workingLate
-		lateEarlyLeaveCount += workingLate
+		earlyLeaveCount = earlyLeave + (working - workingLate)
+		lateEarlyLeaveCount = lateEarlyLeave + workingLate
 		
 		displayWorking = 0
 		notYetCount = 0
 	} else {
 		// Jika masih dalam jam kerja:
-		// Alpha diset 0 agar dashboard tidak merah prematur
 		absentCount = 0
-		earlyLeaveCount = 0
+		earlyLeaveCount = earlyLeave
 		displayWorking = working
 		notYetCount = notCheckedInYet
 		if isHold {
 			notYetCount = 0
 		}
+		lateEarlyLeaveCount = lateEarlyLeave
 	}
 
 	utils.Success(c, "Dashboard summary", gin.H{
