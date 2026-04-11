@@ -90,39 +90,55 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     // Start listening to location changes
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium, // Lebih cepat untuk deteksi awal
-        distanceFilter: 10,
+        accuracy: LocationAccuracy.best, // Gunakan accuracy terbaik untuk presisi radius
+        distanceFilter: 5, // Update tiap pergerakan kecil untuk kelancaran UI
       ),
     ).listen((Position position) {
       if (mounted) {
         setState(() {
           _currentPosition = position;
-          _locationError = false; // Reset error jika sudah dapat sinyal
+          _locationError = false; // Temukan sinyal -> Hapus status error
+          _locationErrorMessage = '';
           _calculateNearestLocation();
+        });
+      }
+    }, onError: (e) {
+      if (mounted) {
+        setState(() {
+          _locationError = true;
+          _locationErrorMessage = 'Gagal memperbarui lokasi. Mohon cari tempat terbuka.';
         });
       }
     });
 
     try {
-      // Try last known position first (instant on many emulators)
+      // Masukkan ke pencarian awal tapi jangan tunjukkan error jika timeout
+      // karena positionStream di atas akan tetap bekerja di latar belakang
+      setState(() {
+        _locationError = false;
+        _locationErrorMessage = 'Sedang mencari sinyal GPS...';
+      });
+
       Position? lastPos = await Geolocator.getLastKnownPosition();
       if (lastPos != null && mounted) {
         setState(() {
           _currentPosition = lastPos;
-          _locationError = false;
           _calculateNearestLocation();
         });
       }
 
-      // Get fresh initial position with timeout
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
-      ).timeout(const Duration(seconds: 15)); // Increased to 15s
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
+      ).timeout(const Duration(seconds: 10), onTimeout: () {
+        // Jika timeout, jangan anggap error fatal, biarkan stream di atas yang bekerja
+        return lastPos ?? Position(longitude: 0, latitude: 0, timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0, altitudeAccuracy: 0, headingAccuracy: 0);
+      });
       
-      if (mounted) {
+      if (mounted && pos.latitude != 0) {
         setState(() {
           _currentPosition = pos;
           _locationError = false;
+          _locationErrorMessage = '';
           _calculateNearestLocation();
         });
       }
@@ -131,7 +147,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       if (mounted) {
         setState(() {
           _locationError = true;
-          _locationErrorMessage = 'GPS macet: $e. Tap segarkan.';
+          _locationErrorMessage = 'Sinyal GPS sedang lemah. Mencoba kembali...';
         });
       }
     }
@@ -530,86 +546,101 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                     // Geofencing Status Card
                     if (_locations.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
-                                ? Colors.green.shade100
+                                ? Colors.green.shade200
                                 : Colors.red.shade100,
+                            width: 1.5,
                           ),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))
                           ],
                         ),
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
-                                    ? Colors.green.withOpacity(0.1)
+                                    ? Colors.green.withOpacity(0.12)
                                     : Colors.red.withOpacity(0.1),
-                                shape: BoxShape.circle,
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
                                 (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
                                     ? Icons.location_on_rounded
                                     : Icons.location_off_rounded,
                                 color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
-                                    ? Colors.green
-                                    : Colors.red,
-                                size: 20,
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade600,
+                                size: 24,
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _nearestLocation != null ? _nearestLocation!['name'] : 'Mencari Lokasi...',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                                    _nearestLocation != null ? _nearestLocation!['name'] : 'Mencari Titik Lokasi...',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
                                   ),
-                                  const SizedBox(height: 2),
-                                  if (_currentPosition == null)
+                                  const SizedBox(height: 4),
+                                  if (_locationError)
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red.shade400),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _locationErrorMessage,
+                                            style: TextStyle(fontSize: 12, color: Colors.red.shade600, fontWeight: FontWeight.w500),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
                                     Text(
-                                      'Diagnostik: GPS Belum Masuk (${_locations.length} Lokasi Terload)',
-                                      style: TextStyle(fontSize: 10, color: Colors.orange.shade700, fontWeight: FontWeight.bold),
+                                      _distanceToNearest != null 
+                                          ? (_distanceToNearest! >= 1000 
+                                              ? 'Jarak: ${(_distanceToNearest! / 1000).toStringAsFixed(2)} km' 
+                                              : 'Jarak: ${_distanceToNearest!.toStringAsFixed(0)} m')
+                                          : 'Menghitung jarak...',
+                                      style: TextStyle(
+                                        fontSize: 13, 
+                                        fontWeight: FontWeight.w600,
+                                        color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
+                                            ? Colors.green.shade700
+                                            : Colors.red.shade600,
+                                      ),
                                     ),
-                                  if (_currentPosition != null && _nearestLocation == null)
-                                    Text(
-                                      'Raw GPS: ${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}',
-                                      style: const TextStyle(fontSize: 10, color: Colors.blue),
+                                  if (!_locationError && _distanceToNearest != null && _nearestLocation != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        'Radius aman: ${_nearestLocation?['radius']}m',
+                                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                      ),
                                     ),
-                                  Text(
-                                    _locationError 
-                                        ? _locationErrorMessage 
-                                        : (_distanceToNearest != null 
-                                            ? 'Jarak Anda: ${_distanceToNearest!.toStringAsFixed(0)}m (Radius: ${_nearestLocation?['radius']}m)'
-                                            : 'Menghitung jarak...'),
-                                    style: TextStyle(
-                                      fontSize: 12, 
-                                      color: (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! <= (_nearestLocation!['radius'] as num).toDouble())
-                                          ? Colors.green.shade700
-                                          : Colors.red.shade700,
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
                             if (_locationError || _currentPosition == null)
                               IconButton(
                                 onPressed: _retryLocation,
-                                icon: const Icon(Icons.refresh_rounded, color: Colors.blueAccent),
+                                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF2563EB)),
                                 tooltip: 'Segarkan Lokasi',
                               ),
-                            if (_distanceToNearest != null && _nearestLocation != null && _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble())
-                              const Tooltip(
-                                message: 'Anda berada di luar radius lokasi absensi yang diizinkan',
-                                child: Icon(Icons.info_outline_rounded, color: Colors.red, size: 18),
-                              ),
+                            if (!_locationError && _distanceToNearest != null && _nearestLocation != null && _distanceToNearest! > (_nearestLocation!['radius'] as num).toDouble())
+                               Icon(Icons.info_outline_rounded, color: Colors.red.shade400, size: 20),
                           ],
                         ),
                       ),

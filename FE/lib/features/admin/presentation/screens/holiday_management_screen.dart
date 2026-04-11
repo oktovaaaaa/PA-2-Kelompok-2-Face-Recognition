@@ -47,20 +47,36 @@ class _HolidayManagementScreenState extends State<HolidayManagementScreen> {
   }
 
   Future<void> _saveWorkDays() async {
-    if (_settings == null) return;
-    final res = await ApiClient.put('/api/admin/attendance-settings', {
-      ..._settings!,
-      'work_days': _workDays.join(','),
-      // Ensure tiers are sent as list, not string
-      'late_penalty_tiers': _settings!['late_penalty_tiers'] is String 
-          ? jsonDecode(_settings!['late_penalty_tiers']) 
-          : _settings!['late_penalty_tiers'],
-    });
-    if (res.success) {
-      AppDialog.showSuccess(context, 'Jadwal kerja rutin diperbarui');
-      _loadSettings();
-    } else {
-      AppDialog.showError(context, res.message ?? 'Gagal menyimpan jadwal');
+    if (_settings == null) {
+      AppDialog.showError(context, 'Data pengaturan belum dimuat sempurna');
+      return;
+    }
+
+    AppDialog.showLoading(context, message: 'Menyimpan jadwal...');
+
+    try {
+      final res = await ApiClient.put('/api/admin/attendance-settings', {
+        ..._settings!,
+        'work_days': _workDays.join(','),
+        // Kirim late_penalty_tiers apa adanya, backend sudah bisa menangani string JSON
+        'late_penalty_tiers': _settings!['late_penalty_tiers'],
+      });
+      
+      if (!mounted) return;
+      Navigator.pop(context); // Tutup dialog loading
+
+      if (res.success) {
+        AppDialog.showSuccess(context, 'Jadwal kerja rutin diperbarui');
+        _loadSettings();
+      } else {
+        AppDialog.showError(context, res.message ?? 'Gagal menyimpan jadwal');
+      }
+    } catch (e) {
+      debugPrint('Error saving settings: $e');
+      if (mounted) {
+        Navigator.pop(context); 
+        AppDialog.showError(context, 'Terjadi kesalahan sistem: ${e.toString()}');
+      }
     }
   }
 
