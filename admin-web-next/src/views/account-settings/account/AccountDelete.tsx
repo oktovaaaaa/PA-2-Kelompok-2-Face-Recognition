@@ -17,8 +17,10 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
+import InputAdornment from '@mui/material/InputAdornment'
+import IconButton from '@mui/material/IconButton'
 
-import { settingService } from '@/libs/settingService'
+import { settingService, Profile } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const AccountDelete = () => {
@@ -29,30 +31,58 @@ const AccountDelete = () => {
   const [step1Open, setStep1Open] = useState(false)
   const [step2Open, setStep2Open] = useState(false)
   const [step3Open, setStep3Open] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
 
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [phrase, setPhrase] = useState('')
   const [loading, setLoading] = useState(false)
+  const [verifying, setVerifying] = useState(false)
   const [error, setError] = useState('')
+
+  const confirmationPhrase = profile ? `SAYA YAKIN MENGHAPUS AKUN ${profile.name.toUpperCase()}` : 'SAYA YAKIN MENGHAPUS AKUN'
+
+  const fetchProfile = async () => {
+    try {
+      const data = await settingService.getProfile()
+      setProfile(data)
+    } catch (err: any) {
+      console.error('Gagal mengambil profil:', err.message)
+    }
+  }
+
+  useState(() => {
+    fetchProfile()
+  })
 
   const handleStep1Confirm = () => {
     setStep1Open(false)
     setTimeout(() => setStep2Open(true), 300)
   }
 
-  const handleStep2Confirm = () => {
+  const handleStep2Confirm = async () => {
     if (!password.trim()) {
       setError('Password tidak boleh kosong')
       return
     }
+    
     setError('')
-    setStep2Open(false)
-    setTimeout(() => setStep3Open(true), 300)
+    setVerifying(true)
+    
+    try {
+      await settingService.verifyPassword(password)
+      setStep2Open(false)
+      setTimeout(() => setStep3Open(true), 300)
+    } catch (err: any) {
+      setError(err.message || 'Password yang Anda masukkan salah.')
+    } finally {
+      setVerifying(false)
+    }
   }
 
   const handleFinalDelete = async () => {
-    if (phrase !== 'SAYA YAKIN') {
-      setError('Frasa konfirmasi harus persis: SAYA YAKIN')
+    if (phrase !== confirmationPhrase) {
+      setError(`Frasa konfirmasi harus persis: ${confirmationPhrase}`)
       return
     }
     setError('')
@@ -74,6 +104,7 @@ const AccountDelete = () => {
     setStep2Open(false)
     setStep3Open(false)
     setPassword('')
+    setShowPassword(false)
     setPhrase('')
     setError('')
     setLoading(false)
@@ -135,17 +166,36 @@ const AccountDelete = () => {
             Untuk keamanan, masukkan <strong>password akun</strong> Anda untuk membuktikan identitas Anda.
           </Typography>
           <TextField
-            fullWidth type='password' label='Masukkan Password Anda'
+            fullWidth 
+            type={showPassword ? 'text' : 'password'} 
+            label='Masukkan Password Anda'
             value={password}
             onChange={e => { setPassword(e.target.value); setError('') }}
             error={!!error}
             helperText={error}
             autoFocus
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position='end'>
+                  <IconButton edge='end' onClick={() => setShowPassword(!showPassword)} onMouseDown={e => e.preventDefault()}>
+                    <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 6, pb: 4 }}>
-          <Button onClick={handleReset} variant='outlined'>Batalkan</Button>
-          <Button onClick={handleStep2Confirm} variant='contained' color='error'>Verifikasi</Button>
+          <Button onClick={handleReset} variant='outlined' disabled={verifying}>Batalkan</Button>
+          <Button 
+            onClick={handleStep2Confirm} 
+            variant='contained' 
+            color='error' 
+            disabled={verifying}
+            startIcon={verifying ? <CircularProgress size={16} color='inherit' /> : null}
+          >
+            {verifying ? 'Memverifikasi...' : 'Verifikasi'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -163,10 +213,10 @@ const AccountDelete = () => {
             Ini adalah langkah terakhir yang tidak dapat diurungkan.
           </Alert>
           <Typography variant='body2' sx={{ mb: 4 }}>
-            Ketik <strong style={{ letterSpacing: '2px' }}>SAYA YAKIN</strong> pada kotak di bawah untuk menghapus akun Anda secara permanen.
+            Ketik <strong style={{ letterSpacing: '2px' }}>{confirmationPhrase}</strong> pada kotak di bawah untuk menghapus akun Anda secara permanen.
           </Typography>
           <TextField
-            fullWidth label='Ketik "SAYA YAKIN"' placeholder='SAYA YAKIN'
+            fullWidth label={`Ketik "${confirmationPhrase}"`} placeholder={confirmationPhrase}
             value={phrase}
             onChange={e => { setPhrase(e.target.value); setError('') }}
             error={!!error}
@@ -178,7 +228,7 @@ const AccountDelete = () => {
           <Button onClick={handleReset} variant='outlined'>Batalkan</Button>
           <Button
             onClick={handleFinalDelete} variant='contained' color='error'
-            disabled={loading || phrase !== 'SAYA YAKIN'}
+            disabled={loading || phrase !== confirmationPhrase}
             startIcon={loading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-delete-bin-7-line' />}
           >
             {loading ? 'Menghapus...' : 'Hapus Akun Permanen'}

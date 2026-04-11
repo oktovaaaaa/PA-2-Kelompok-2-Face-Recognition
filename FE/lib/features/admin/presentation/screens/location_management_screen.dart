@@ -52,27 +52,55 @@ class _AdminLocationManagementScreenState extends State<AdminLocationManagementS
     }
   }
 
-  Future<void> _searchAddress(String query, {VoidCallback? onUpdate}) async {
+  Future<void> _searchAddress(String query, {VoidCallback? onUpdate, StateSetter? setDialogState}) async {
     if (query.isEmpty) {
-      setState(() => _suggestions = []);
-      if (onUpdate != null) onUpdate();
+      if (mounted) {
+        setState(() => _suggestions = []);
+        if (setDialogState != null) setDialogState(() {});
+        if (onUpdate != null) onUpdate();
+      }
       return;
     }
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () async {
-      setState(() => _isSearching = true);
-      if (onUpdate != null) onUpdate();
+      if (mounted) {
+        setState(() => _isSearching = true);
+        if (setDialogState != null) setDialogState(() {});
+        if (onUpdate != null) onUpdate();
+      }
       
       try {
-        final res = await http.get(Uri.parse(
-            'https://nominatim.openstreetmap.org/search?format=json&q=$query&addressdetails=1&limit=5'));
+        final res = await http.get(
+          Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=$query&addressdetails=1&limit=5'),
+          headers: {
+            'User-Agent': 'VidentiAttendanceApp/1.0 (com.videnti.app)',
+            'Accept-Language': 'id', // Prioritaskan hasil dalam Bahasa Indonesia
+          },
+        );
+        
         if (res.statusCode == 200) {
-          setState(() => _suggestions = jsonDecode(res.body));
+          if (mounted) {
+            setState(() => _suggestions = jsonDecode(res.body));
+            if (setDialogState != null) setDialogState(() {});
+          }
+        } else {
+          debugPrint('Nominatim Error: ${res.statusCode} - ${res.body}');
+          if (mounted) {
+            setState(() => _suggestions = []);
+            if (setDialogState != null) setDialogState(() {});
+          }
+        }
+      } catch (e) {
+        debugPrint('Search API Exception: $e');
+        if (mounted) {
+          setState(() => _suggestions = []);
+          if (setDialogState != null) setDialogState(() {});
         }
       } finally {
         if (mounted) {
           setState(() => _isSearching = false);
+          if (setDialogState != null) setDialogState(() {});
           if (onUpdate != null) onUpdate();
         }
       }
@@ -131,92 +159,155 @@ class _AdminLocationManagementScreenState extends State<AdminLocationManagementS
                   const SizedBox(height: 16),
                   const Text('Pilih Lokasi di Peta (Tap untuk memindah pin)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                   const SizedBox(height: 8),
-                  
-                  // Search Bar inside Dialog
-                  Container(
-                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Cari Alamat...',
-                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                        suffixIcon: _isSearching ? const SizedBox(width: 16, height: 16, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))) : null,
-                        border: InputBorder.none,
-                      ),
-                      onChanged: (v) {
-                        _searchAddress(v, onUpdate: () => setDialogState(() {}));
-                      },
-                    ),
-                  ),
-                  if (_suggestions.isNotEmpty)
+                                     // Search Bar inside Dialog
                     Container(
-                      constraints: const BoxConstraints(maxHeight: 150),
-                      margin: const EdgeInsets.only(top: 4),
-                      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(12)),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: _suggestions.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (ctx, idx) {
-                          final s = _suggestions[idx];
-                          return ListTile(
-                            dense: true,
-                            title: Text(s['display_name'], style: const TextStyle(fontSize: 11)),
-                            onTap: () {
-                              final lat = double.parse(s['lat']);
-                              final lon = double.parse(s['lon']);
-                              setDialogState(() {
-                                selectedPos = LatLng(lat, lon);
-                                _searchCtrl.clear();
-                                _suggestions = [];
-                              });
-                            },
-                          );
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'Cari Alamat di Sini...',
+                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF2563EB), size: 22),
+                          suffixIcon: _searchCtrl.text.isNotEmpty 
+                            ? (_isSearching 
+                                ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
+                                : IconButton(icon: const Icon(Icons.close_rounded, size: 20), onPressed: () {
+                                    _searchCtrl.clear();
+                                    _searchAddress('', setDialogState: setDialogState);
+                                  }))
+                            : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onChanged: (v) {
+                          _searchAddress(v, setDialogState: setDialogState);
                         },
                       ),
                     ),
-                  
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   SizedBox(
-                    height: 250,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: selectedPos,
-                          initialZoom: 16.0,
-                          onTap: (_, p) => setDialogState(() => selectedPos = p),
+                    height: 300,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: FlutterMap(
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: selectedPos,
+                              initialZoom: 16.0,
+                              onTap: (_, p) => setDialogState(() => selectedPos = p),
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.videnti.app',
+                              ),
+                              CircleLayer(
+                                circles: [
+                                  CircleMarker(
+                                    point: selectedPos,
+                                    radius: double.tryParse(radiusCtrl.text) ?? 100,
+                                    useRadiusInMeter: true,
+                                    color: const Color(0xFF2563EB).withOpacity(0.2),
+                                    borderStrokeWidth: 2,
+                                    borderColor: const Color(0xFF2563EB),
+                                  ),
+                                ],
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: selectedPos,
+                                    width: 44,
+                                    height: 44,
+                                    child: const Icon(Icons.location_on_rounded, color: Colors.red, size: 44),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        children: [
-                          TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.videnti.app',
+                        
+                        // Floating Search Suggestions
+                        if (_suggestions.isNotEmpty)
+                          Positioned(
+                            top: 12,
+                            left: 12,
+                            right: 12,
+                            child: Material(
+                              elevation: 8,
+                              borderRadius: BorderRadius.circular(16),
+                              clipBehavior: Clip.antiAlias,
+                              color: Colors.white,
+                              child: Container(
+                                constraints: const BoxConstraints(maxHeight: 220),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.grey.shade100),
+                                ),
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: _suggestions.length,
+                                  separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+                                  itemBuilder: (ctx, idx) {
+                                    final s = _suggestions[idx];
+                                    return ListTile(
+                                      visualDensity: VisualDensity.compact,
+                                      leading: const Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF2563EB)),
+                                      title: Text(
+                                        s['display_name'], 
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF0F172A)), 
+                                        maxLines: 2, 
+                                        overflow: TextOverflow.ellipsis
+                                      ),
+                                      subtitle: s['type'] != null ? Text(s['type'].toString().toUpperCase(), style: const TextStyle(fontSize: 10, letterSpacing: 0.5)) : null,
+                                      onTap: () {
+                                        final lat = double.parse(s['lat']);
+                                        final lon = double.parse(s['lon']);
+                                        setDialogState(() {
+                                          selectedPos = LatLng(lat, lon);
+                                          _mapController.move(selectedPos, 16.0);
+                                          _searchCtrl.clear();
+                                          _suggestions = [];
+                                        });
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
                           ),
-                          CircleLayer(
-                            circles: [
-                              CircleMarker(
-                                point: selectedPos,
-                                radius: double.tryParse(radiusCtrl.text) ?? 100,
-                                useRadiusInMeter: true,
-                                color: Color(0xFF2563EB).withOpacity(0.2),
-                                borderStrokeWidth: 2,
-                                borderColor: Color(0xFF2563EB),
+
+                        // Zoom Controls
+                        Positioned(
+                          right: 12,
+                          bottom: 12,
+                          child: Column(
+                            children: [
+                              _buildMapAction(
+                                icon: Icons.add_rounded,
+                                onTap: () {
+                                  _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1);
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              _buildMapAction(
+                                icon: Icons.remove_rounded,
+                                onTap: () {
+                                  _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1);
+                                },
                               ),
                             ],
                           ),
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: selectedPos,
-                                width: 40,
-                                height: 40,
-                                child: const Icon(Icons.location_on_rounded, color: Colors.red, size: 40),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -233,7 +324,10 @@ class _AdminLocationManagementScreenState extends State<AdminLocationManagementS
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
                           onPressed: () async {
-                            if (nameCtrl.text.isEmpty) return;
+                            if (nameCtrl.text.trim().isEmpty) {
+                              AppDialog.showError(ctx, 'Nama lokasi wajib diisi');
+                              return;
+                            }
                             Navigator.pop(ctx);
                             final data = {
                               'name': nameCtrl.text,
@@ -377,6 +471,21 @@ class _AdminLocationManagementScreenState extends State<AdminLocationManagementS
         backgroundColor: const Color(0xFF2563EB),
         icon: const Icon(Icons.add_location_alt_rounded, color: Colors.white),
         label: const Text('Tambah Lokasi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildMapAction({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
+        ),
+        child: Icon(icon, color: const Color(0xFF0F172A), size: 20),
       ),
     );
   }

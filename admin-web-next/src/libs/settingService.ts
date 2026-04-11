@@ -153,6 +153,17 @@ export const settingService = {
         return resData;
     },
 
+    async verifyPassword(password: string) {
+        const response = await fetch(`${API_URL}/profile/verify-password`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ password }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Password yang Anda masukkan salah.');
+        return data;
+    },
+
     // 3. Company Methods
     async getCompany() {
         const response = await fetch(`${API_URL}/admin/company`, {
