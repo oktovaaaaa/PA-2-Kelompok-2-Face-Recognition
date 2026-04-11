@@ -12,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
+import Autocomplete from '@mui/material/Autocomplete'
 import { employeeService, Employee } from '@/libs/employeeService'
 import { format } from 'date-fns'
 import { useNotification } from '@/contexts/NotificationContext'
@@ -64,22 +65,24 @@ const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => 
       <DialogContent sx={{ pt: 4 }}>
         <Grid container spacing={4} sx={{ mt: 1 }}>
           <Grid item xs={12}>
-            <TextField
-              select
+            <Autocomplete
               fullWidth
-              label="Pilih Karyawan"
-              name="user_id"
-              value={formData.user_id}
-              onChange={handleChange}
-              size='small'
-              required
-            >
-              {employees.map(emp => (
-                <MenuItem key={emp.id} value={emp.id}>
-                  {emp.name} ({emp.position_name || 'No Position'})
-                </MenuItem>
-              ))}
-            </TextField>
+              size="small"
+              options={employees}
+              getOptionLabel={(option) => option.name ? `${option.name} (${option.position_name || 'No Position'})` : ''}
+              value={employees.find(emp => emp.id === formData.user_id) || null}
+              onChange={(event, newValue) => {
+                setFormData({ ...formData, user_id: newValue ? newValue.id : '' });
+              }}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Cari Karyawan" 
+                  placeholder="Wajib diisi" 
+                />
+              )}
+              noOptionsText="Karyawan tidak ditemukan"
+            />
           </Grid>
           
           <Grid item xs={12} sm={6}>
@@ -116,11 +119,10 @@ const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => 
               fullWidth
               label="Judul / Subjek"
               name="title"
-              placeholder="Contoh: Izin Kedukaan / Sakit Demam"
+              placeholder="Wajib diisi (Contoh: Izin Kedukaan)"
               value={formData.title}
               onChange={handleChange}
               size='small'
-              required
             />
           </Grid>
 

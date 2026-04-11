@@ -105,8 +105,8 @@ const ForgotPassword = () => {
           <div className='absolute bg-white/10 rounded-full w-[250px] h-[250px] -top-[50px] -right-[50px] z-1' />
           <div className='absolute bg-white/5 rounded-full w-[150px] h-[150px] bottom-[100px] right-[50px] z-1' />
           
-          <h1 className='text-[40px] font-extrabold leading-tight mb-2 z-10'>RECOVER</h1>
-          <h2 className='text-[20px] font-bold uppercase tracking-[2px] mb-6 z-10'>ACCESS CONTROL</h2>
+          <h1 className='text-[40px] font-extrabold leading-tight mb-2 z-10'>PULIHKAN</h1>
+          <h2 className='text-[20px] font-bold uppercase tracking-[2px] mb-6 z-10'>KONTROL AKSES</h2>
           <p className='text-[14px] text-white/80 leading-relaxed max-w-[320px] z-10'>
             Keamanan akun adalah prioritas kami. Gunakan sistem verifikasi OTP untuk memulihkan akses ke dashboard Admin Anda dengan aman.
           </p>
@@ -122,8 +122,8 @@ const ForgotPassword = () => {
                   <span className='text-[14px] font-bold'>Kembali ke Login</span>
                 </Link>
               </div>
-              <h2 className='text-[32px] font-extrabold mb-1 text-[#0F172A]'>Lupa Sandi</h2>
-              <p className='text-[#64748B] text-[14px] mb-8'>Masukkan email Anda untuk memulihkan akun.</p>
+              <h2 className='text-[32px] font-extrabold mb-1 text-[#0F172A]'>Lupa Kata Sandi</h2>
+              <p className='text-[#64748B] text-[14px] mb-8'>Masukkan alamat email Anda untuk memulihkan akses akun.</p>
               
               <form onSubmit={handleRequestOTP} className='flex flex-col gap-5'>
                 {/* Email Input */}
@@ -150,8 +150,8 @@ const ForgotPassword = () => {
             </div>
           ) : (
             <div className='view-container animate-fade-in'>
-              <h2 className='text-[32px] font-extrabold mb-1 text-[#0F172A]'>Atur Ulang</h2>
-              <p className='text-[#64748B] text-[14px] mb-8'>Gunakan kode OTP dan buat sandi baru.</p>
+              <h2 className='text-[32px] font-extrabold mb-1 text-[#0F172A]'>Atur Ulang Sandi</h2>
+              <p className='text-[#64748B] text-[14px] mb-8'>Gunakan kode OTP yang diterima dan buat sandi baru.</p>
               
               <form onSubmit={handleResetPassword} className='flex flex-col gap-4'>
                 {/* OTP Input */}
@@ -183,7 +183,7 @@ const ForgotPassword = () => {
                     className='text-[#2563EB] text-[11px] font-extrabold uppercase cursor-pointer select-none ml-2'
                     onClick={() => setIsPasswordShown(!isPasswordShown)}
                   >
-                    {isPasswordShown ? 'HIDE' : 'SHOW'}
+                    {isPasswordShown ? 'SEMBUNYIKAN' : 'TAMPILKAN'}
                   </span>
                 </div>
 
@@ -192,7 +192,7 @@ const ForgotPassword = () => {
                   disabled={loading}
                   className='w-full py-4 bg-[#0F172A] text-white rounded-full text-[16px] font-extrabold transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-70 flex justify-center items-center gap-2 mt-4'
                 >
-                  {loading ? <CircularProgress size={20} color='inherit' /> : 'Update Kata Sandi'}
+                  {loading ? <CircularProgress size={20} color='inherit' /> : 'Perbarui Kata Sandi'}
                 </button>
                 
                 <button 

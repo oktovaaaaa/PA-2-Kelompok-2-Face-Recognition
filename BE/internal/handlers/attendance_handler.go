@@ -369,8 +369,9 @@ func GetTodayAttendance(c *gin.Context) {
 	// Cek Hari Libur
 	if holiday, msg := isHoliday(emp.CompanyID, now); holiday {
 		utils.Success(c, "Hari ini libur", gin.H{
-			"status":       "HOLIDAY",
-			"holiday_name": msg,
+			"date":           today,
+			"display_status": "HOLIDAY",
+			"holiday_name":   msg,
 		})
 		return
 	}

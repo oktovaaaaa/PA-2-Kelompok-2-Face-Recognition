@@ -32,6 +32,16 @@ func AdminCreateBonus(c *gin.Context) {
 		return
 	}
 
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
+	// Verifikasi: Apakah target UserID ada di perusahaan yang sama dengan Admin?
+	var checkUser models.User
+	if err := database.DB.Where("id = ? AND company_id = ?", input.UserID, admin.CompanyID).First(&checkUser).Error; err != nil {
+		utils.Error(c, "Karyawan tidak ditemukan di instansi Anda")
+		return
+	}
+
 	bonus := models.Bonus{
 		ID:          uuid.New().String(),
 		UserID:      input.UserID,
@@ -156,9 +166,14 @@ func AdminGetBonuses(c *gin.Context) {
 func AdminDeleteBonus(c *gin.Context) {
 	id := c.Param("id")
 	
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
 	var bonus models.Bonus
-	if err := database.DB.First(&bonus, "id = ?", id).Error; err != nil {
-		utils.Error(c, "Data bonus tidak ditemukan")
+	if err := database.DB.Joins("JOIN users ON users.id = bonuses.user_id").
+		Where("bonuses.id = ? AND users.company_id = ?", id, admin.CompanyID).
+		First(&bonus).Error; err != nil {
+		utils.Error(c, "Data bonus tidak ditemukan atau Anda tidak memiliki akses")
 		return
 	}
 

@@ -105,7 +105,7 @@ const Login = ({ mode }: { mode: Mode }) => {
 
     try {
       await authService.loginStep1(email, password)
-      handleShowNotification('OTP telah dikirim ke email Anda', 'success')
+      handleShowNotification('Kode OTP telah dikirim ke email Anda', 'success')
       setStep('otp')
     } catch (error: any) {
       if (error.message) {
@@ -121,7 +121,7 @@ const Login = ({ mode }: { mode: Mode }) => {
     const fullOtp = otpDigits.join('')
 
     if (fullOtp.length !== 6) {
-      handleShowNotification('Silakan isi 6 digit kode OTP', 'warning')
+      handleShowNotification('Silakan masukkan 6 digit kode OTP', 'warning')
 
       return
     }
@@ -150,10 +150,10 @@ const Login = ({ mode }: { mode: Mode }) => {
     setIsResending(true)
     try {
       await authService.sendOTP(email)
-      handleShowNotification('Kode OTP baru telah dikirim', 'success')
+      handleShowNotification('Kode OTP baru telah dikirim ke email Anda', 'success')
       setResendTimer(30)
     } catch (error: any) {
-      handleShowNotification(error.message || 'Gagal mengirim ulang OTP', 'error')
+      handleShowNotification(error.message || 'Gagal mengirim ulang kode OTP', 'error')
     } finally {
       setIsResending(false)
     }
@@ -208,7 +208,7 @@ const Login = ({ mode }: { mode: Mode }) => {
           <div className='absolute bg-white/10 rounded-full w-[250px] h-[250px] -top-[50px] -right-[50px] z-1' />
           <div className='absolute bg-white/5 rounded-full w-[150px] h-[150px] bottom-[100px] right-[50px] z-1' />
           
-          <h1 className='text-[48px] font-extrabold leading-tight mb-2 z-10'>WELCOME</h1>
+          <h1 className='text-[48px] font-extrabold leading-tight mb-2 z-10'>SELAMAT DATANG</h1>
           <h2 className='text-[24px] font-bold uppercase tracking-[2px] mb-6 z-10'>VIDENTI ADMIN</h2>
           <p className='text-[14px] text-white/80 leading-relaxed max-w-[320px] z-10'>
             Sistem manajemen absensi cerdas berbasis pemindaian wajah. Kelola data karyawan dan laporan kehadiran dengan mudah bersama VIDENTI.
@@ -256,7 +256,7 @@ const Login = ({ mode }: { mode: Mode }) => {
                     className='text-[#2563EB] text-[11px] font-extrabold uppercase cursor-pointer select-none ml-2'
                     onClick={() => setIsPasswordShown(!isPasswordShown)}
                   >
-                    {isPasswordShown ? 'HIDE' : 'SHOW'}
+                    {isPasswordShown ? 'SEMBUNYIKAN' : 'TAMPILKAN'}
                   </span>
                 </div>
 
@@ -280,13 +280,13 @@ const Login = ({ mode }: { mode: Mode }) => {
                   disabled={loading}
                   className='w-full py-4 bg-[#0F172A] text-white rounded-full text-[16px] font-extrabold transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-70 flex justify-center items-center gap-2 mt-2'
                 >
-                  {loading ? <CircularProgress size={20} color='inherit' /> : 'Masuk Dashboard'}
+                  {loading ? <CircularProgress size={20} color='inherit' /> : 'Masuk ke Dashboard'}
                 </button>
               </form>
 
               <div className='relative text-center my-6'>
                 <hr className='border-[#E2E8F0]' />
-                <span className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[12px] text-[#64748B]'>Atau</span>
+                <span className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[12px] text-[#64748B]'>Atau masuk dengan</span>
               </div>
 
               <button 

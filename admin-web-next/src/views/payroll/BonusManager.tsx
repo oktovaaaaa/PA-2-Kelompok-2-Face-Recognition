@@ -7,7 +7,7 @@ import {
   Card, CardHeader, CardContent, Grid, TextField, 
   Button, Typography, Box, CircularProgress, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-  Paper, Avatar, MenuItem, InputAdornment, Divider
+  Paper, Avatar, MenuItem, InputAdornment, Divider, Autocomplete
 } from '@mui/material'
 import { bonusService, Bonus } from '@/libs/bonusService'
 import { employeeService, Employee } from '@/libs/employeeService'
@@ -120,27 +120,37 @@ const BonusManager = () => {
             <form onSubmit={handleAdd}>
               <Grid container spacing={5}>
                 <Grid item xs={12}>
-                  <TextField
-                    select fullWidth label="Pilih Karyawan" size="small" required
-                    value={formData.user_id}
-                    onChange={e => setFormData({...formData, user_id: e.target.value})}
-                  >
-                    {employees.map(emp => (
-                      <MenuItem key={emp.id} value={emp.id}>{emp.name}</MenuItem>
-                    ))}
-                  </TextField>
+                  <Autocomplete
+                    fullWidth
+                    size="small"
+                    options={employees}
+                    getOptionLabel={(option) => option.name || ''}
+                    value={employees.find(emp => emp.id === formData.user_id) || null}
+                    onChange={(event, newValue) => {
+                      setFormData({ ...formData, user_id: newValue ? newValue.id : '' });
+                    }}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        label="Cari Karyawan" 
+                        placeholder="Wajib diisi" 
+                      />
+                    )}
+                    noOptionsText="Karyawan tidak ditemukan"
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Nama Bonus" size="small" required
-                    placeholder="Misal: Bonus Performa, Insentif Lembur"
+                    fullWidth label="Nama Bonus" size="small"
+                    placeholder="Wajib diisi (Misal: Bonus Performa)"
                     value={formData.title}
                     onChange={e => setFormData({...formData, title: e.target.value})}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Besar Nominal" type="text" size="small" required
+                    fullWidth label="Besar Nominal" type="text" size="small"
+                    placeholder="Wajib diisi"
                     value={formData.amount === 0 ? '' : formData.amount.toLocaleString('id-ID')}
                     onChange={e => {
                         const rawValue = e.target.value.replace(/[^0-9]/g, '')
@@ -152,7 +162,7 @@ const BonusManager = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Tanggal" type="date" size="small" required
+                    fullWidth label="Tanggal" type="date" size="small"
                     InputLabelProps={{ shrink: true }}
                     value={formData.date}
                     onChange={e => setFormData({...formData, date: e.target.value})}

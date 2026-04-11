@@ -6,7 +6,7 @@ import {
   Card, CardHeader, CardContent, Grid, TextField, 
   Button, Typography, Box, CircularProgress, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-  Paper, Avatar, MenuItem, InputAdornment, Divider, Chip, Tabs, Tab
+  Paper, Avatar, MenuItem, InputAdornment, Divider, Chip, Tabs, Tab, Autocomplete
 } from '@mui/material'
 import { settingService, ManualPenalty } from '@/libs/settingService'
 import { employeeService, Employee } from '@/libs/employeeService'
@@ -209,27 +209,37 @@ const PenaltyManager = () => {
             <form onSubmit={handleAdd}>
               <Grid container spacing={5}>
                 <Grid item xs={12}>
-                  <TextField
-                    select fullWidth label="Pilih Karyawan" size="small" required
-                    value={formData.user_id}
-                    onChange={e => setFormData({...formData, user_id: e.target.value})}
-                  >
-                    {employees.map(emp => (
-                      <MenuItem key={emp.id} value={emp.id}>{emp.name}</MenuItem>
-                    ))}
-                  </TextField>
+                  <Autocomplete
+                    fullWidth
+                    size="small"
+                    options={employees}
+                    getOptionLabel={(option) => option.name || ''}
+                    value={employees.find(emp => emp.id === formData.user_id) || null}
+                    onChange={(event, newValue) => {
+                      setFormData({ ...formData, user_id: newValue ? newValue.id : '' });
+                    }}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        label="Cari Karyawan" 
+                        placeholder="Wajib diisi" 
+                      />
+                    )}
+                    noOptionsText="Karyawan tidak ditemukan"
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Judul / Jenis Pelanggaran" size="small" required
-                    placeholder="Misal: Pecah Kaca, Kerusakan Alat"
+                    fullWidth label="Judul / Jenis Pelanggaran" size="small"
+                    placeholder="Wajib diisi (Misal: Kerusakan Alat)"
                     value={formData.title}
                     onChange={e => setFormData({...formData, title: e.target.value})}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Besar Sanksi" type="text" size="small" required
+                    fullWidth label="Besar Sanksi" type="text" size="small"
+                    placeholder="Wajib diisi"
                     value={formData.amount === 0 ? '' : formData.amount.toLocaleString('id-ID')}
                     onChange={e => {
                         const rawValue = e.target.value.replace(/[^0-9]/g, '')
@@ -241,7 +251,7 @@ const PenaltyManager = () => {
                 </Grid>
                 <Grid item xs={12}>
                   <TextField 
-                    fullWidth label="Tanggal Kejadian" type="date" size="small" required
+                    fullWidth label="Tanggal Kejadian" type="date" size="small"
                     InputLabelProps={{ shrink: true }}
                     value={formData.date}
                     onChange={e => setFormData({...formData, date: e.target.value})}

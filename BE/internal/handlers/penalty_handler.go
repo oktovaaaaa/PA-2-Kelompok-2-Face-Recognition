@@ -34,6 +34,16 @@ func CreatePenalty(c *gin.Context) {
 		return
 	}
 
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
+	// Verifikasi: Apakah target UserID ada di perusahaan yang sama dengan Admin?
+	var checkUser models.User
+	if err := database.DB.Where("id = ? AND company_id = ?", input.UserID, admin.CompanyID).First(&checkUser).Error; err != nil {
+		utils.Error(c, "Karyawan tidak ditemukan di instansi Anda")
+		return
+	}
+
 	userID := input.UserID
 	title := input.Title
 	description := input.Description
@@ -204,9 +214,14 @@ func GetPenalties(c *gin.Context) {
 func DeletePenalty(c *gin.Context) {
 	id := c.Param("id")
 
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
 	var penalty models.Penalty
-	if err := database.DB.First(&penalty, "id = ?", id).Error; err != nil {
-		utils.Error(c, "Data denda tidak ditemukan")
+	if err := database.DB.Joins("JOIN users ON users.id = penalties.user_id").
+		Where("penalties.id = ? AND users.company_id = ?", id, admin.CompanyID).
+		First(&penalty).Error; err != nil {
+		utils.Error(c, "Data denda tidak ditemukan atau Anda tidak memiliki akses")
 		return
 	}
 

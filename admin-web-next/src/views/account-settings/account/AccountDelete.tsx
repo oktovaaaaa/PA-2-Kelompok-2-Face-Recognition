@@ -19,6 +19,8 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
+import Checkbox from '@mui/material/Checkbox'
+import FormControlLabel from '@mui/material/FormControlLabel'
 
 import { settingService, Profile } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
@@ -31,6 +33,7 @@ const AccountDelete = () => {
   const [step1Open, setStep1Open] = useState(false)
   const [step2Open, setStep2Open] = useState(false)
   const [step3Open, setStep3Open] = useState(false)
+  const [step4Open, setStep4Open] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
 
   const [password, setPassword] = useState('')
@@ -38,6 +41,7 @@ const AccountDelete = () => {
   const [phrase, setPhrase] = useState('')
   const [loading, setLoading] = useState(false)
   const [verifying, setVerifying] = useState(false)
+  const [finalAgreed, setFinalAgreed] = useState(false)
   const [error, setError] = useState('')
 
   const confirmationPhrase = profile ? `SAYA YAKIN MENGHAPUS AKUN ${profile.name.toUpperCase()}` : 'SAYA YAKIN MENGHAPUS AKUN'
@@ -80,17 +84,25 @@ const AccountDelete = () => {
     }
   }
 
-  const handleFinalDelete = async () => {
+  const handleStep3Confirm = () => {
     if (phrase !== confirmationPhrase) {
       setError(`Frasa konfirmasi harus persis: ${confirmationPhrase}`)
       return
     }
     setError('')
+    setStep3Open(false)
+    setTimeout(() => setStep4Open(true), 300)
+  }
+
+  const handleFinalDelete = async () => {
+    if (!finalAgreed) return
+
     setLoading(true)
+    setError('')
 
     try {
       await settingService.deleteAdminAccount(password, phrase)
-      showNotification('Akun Anda telah berhasil dihapus secara permanen.', 'success')
+      showNotification('Akun dan seluruh data instansi telah berhasil dihapus secara permanen.', 'success')
       localStorage.removeItem('token')
       router.push('/login')
     } catch (err: any) {
@@ -103,9 +115,11 @@ const AccountDelete = () => {
     setStep1Open(false)
     setStep2Open(false)
     setStep3Open(false)
+    setStep4Open(false)
     setPassword('')
     setShowPassword(false)
     setPhrase('')
+    setFinalAgreed(false)
     setError('')
     setLoading(false)
   }
@@ -227,11 +241,61 @@ const AccountDelete = () => {
         <DialogActions sx={{ px: 6, pb: 4 }}>
           <Button onClick={handleReset} variant='outlined'>Batalkan</Button>
           <Button
+            onClick={handleStep3Confirm} variant='contained' color='error'
+            disabled={phrase !== confirmationPhrase}
+          >
+            Lanjutkan ke Kesepakatan Akhir
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* STEP 4: Persetujuan Akhir & Checkbox */}
+      <Dialog open={step4Open} onClose={handleReset} maxWidth='sm' fullWidth>
+        <DialogTitle sx={{ fontWeight: '700', color: 'error.main' }}>
+          <Box className='flex items-center gap-3'>
+            <i className='ri-shield-flash-fill text-2xl' />
+            Persetujuan Akhir Penghapusan Data
+          </Box>
+        </DialogTitle>
+        <Divider />
+        <DialogContent>
+          <Alert severity='warning' variant='filled' sx={{ mb: 4, mt: 2 }}>
+            <Typography variant='body2' fontWeight='700' sx={{ color: 'white' }}>
+              PERHATIAN: Ini adalah konfirmasi terakhir sebelum data dihapus secara fisik dari database.
+            </Typography>
+          </Alert>
+          
+          <Box sx={{ bgcolor: 'error.lighter', p: 4, borderRadius: 2, mb: 4, border: '1px solid', borderColor: 'error.light' }}>
+            <Typography variant='body1' color='error.main' fontWeight='700' gutterBottom>
+              Dampak Penghapusan:
+            </Typography>
+            <ul style={{ paddingLeft: '20px', margin: 0, color: '#f44336' }}>
+              <li><Typography variant='body2' fontWeight='600'>Akun perusahaan Anda akan terhapus total.</Typography></li>
+              <li><Typography variant='body2' fontWeight='600'>SELURUH data akun karyawan Anda akan dimusnahkan.</Typography></li>
+              <li><Typography variant='body2' fontWeight='600'>Data yang sudah dihapus TIDAK DAPAT dipulihkan kembali dengan cara apa pun.</Typography></li>
+            </ul>
+          </Box>
+
+          <FormControlLabel
+            control={<Checkbox checked={finalAgreed} onChange={e => setFinalAgreed(e.target.checked)} color='error' />}
+            label={
+              <Typography variant='body2' fontWeight='700'>
+                Saya mengerti dan setuju bahwa dengan menghapus akun ini, seluruh data perusahaan dan data seluruh karyawan saya akan terhapus permanen dan tidak dapat dipulihkan kembali.
+              </Typography>
+            }
+          />
+          
+          {error && <Typography variant='caption' color='error' sx={{ mt: 2, display: 'block' }}>{error}</Typography>}
+        </DialogContent>
+        <DialogActions sx={{ px: 6, pb: 6 }}>
+          <Button onClick={handleReset} variant='outlined' sx={{ mr: 'auto' }}>Batalkan</Button>
+          <Button
             onClick={handleFinalDelete} variant='contained' color='error'
-            disabled={loading || phrase !== confirmationPhrase}
+            disabled={loading || !finalAgreed}
+            size='large'
             startIcon={loading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-delete-bin-7-line' />}
           >
-            {loading ? 'Menghapus...' : 'Hapus Akun Permanen'}
+            {loading ? 'Sedang Memproses...' : 'HAPUS PERUSAHAAN & DATA SEKARANG'}
           </Button>
         </DialogActions>
       </Dialog>

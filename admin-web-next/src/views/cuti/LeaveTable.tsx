@@ -16,6 +16,9 @@ import IconButton from '@mui/material/IconButton'
 import Box from '@mui/material/Box'
 import Avatar from '@mui/material/Avatar'
 import TablePagination from '@mui/material/TablePagination'
+import TextField from '@mui/material/TextField'
+import InputAdornment from '@mui/material/InputAdornment'
+import Divider from '@mui/material/Divider'
 import { LeaveRequest } from '@/libs/leaveService'
 import { formatFullDate } from '@/utils/dateFormatter'
 
@@ -28,6 +31,7 @@ interface Props {
 const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage)
@@ -56,10 +60,34 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
     }
   }
 
-  const paginatedLeaves = leaves.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  const filteredLeaves = leaves.filter(l => 
+    (l.user_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (l.user_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (l.title || '').toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const paginatedLeaves = filteredLeaves.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   return (
-    <Card sx={{ mt: 6 }}>
+    <Card sx={{ mt: 6, border: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ p: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant='h6' sx={{ fontWeight: '700' }}>Riwayat Pengajuan</Typography>
+        <TextField
+          size='small'
+          placeholder='Cari nama atau email...'
+          value={searchTerm}
+          onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+          sx={{ width: 250 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <i className='ri-search-line' />
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
+      <Divider />
       <TableContainer component={Paper} elevation={0}>
         <Table sx={{ minWidth: 800 }}>
           <TableHead sx={{ bgcolor: 'action.hover' }}>
@@ -135,7 +163,7 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component='div'
-        count={leaves.length}
+        count={filteredLeaves.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}

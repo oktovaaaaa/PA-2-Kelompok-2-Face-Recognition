@@ -843,8 +843,8 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
           ListTile(
             onTap: _showDeleteAccountFlow,
             leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
-            title: const Text('Resign & Hapus Akun', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
-            subtitle: const Text('Data riwayat tetap tersimpan di perusahaan', style: TextStyle(fontSize: 12, color: Colors.red)),
+            title: const Text('Hapus Akun Permanen', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
+            subtitle: const Text('Seluruh data instansi akan terhapus total', style: TextStyle(fontSize: 12, color: Colors.red)),
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.red),
           ),
         ],
@@ -1313,7 +1313,7 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                       text: 'SAYA YAKIN MENGHAPUS AKUN ${(_profile?['name'] ?? '').toString().toUpperCase()}', 
                       style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.red, fontSize: 13)
                     ),
-                    const TextSpan(text: ' pada kotak di bawah untuk memproses pengunduran diri dan penghapusan akun.'),
+                    const TextSpan(text: ' pada kotak di bawah untuk memproses penghapusan akun secara permanen.'),
                   ],
                 ),
               ),
@@ -1333,30 +1333,116 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  onPressed: deleteLoading ? null : () async {
+                  onPressed: () {
                     final expectedPhrase = 'SAYA YAKIN MENGHAPUS AKUN ${(_profile?['name'] ?? '').toString().toUpperCase()}';
                     if (phraseCtrl.text.trim() != expectedPhrase) {
                       AppDialog.showError(context, 'Frasa konfirmasi harus persis: $expectedPhrase');
                       return;
                     }
+                    Navigator.pop(context);
+                    _showFinalStep4(passwordFromStep2!, expectedPhrase);
+                  },
+                  child: const Text('Lanjutkan ke Tahap Akhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFinalStep4(String password, String phrase) async {
+    bool finalAgreed = false;
+    bool deleteLoading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+          padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: const [
+                    Icon(Icons.shield_rounded, color: Colors.red, size: 28),
+                    SizedBox(width: 12),
+                    Text('Persetujuan Akhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.red)),
+                  ]),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Harap baca pernyataan di bawah ini dengan sangat teliti:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.red.shade100),
+                ),
+                child: Column(
+                  children: [
+                    _bulletWarning('Seluruh akun karyawan perusahaan ini akan dihapus permanen.'),
+                    const SizedBox(height: 8),
+                    _bulletWarning('Data absensi, gaji, dan riwayat denda akan dimusnahkan.'),
+                    const SizedBox(height: 8),
+                    _bulletWarning('Data yang dihapus TIDAK DAPAT dipulihkan kembali.'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              CheckboxListTile(
+                value: finalAgreed,
+                onChanged: (val) => setModalState(() => finalAgreed = val ?? false),
+                activeColor: Colors.red,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'Saya mengerti dan setuju bahwa dengan menghapus akun ini, seluruh data perusahaan dan karyawan akan terhapus permanen dan tidak dapat dipulihkan.',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade900,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: (deleteLoading || !finalAgreed) ? null : () async {
                     setModalState(() => deleteLoading = true);
                     try {
                       final res = await ApiClient.delete('/api/profile', body: {
-                        'password': passwordFromStep2,
-                        'confirmation_phrase': expectedPhrase,
+                        'password': password,
+                        'confirmation_phrase': phrase,
                       });
                       if (!mounted) return;
                       if (res.success) {
                         Navigator.pop(context);
                         await SessionStorage.clear();
                         if (!mounted) return;
-                        AppDialog.showSuccess(context, 'Proses Resign dan Hapus Akun Berhasil');
+                        AppDialog.showSuccess(context, 'Akun dan Data Instansi Berhasil Dihapus');
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (_) => const LandingScreen()),
                           (route) => false,
                         );
                       } else {
-                        AppDialog.showError(context, res.message ?? 'Gagal memproses pengunduran diri');
+                        AppDialog.showError(context, res.message ?? 'Gagal memproses penghapusan');
                         setModalState(() => deleteLoading = false);
                       }
                     } catch (e) {
@@ -1366,20 +1452,23 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                   },
                   child: deleteLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.delete_forever_rounded),
-                          SizedBox(width: 8),
-                          Text('Resign & Hapus Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        ],
-                      ),
+                    : const Text('HAPUS PERUSAHAAN & DATA SEKARANG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _bulletWarning(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('• ', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        Expanded(child: Text(text, style: const TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w600))),
+      ],
     );
   }
 

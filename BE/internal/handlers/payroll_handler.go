@@ -99,6 +99,9 @@ func GetSalaryYears(c *gin.Context) {
 
 // AdminGetSalaries - Admin view with filters
 func AdminGetSalaries(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
 	month, _ := strconv.Atoi(c.Query("month"))
 	year, _ := strconv.Atoi(c.Query("year"))
 	positionID := c.Query("position_id")
@@ -107,7 +110,7 @@ func AdminGetSalaries(c *gin.Context) {
 	// Proactive Generation & Cleanup: Pastikan data akurat sesuai tanggal bergabung
 	if month > 0 && year > 0 {
 		var employees []models.User
-		database.DB.Where("role = ?", "EMPLOYEE").Find(&employees)
+		database.DB.Where("role = ? AND company_id = ?", "EMPLOYEE", admin.CompanyID).Find(&employees)
 
 		targetMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
 
@@ -126,7 +129,9 @@ func AdminGetSalaries(c *gin.Context) {
 	}
 
 	var salaries []models.Salary
-	query := database.DB.Preload("User").Preload("User.Position").Preload("Payments").Joins("JOIN users ON users.id = salaries.user_id")
+	query := database.DB.Preload("User").Preload("User.Position").Preload("Payments").
+		Joins("JOIN users ON users.id = salaries.user_id").
+		Where("users.company_id = ?", admin.CompanyID)
 
 	if month > 0 && year > 0 {
 		periodEnd := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local).AddDate(0, 1, 0)
@@ -141,7 +146,7 @@ func AdminGetSalaries(c *gin.Context) {
 	}
 
 	// Filter by User
-	userSubQuery := database.DB.Model(&models.User{})
+	userSubQuery := database.DB.Model(&models.User{}).Where("company_id = ?", admin.CompanyID)
 	if positionID != "" {
 		userSubQuery = userSubQuery.Where("position_id = ?", positionID)
 	}
@@ -154,7 +159,7 @@ func AdminGetSalaries(c *gin.Context) {
 
 	if len(userIDs) > 0 || (positionID == "" && search == "") {
 		if positionID != "" || search != "" {
-			query = query.Where("user_id IN ?", userIDs)
+			query = query.Where("salaries.user_id IN ?", userIDs)
 		}
 		query.Order("year desc, month desc").Find(&salaries)
 	} else {
@@ -166,12 +171,17 @@ func AdminGetSalaries(c *gin.Context) {
 
 // AdminPaySalary - Process payment (supports installments)
 func AdminPaySalary(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	admin := userCtx.(models.User)
+
 	salaryID := c.Param("id")
 	amountStr := c.PostForm("amount")
 
 	var salary models.Salary
-	if err := database.DB.First(&salary, "id = ?", salaryID).Error; err != nil {
-		utils.Error(c, "Data gaji tidak ditemukan")
+	if err := database.DB.Joins("JOIN users ON users.id = salaries.user_id").
+		Where("salaries.id = ? AND users.company_id = ?", salaryID, admin.CompanyID).
+		First(&salary).Error; err != nil {
+		utils.Error(c, "Data gaji tidak ditemukan atau Anda tidak memiliki akses")
 		return
 	}
 

@@ -197,8 +197,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
           case 'LEAVE_REQUEST':
           case 'LEAVE_APPROVED':
           case 'LEAVE_REJECTED':
-            // Go back to dashboard where Leave Tab is accessible
-            Navigator.pop(context);
+            final role = context.read<AuthProvider>().currentUser?['role'];
+            if (role == 'ADMIN') {
+              // Admin leaves are managed on web, but if they are on mobile, just pop
+              Navigator.pop(context);
+            } else {
+              Navigator.pushAndRemoveUntil(
+                context, 
+                MaterialPageRoute(builder: (_) => const EmployeeDashboardScreen(initialIndex: 2)),
+                (route) => false
+              );
+            }
             break;
           default:
             // Just mark as read

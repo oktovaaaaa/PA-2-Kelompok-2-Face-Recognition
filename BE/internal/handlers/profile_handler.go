@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // GetMyProfile — mendapatkan profil diri sendiri (admin & karyawan)
@@ -337,14 +338,65 @@ func DeleteAccount(c *gin.Context) {
 	database.DB.Where("user_id = ?", user.ID).Delete(&models.Notification{})
 
 	if dbUser.Role == "ADMIN" {
-		// Admin: hapus semua data miliknya (hard delete)
-		database.DB.Where("user_id = ?", user.ID).Delete(&models.Attendance{})
-		database.DB.Where("user_id = ?", user.ID).Delete(&models.Penalty{})
-		database.DB.Where("user_id = ?", user.ID).Delete(&models.LeaveRequest{})
-		database.DB.Where("user_id = ?", user.ID).Delete(&models.Salary{})
-		
-		if err := database.DB.Exec("DELETE FROM users WHERE id = ?", dbUser.ID).Error; err != nil {
-			utils.Error(c, "Gagal menghapus akun: "+err.Error())
+		// Admin: Hapus TOTAL semua data instansi (Cascade Delete manual)
+		companyID := dbUser.CompanyID
+
+		err := database.DB.Transaction(func(tx *gorm.DB) error {
+			// 1. Hapus data transaksional yang terikat UserID (Absensi, Denda, Gaji, Bonus, dll)
+			userIDsSubQuery := tx.Model(&models.User{}).Select("id").Where("company_id = ?", companyID)
+
+			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Attendance{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus attendances: %w", err)
+			}
+			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Penalty{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus penalties: %w", err)
+			}
+			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.LeaveRequest{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus leave_requests: %w", err)
+			}
+			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Salary{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus salaries: %w", err)
+			}
+			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Bonus{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus bonuses: %w", err)
+			}
+
+			// 2. Hapus semua User (Admin & semua Karyawannya)
+			// Menggunakan Unscoped() agar data benar-benar terhapus fisik (Hard Delete)
+			if err := tx.Where("company_id = ?", companyID).Unscoped().Delete(&models.User{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus users: %w", err)
+			}
+
+			// 3. Hapus data master yang terikat CompanyID (Lokasi, Pengaturan, Hari Libur, dll)
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.Notification{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus notifications: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.AttendanceSettings{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus attendance_settings: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.CompanyLocation{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus company_locations: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.Holiday{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus holidays: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.InviteToken{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus invite_tokens: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.Position{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus positions: %w", err)
+			}
+
+			// 4. Terakhir, hapus data Company itu sendiri (Hard Delete)
+			if err := tx.Where("id = ?", companyID).Unscoped().Delete(&models.Company{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus company: %w", err)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			utils.Error(c, "Gagal menghapus total data instansi: "+err.Error())
 			return
 		}
 	} else {
