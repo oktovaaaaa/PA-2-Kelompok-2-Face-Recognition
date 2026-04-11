@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 import '../../../../../core/network/api_client.dart';
 import '../../../../common/widgets/app_dialog.dart';
 import '../../../../../core/constants/app_constants.dart';
@@ -150,6 +152,7 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
                   const SizedBox(height: 12),
                   _buildInfoCard([
                     _buildInfoRow(Icons.category_outlined, 'Tipe Izin', leave['type'] ?? '-'),
+                    _buildInfoRow(Icons.calendar_today_outlined, 'Tanggal', _formatDates(leave['dates'] ?? '')),
                     _buildInfoRow(Icons.description_outlined, 'Deskripsi', leave['description'] ?? '-', isMultiline: true),
                   ]),
                   const SizedBox(height: 24),
@@ -483,7 +486,7 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
                                                 Text(l['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  '${l['user_name'] ?? '-'} • ${l['type'] ?? '-'}',
+                                                  '${l['user_name'] ?? '-'} • ${_formatDates(l['dates'] ?? '')}',
                                                   style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                                                 ),
                                               ],
@@ -587,6 +590,33 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
         ),
       ),
     );
+  }
+
+  String _formatDates(String datesJson) {
+    if (datesJson.isEmpty) return '-';
+    try {
+      final List<dynamic> dates = jsonDecode(datesJson);
+      if (dates.isEmpty) return '-';
+      if (dates.length == 1) return DateFormat('dd MMM yyyy').format(DateTime.parse(dates[0]));
+      
+      final sorted = dates.map((d) => DateTime.parse(d)).toList()..sort();
+      final first = sorted.first;
+      final last = sorted.last;
+      
+      bool isContiguous = true;
+      for (int i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i+1].difference(sorted[i]).inDays != 1) {
+          isContiguous = false;
+          break;
+        }
+      }
+      
+      return isContiguous
+          ? '${DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(first)} - \n${DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(last)}\n(${dates.length} Hari)'
+          : sorted.map((d) => DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(d)).join('\n');
+    } catch (_) {
+      return '-';
+    }
   }
 
   String _monthName(int m) {

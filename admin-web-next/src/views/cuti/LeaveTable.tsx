@@ -20,7 +20,8 @@ import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import Divider from '@mui/material/Divider'
 import { LeaveRequest } from '@/libs/leaveService'
-import { formatFullDate } from '@/utils/dateFormatter'
+import { formatFullDate, formatDate } from '@/utils/dateFormatter'
+import { parseISO } from 'date-fns'
 
 interface Props {
   leaves: LeaveRequest[]
@@ -57,6 +58,39 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
       case 'REJECTED': return 'Ditolak'
       case 'PENDING': return 'Menunggu'
       default: return status
+    }
+  }
+
+  const formatLeaveDates = (datesJson?: string, createdAt?: string) => {
+    if (!datesJson) return createdAt ? formatFullDate(createdAt) : '-'
+    try {
+      const dates: string[] = JSON.parse(datesJson)
+      if (dates.length === 0) return createdAt ? formatFullDate(createdAt) : '-'
+      if (dates.length === 1) return formatDate(dates[0])
+      
+      const sorted = [...dates].sort()
+      const first = parseISO(sorted[0])
+      const last = parseISO(sorted[sorted.length - 1])
+      
+      // Check if contiguous
+      let isContiguous = true
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const d1 = parseISO(sorted[i])
+        const d2 = parseISO(sorted[i+1])
+        const diff = (d2.getTime() - d1.getTime()) / (1000 * 3600 * 24)
+        if (diff !== 1) {
+          isContiguous = false
+          break
+        }
+      }
+
+      if (isContiguous) {
+        return `${format(first, 'd MMMM', { locale: id })} - ${format(last, 'd MMMM yyyy', { locale: id })} (${dates.length} Hari)`
+      }
+
+      return sorted.map(d => format(parseISO(d), 'd MMMM', { locale: id })).join(', ')
+    } catch {
+      return createdAt ? formatFullDate(createdAt) : '-'
     }
   }
 
@@ -136,7 +170,9 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
                     <Typography variant='body2' noWrap sx={{ maxWidth: 200 }}>{row.title}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant='body2'>{formatFullDate(row.created_at)}</Typography>
+                    <Typography variant='body2' sx={{ fontWeight: '500' }}>
+                      {formatLeaveDates(row.dates, row.created_at)}
+                    </Typography>
                   </TableCell>
                   <TableCell align="center">
                     <Chip 

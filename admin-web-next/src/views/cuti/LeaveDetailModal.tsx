@@ -15,7 +15,9 @@ import TextField from '@mui/material/TextField'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
 import { LeaveRequest, formatImageUrl } from '@/libs/leaveService'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
+import { id } from 'date-fns/locale'
+import { formatDate } from '@/utils/dateFormatter'
 
 interface Props {
   open: boolean
@@ -30,6 +32,53 @@ const LeaveDetailModal = ({ open, onClose, leave, onProcess }: Props) => {
   if (!leave) return null
 
   const isPending = leave.status === 'PENDING'
+
+  const formatLeaveDates = (datesJson?: string, createdAt?: string) => {
+    if (!datesJson) return createdAt ? format(new Date(createdAt), 'EEEE, dd MMMM yyyy', { locale: id }) : '-'
+    try {
+      const dates: string[] = JSON.parse(datesJson)
+      if (dates.length === 0) return createdAt ? format(new Date(createdAt), 'EEEE, dd MMMM yyyy', { locale: id }) : '-'
+      if (dates.length === 1) return format(parseISO(dates[0]), 'EEEE, dd MMMM yyyy', { locale: id })
+      
+      const sorted = [...dates].sort()
+      const first = parseISO(sorted[0])
+      const last = parseISO(sorted[sorted.length - 1])
+      
+      let isContiguous = true
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const d1 = parseISO(sorted[i])
+        const d2 = parseISO(sorted[i+1])
+        const diff = (d2.getTime() - d1.getTime()) / (1000 * 3600 * 24)
+        if (diff !== 1) {
+          isContiguous = false
+          break
+        }
+      }
+
+      if (isContiguous) {
+        return (
+          <Box>
+            <Typography variant='body1' fontWeight='600'>{format(first, 'EEEE, dd MMMM', { locale: id })} - </Typography>
+            <Typography variant='body1' fontWeight='600'>{format(last, 'EEEE, dd MMMM yyyy', { locale: id })}</Typography>
+            <Typography variant='caption' color='primary'>({dates.length} Hari Berurutan)</Typography>
+          </Box>
+        )
+      }
+
+      return (
+        <Box>
+          {sorted.map((d, i) => (
+            <Typography key={i} variant='body2' fontWeight='600' sx={{ display: 'block', mb: 0.5 }}>
+              • {format(parseISO(d), 'EEEE, dd MMMM yyyy', { locale: id })}
+            </Typography>
+          ))}
+          <Typography variant='caption' color='primary' sx={{ mt: 1, display: 'block' }}>Total {dates.length} Hari</Typography>
+        </Box>
+      )
+    } catch {
+      return createdAt ? format(new Date(createdAt), 'EEEE, dd MMMM yyyy', { locale: id }) : '-'
+    }
+  }
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth='sm'>
@@ -65,9 +114,9 @@ const LeaveDetailModal = ({ open, onClose, leave, onProcess }: Props) => {
             <Typography variant='caption' color='text.secondary'>Tipe Izin</Typography>
             <Typography variant='body1' fontWeight='600'>{leave.type}</Typography>
           </Grid>
-          <Grid item xs={6}>
-            <Typography variant='caption' color='text.secondary'>Tanggal Pengajuan</Typography>
-            <Typography variant='body1' fontWeight='600'>{format(new Date(leave.created_at), 'dd MMMM yyyy')}</Typography>
+          <Grid item xs={12}>
+            <Typography variant='caption' color='text.secondary'>Periode Izin</Typography>
+            <Box sx={{ mt: 1 }}>{formatLeaveDates(leave.dates, leave.created_at)}</Box>
           </Grid>
           <Grid item xs={12}>
             <Typography variant='caption' color='text.secondary'>Judul / Alasan</Typography>

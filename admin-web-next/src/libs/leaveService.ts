@@ -34,6 +34,7 @@ export interface LeaveRequest {
   photo_url?: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   admin_note?: string
+  dates?: string
   created_at: string
 }
 

@@ -32,6 +32,7 @@ dependencies:
   open_filex: any
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  calendar_date_picker2: ^1.1.9
 
 dev_dependencies:
   flutter_test:

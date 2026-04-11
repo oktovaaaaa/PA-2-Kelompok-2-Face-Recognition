@@ -113,6 +113,11 @@ func CheckIn(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	emp := userCtx.(models.User)
 
+	if emp.Role == "ADMIN" {
+		utils.Error(c, "Akun Admin tidak diperbolehkan melakukan absensi.")
+		return
+	}
+
 	var req struct {
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
@@ -212,6 +217,11 @@ func CheckIn(c *gin.Context) {
 func CheckOut(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	emp := userCtx.(models.User)
+
+	if emp.Role == "ADMIN" {
+		utils.Error(c, "Akun Admin tidak diperbolehkan melakukan absensi.")
+		return
+	}
 
 	var req struct {
 		Latitude  float64 `json:"latitude"`

@@ -49,7 +49,7 @@ func GetPositions(c *gin.Context) {
 	adminUser := userCtx.(models.User)
 
 	var positions []models.Position
-	database.DB.Where("company_id = ?", adminUser.CompanyID).Find(&positions)
+	database.DB.Where("company_id = ? AND LOWER(name) NOT LIKE ? AND LOWER(name) NOT LIKE ?", adminUser.CompanyID, "%admin%", "%super admin%").Find(&positions)
 	utils.Success(c, "Daftar jabatan", positions)
 }
 

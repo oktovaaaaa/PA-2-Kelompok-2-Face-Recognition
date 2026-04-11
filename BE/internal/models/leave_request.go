@@ -28,7 +28,8 @@ type LeaveRequest struct {
 
 	// Soft-delete per pihak: data benar-benar terhapus hanya jika keduanya true
 	IsDeletedByEmployee bool `json:"is_deleted_by_employee"`
-	IsDeletedByAdmin    bool `json:"is_deleted_by_admin"`
+	IsDeletedByAdmin    bool   `json:"is_deleted_by_admin"`
+	Dates               string `json:"dates"` // Daftar tanggal terpilih (JSON string)
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

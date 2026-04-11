@@ -1,5 +1,4 @@
-// Next Imports
-import { Inter } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 
 // MUI Imports
 import type { Theme } from '@mui/material/styles'
@@ -15,7 +14,7 @@ import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
 
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
+const outfit = Outfit({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
 
 const theme = (mode: SystemMode, direction: Theme['direction']): Theme => {
   return {
@@ -34,7 +33,7 @@ const theme = (mode: SystemMode, direction: Theme['direction']): Theme => {
       }
     },
     shadows: shadows(mode),
-    typography: typography(inter.style.fontFamily),
+    typography: typography(outfit.style.fontFamily),
     customShadows: customShadows(mode),
     mainColorChannels: {
       light: '46 38 61',

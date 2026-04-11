@@ -7,6 +7,7 @@ import (
 	"employee-system/internal/models"
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
+	"encoding/json"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,12 +40,13 @@ func AdminGetLeaveRequests(c *gin.Context) {
 		Status          string    `json:"status"`
 		AdminNote       string    `json:"admin_note"`
 		ConfirmedHonest bool      `json:"confirmed_honest"`
+		Dates           string    `json:"dates"`
 		CreatedAt       time.Time `json:"created_at"`
 	}
 
 	var result []LeaveWithUser
-	query := database.DB.Table("leave_requests").
-		Select("leave_requests.id, leave_requests.user_id, leave_requests.type, leave_requests.title, leave_requests.description, leave_requests.photo_url, leave_requests.status, leave_requests.admin_note, leave_requests.confirmed_honest, leave_requests.created_at, users.name as user_name, users.email as user_email, users.photo_url as user_photo").
+	query := database.DB.Model(&models.LeaveRequest{}).
+		Select("leave_requests.id, leave_requests.user_id, leave_requests.type, leave_requests.title, leave_requests.description, leave_requests.photo_url, leave_requests.status, leave_requests.admin_note, leave_requests.confirmed_honest, leave_requests.dates, leave_requests.created_at, users.name as user_name, users.email as user_email, users.photo_url as user_photo").
 		Joins("left join users on users.id = leave_requests.user_id").
 		Where("leave_requests.company_id = ? AND leave_requests.is_deleted_by_admin = ?", adminUser.CompanyID, false)
 
@@ -63,7 +65,7 @@ func AdminGetLeaveRequests(c *gin.Context) {
 		query = query.Where("users.name ILIKE ?", "%"+search+"%")
 	}
 
-	query.Order("leave_requests.created_at desc").Find(&result)
+	query.Order("CASE WHEN leave_requests.status = 'PENDING' THEN 0 ELSE 1 END, leave_requests.created_at ASC").Find(&result)
 
 	utils.Success(c, "Daftar izin karyawan", result)
 }
@@ -93,12 +95,23 @@ func ApproveLeave(c *gin.Context) {
 	leave.AdminNote = body.Note
 	database.DB.Save(&leave)
 
-	// Tandai hari kehadiran dengan status LEAVE/SICK
+	// Tandai hari kehadiran dengan status LEAVE/SICK untuk SEMUA tanggal terpilih
 	attendanceStatus := "LEAVE"
 	if leave.Type == "SAKIT" {
 		attendanceStatus = "SICK"
 	}
-	upsertAttendance(leave.UserID, adminUser.CompanyID, leave.CreatedAt.Format("2006-01-02"), attendanceStatus)
+
+	if leave.Dates != "" {
+		var dateList []string
+		if err := json.Unmarshal([]byte(leave.Dates), &dateList); err == nil {
+			for _, d := range dateList {
+				upsertAttendance(leave.UserID, adminUser.CompanyID, d, attendanceStatus)
+			}
+		}
+	} else {
+		// Fallback ke CreatedAt jika data Dates kosong (kompatibilitas data lama)
+		upsertAttendance(leave.UserID, adminUser.CompanyID, leave.CreatedAt.Format("2006-01-02"), attendanceStatus)
+	}
 
 	// Kirim notifikasi ke karyawan
 	services.CreateNotification(leave.UserID, adminUser.CompanyID, "Izin Disetujui",
@@ -170,20 +183,32 @@ func AdminCreateLeave(c *gin.Context) {
 	adminUser := userCtx.(models.User)
 
 	var body struct {
-		UserID          string `json:"user_id"`
-		Type            string `json:"type"`
-		Title           string `json:"title"`
-		Description     string `json:"description"`
-		Date            string `json:"date"` // format YYYY-MM-DD
-		Status          string `json:"status"` // PENDING/APPROVED
+		UserID          string   `json:"user_id"`
+		Type            string   `json:"type"`
+		Title           string   `json:"title"`
+		Description     string   `json:"description"`
+		Date            string   `json:"date"`  // format YYYY-MM-DD (legacy/single)
+		Dates           []string `json:"dates"` // format [YYYY-MM-DD, ...]
+		Status          string   `json:"status"` // PENDING/APPROVED
 	}
-	if err := c.ShouldBindJSON(&body); err != nil || body.UserID == "" || body.Type == "" || body.Date == "" {
+	if err := c.ShouldBindJSON(&body); err != nil || body.UserID == "" || body.Type == "" {
 		utils.Error(c, "Data tidak lengkap")
 		return
 	}
 
-	// Parsing tanggal untuk CreatedAt
-	parsedDate, _ := time.Parse("2006-01-02", body.Date)
+	// Normalisasi: jika hanya ada Date tunggal, pindahkan ke Dates
+	if len(body.Dates) == 0 && body.Date != "" {
+		body.Dates = []string{body.Date}
+	}
+
+	if len(body.Dates) == 0 {
+		utils.Error(c, "Pilih minimal satu tanggal")
+		return
+	}
+
+	// Parsing tanggal pertama untuk CreatedAt
+	parsedDate, _ := time.Parse("2006-01-02", body.Dates[0])
+	datesJSON, _ := json.Marshal(body.Dates)
 
 	leave := models.LeaveRequest{
 		ID:              uuid.New().String(),
@@ -194,6 +219,7 @@ func AdminCreateLeave(c *gin.Context) {
 		Description:     body.Description,
 		Status:          body.Status,
 		ConfirmedHonest: true,
+		Dates:           string(datesJSON),
 	}
 	// override created_at if provided to match the calendar date
 	if !parsedDate.IsZero() {
@@ -205,13 +231,15 @@ func AdminCreateLeave(c *gin.Context) {
 		return
 	}
 
-	// Jika langsung APPROVED, update attendance
+	// Jika langsung APPROVED, update attendance untuk SEMUA tanggal
 	if body.Status == "APPROVED" {
 		attendanceStatus := "LEAVE"
 		if body.Type == "SAKIT" {
 			attendanceStatus = "SICK"
 		}
-		upsertAttendance(body.UserID, adminUser.CompanyID, body.Date, attendanceStatus)
+		for _, d := range body.Dates {
+			upsertAttendance(body.UserID, adminUser.CompanyID, d, attendanceStatus)
+		}
 	}
 
 	utils.Success(c, "Izin berhasil ditambahkan oleh admin", leave)
@@ -225,14 +253,15 @@ func EmployeeCreateLeave(c *gin.Context) {
 	emp := userCtx.(models.User)
 
 	var body struct {
-		Type            string `json:"type"`
-		Title           string `json:"title"`
-		Description     string `json:"description"`
-		PhotoURL        string `json:"photo_url"`
-		ConfirmedHonest bool   `json:"confirmed_honest"`
+		Type            string   `json:"type"`
+		Title           string   `json:"title"`
+		Description     string   `json:"description"`
+		PhotoURL        string   `json:"photo_url"`
+		ConfirmedHonest bool     `json:"confirmed_honest"`
+		Dates           []string `json:"dates"` // Harap mengirimkan list tanggal
 	}
-	if err := c.ShouldBindJSON(&body); err != nil || body.Title == "" || body.Type == "" {
-		utils.Error(c, "Data izin tidak lengkap")
+	if err := c.ShouldBindJSON(&body); err != nil || body.Title == "" || body.Type == "" || len(body.Dates) == 0 {
+		utils.Error(c, "Data izin tidak lengkap (pastikan tanggal sudah dipilih)")
 		return
 	}
 	if !body.ConfirmedHonest {
@@ -244,6 +273,9 @@ func EmployeeCreateLeave(c *gin.Context) {
 		return
 	}
 
+	// Serialize dates to JSON string
+	datesJSON, _ := json.Marshal(body.Dates)
+
 	leave := models.LeaveRequest{
 		ID:              uuid.New().String(),
 		UserID:          emp.ID,
@@ -254,6 +286,7 @@ func EmployeeCreateLeave(c *gin.Context) {
 		PhotoURL:        body.PhotoURL,
 		Status:          "PENDING",
 		ConfirmedHonest: body.ConfirmedHonest,
+		Dates:           string(datesJSON),
 	}
 	if err := database.DB.Create(&leave).Error; err != nil {
 		utils.Error(c, "Gagal membuat izin")

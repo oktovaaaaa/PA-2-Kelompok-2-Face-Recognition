@@ -190,12 +190,19 @@ const EmployeeList = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant='h4' fontWeight='800' color='primary' gutterBottom>
+            Data Karyawan
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Kelola data, status, dan jabatan {employees.length} karyawan di perusahaan Anda.
+          </Typography>
+        </Box>
+      </Box>
+
       <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-        <CardHeader 
-          title="Data Karyawan" 
-          subheader={`Kelola data dan status ${employees.length} karyawan`}
-          sx={{ pb: 0 }}
-        />
         <Box sx={{ px: 5, py: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, flexWrap: 'wrap' }}>
           <Tabs 
             value={statusFilter} 

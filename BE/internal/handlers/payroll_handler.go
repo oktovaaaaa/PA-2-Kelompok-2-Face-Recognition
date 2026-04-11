@@ -128,10 +128,15 @@ func AdminGetSalaries(c *gin.Context) {
 		}
 	}
 
+	// [AUTO-CLEANUP] Bersihkan data gaji & absensi ADMIN yang tidak sengaja terbentuk
+	database.DB.Exec("DELETE FROM salaries WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' AND company_id = ?)", admin.CompanyID)
+	database.DB.Exec("DELETE FROM attendances WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' AND company_id = ?)", admin.CompanyID)
+	database.DB.Exec("UPDATE users SET position_id = NULL WHERE role = 'ADMIN' AND company_id = ?", admin.CompanyID)
+
 	var salaries []models.Salary
 	query := database.DB.Preload("User").Preload("User.Position").Preload("Payments").
 		Joins("JOIN users ON users.id = salaries.user_id").
-		Where("users.company_id = ?", admin.CompanyID)
+		Where("users.company_id = ? AND users.role = ?", admin.CompanyID, "EMPLOYEE")
 
 	if month > 0 && year > 0 {
 		periodEnd := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local).AddDate(0, 1, 0)
@@ -145,8 +150,8 @@ func AdminGetSalaries(c *gin.Context) {
 		}
 	}
 
-	// Filter by User
-	userSubQuery := database.DB.Model(&models.User{}).Where("company_id = ?", admin.CompanyID)
+	// Filter by User (hanya karyawan)
+	userSubQuery := database.DB.Model(&models.User{}).Where("company_id = ? AND role = ?", admin.CompanyID, "EMPLOYEE")
 	if positionID != "" {
 		userSubQuery = userSubQuery.Where("position_id = ?", positionID)
 	}
@@ -382,6 +387,13 @@ func repairDuplicates(userID string, month int, year int) {
 func generateSalary(userID string, month int, year int) {
 	var user models.User
 	if err := database.DB.Preload("Position").First(&user, "id = ?", userID).Error; err != nil {
+		return
+	}
+
+	// JANGAN buat gaji untuk peran ADMIN
+	if user.Role == "ADMIN" {
+		// Cleanup jika ada record tersisa
+		database.DB.Where("user_id = ?", userID).Delete(&models.Salary{})
 		return
 	}
 

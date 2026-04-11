@@ -15,14 +15,14 @@ const AdjustmentDashboard = () => {
   }
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 0 }}>
+      {/* Page Header */}
       <Box sx={{ mb: 6 }}>
-        <Typography variant='h4' sx={{ fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <i className='ri-equalizer-line' style={{ color: '#6366f1' }} />
-          Manajemen Bonus & Sanksi
+        <Typography variant='h4' fontWeight='800' color='primary' gutterBottom>
+          Bonus & Sanksi
         </Typography>
-        <Typography variant='body1' color='text.secondary'>
-          Kelola penyesuaian gaji manual untuk setiap karyawan dalam satu dashboard terpadu.
+        <Typography variant='body2' color='text.secondary'>
+          Kelola penyesuaian gaji manual, reward prestasi, dan potongan sanksi untuk seluruh karyawan.
         </Typography>
       </Box>
 

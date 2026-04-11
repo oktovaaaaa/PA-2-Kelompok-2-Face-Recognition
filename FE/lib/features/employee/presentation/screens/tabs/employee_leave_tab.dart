@@ -1,8 +1,11 @@
 // lib/features/employee/presentation/screens/tabs/employee_leave_tab.dart
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
+import 'package:intl/intl.dart';
 import '../../../../../core/network/api_client.dart';
 import '../../../../../core/constants/app_constants.dart';
 import 'package:flutter/services.dart';
@@ -69,6 +72,20 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
     File? pickedPhoto;
     String? uploadedPhotoUrl = existing?['photo_url'];
 
+    // Multi-date selection state
+    List<DateTime?> selectedDates = [];
+    if (existing?['dates'] != null && (existing!['dates'] as String).isNotEmpty) {
+      try {
+        final List<dynamic> datesStr = jsonDecode(existing['dates']);
+        selectedDates = datesStr.map((d) => DateTime.parse(d as String)).toList();
+      } catch (_) {}
+    } else if (existing?['created_at'] != null) {
+      selectedDates = [DateTime.parse(existing!['created_at'])];
+    }
+    
+    // Calendar mode: single/multi (Beberapa Hari) or range (Rentang)
+    CalendarDatePicker2Type calendarType = CalendarDatePicker2Type.multi;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -81,8 +98,27 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isEdit ? 'Edit Izin' : 'Ajukan Izin/Sakit',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(isEdit ? 'Edit Izin' : 'Ajukan Izin/Sakit',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 // Tipe
                 Row(
@@ -92,16 +128,75 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                         child: Padding(
                           padding: EdgeInsets.only(right: t == 'IZIN' ? 8.0 : 0),
                           child: ChoiceChip(
-                            label: Text(t == 'IZIN' ? '📄 Izin' : '🏥 Sakit'),
+                            label: Text(t == 'IZIN' ? 'Izin' : 'Sakit'),
                             selected: selectedType == t,
                             onSelected: (_) => setModal(() => selectedType = t),
-                            selectedColor: const Color(0xFF2E7D32),
+                            selectedColor: const Color(0xFF2563EB),
                             labelStyle: TextStyle(color: selectedType == t ? Colors.white : Colors.black),
                           ),
                         ),
                       ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                // Mode Tanggal Toggle
+                const Text('Mode Pemilihan Tanggal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF64748B))),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    children: [
+                      _buildModeButton(
+                        label: 'Beberapa Hari',
+                        icon: Icons.calendar_month_rounded,
+                        active: calendarType == CalendarDatePicker2Type.multi,
+                        onTap: () => setModal(() {
+                          calendarType = CalendarDatePicker2Type.multi;
+                          selectedDates = [];
+                        }),
+                      ),
+                      const SizedBox(width: 4),
+                      _buildModeButton(
+                        label: 'Rentang Waktu',
+                        icon: Icons.date_range_rounded,
+                        active: calendarType == CalendarDatePicker2Type.range,
+                        onTap: () => setModal(() {
+                          calendarType = CalendarDatePicker2Type.range;
+                          selectedDates = [];
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Kalender
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: CalendarDatePicker2(
+                    config: CalendarDatePicker2Config(
+                      calendarType: calendarType,
+                      selectedDayHighlightColor: const Color(0xFF2563EB),
+                      weekdayLabelTextStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+                      controlsTextStyle: const TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    value: selectedDates,
+                    onValueChanged: (dates) => setModal(() => selectedDates = dates),
+                  ),
+                ),
+                if (selectedDates.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    calendarType == CalendarDatePicker2Type.range && selectedDates.length >= 2 && selectedDates[1] != null
+                        ? 'Terpilih: ${DateFormat('dd MMM').format(selectedDates[0]!)} - ${DateFormat('dd MMM yyyy').format(selectedDates[1]!)}'
+                        : 'Terpilih: ${selectedDates.length} Hari',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB), fontSize: 13),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextField(
                   controller: titleCtrl,
@@ -162,7 +257,7 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                       style: TextStyle(fontSize: 13)),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
-                  activeColor: const Color(0xFF2E7D32),
+                  activeColor: const Color(0xFF2563EB),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -183,12 +278,36 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                           uploadedPhotoUrl = uploadRes.data?['url'] as String?;
                         }
                       }
+                      // Prepare dates for backend (YYYY-MM-DD)
+                      List<String> datesToSend = [];
+                      if (calendarType == CalendarDatePicker2Type.multi) {
+                        datesToSend = selectedDates
+                            .where((d) => d != null)
+                            .map((d) => DateFormat('yyyy-MM-dd').format(d!))
+                            .toList();
+                      } else if (calendarType == CalendarDatePicker2Type.range && selectedDates.length >= 2 && selectedDates[0] != null && selectedDates[1] != null) {
+                        // Generate all dates in range
+                        DateTime start = selectedDates[0]!;
+                        DateTime end = selectedDates[1]!;
+                        for (int i = 0; i <= end.difference(start).inDays; i++) {
+                          datesToSend.add(DateFormat('yyyy-MM-dd').format(start.add(Duration(days: i))));
+                        }
+                      } else if (selectedDates.isNotEmpty && selectedDates[0] != null) {
+                        datesToSend = [DateFormat('yyyy-MM-dd').format(selectedDates[0]!)];
+                      }
+
+                      if (datesToSend.isEmpty) {
+                        AppDialog.showError(context, 'Pilih minimal satu tanggal');
+                        return;
+                      }
+
                       final body = {
                         'type': selectedType,
                         'title': titleCtrl.text.trim(),
                         'description': descCtrl.text.trim(),
                         'photo_url': uploadedPhotoUrl ?? '',
                         'confirmed_honest': confirmed,
+                        'dates': datesToSend,
                       };
                       try {
                         final res = isEdit
@@ -315,6 +434,32 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                   child: Text(_statusLabels[status] ?? status, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            // Informasi Tanggal
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.blue.shade50.withOpacity(0.5), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blue.shade100)),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xFF2563EB)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Tanggal Diajukan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatDates(l['dates'] ?? ''),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const Divider(height: 40),
             const Text('Keterangan / Alasan', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 12)),
@@ -697,5 +842,58 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
         ),
       ),
     );
+  }
+
+  Widget _buildModeButton({required String label, required IconData icon, required bool active, required VoidCallback onTap}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: active ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: active ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: active ? const Color(0xFF2563EB) : Colors.grey),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(fontSize: 12, fontWeight: active ? FontWeight.bold : FontWeight.normal, color: active ? const Color(0xFF2563EB) : Colors.grey)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDates(String datesJson) {
+    if (datesJson.isEmpty) return '-';
+    try {
+      final List<dynamic> dates = jsonDecode(datesJson);
+      if (dates.isEmpty) return '-';
+      if (dates.length == 1) return DateFormat('dd MMMM yyyy').format(DateTime.parse(dates[0]));
+      
+      // Sort dates
+      final sorted = dates.map((d) => DateTime.parse(d)).toList()..sort();
+      final first = sorted.first;
+      final last = sorted.last;
+      
+      // Jika berurutan semua (rentang)
+      bool isContiguous = true;
+      for (int i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i+1].difference(sorted[i]).inDays != 1) {
+          isContiguous = false;
+          break;
+        }
+      }
+      
+        return isContiguous
+            ? '${DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(first)} - \n${DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(last)}\n(${dates.length} Hari)'
+            : sorted.map((d) => DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(d)).join('\n');
+    } catch (_) {
+      return '-';
+    }
   }
 }

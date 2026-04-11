@@ -108,14 +108,21 @@ const PayrollList = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* 1. Header & Filters */}
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant='h4' fontWeight='800' color='primary' gutterBottom>
+            Laporan Payroll
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Kelola pembayaran gaji tepat waktu, pantau rincian potongan, dan status pelunasan karyawan.
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* 1. Filters Card */}
       <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-        <CardHeader 
-          title="Manajemen Penggajian" 
-          subheader="Kelola pembayaran gaji, rincian potongan, dan status pelunasan."
-          sx={{ pb: 3 }}
-        />
-        <Box sx={{ px: 5, pb: 5 }}>
+        <Box sx={{ px: 5, pb: 5, pt: 5 }}>
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} sm={2.4}>
               <TextField

@@ -130,14 +130,20 @@ const EmployeeApproval = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant='h4' fontWeight='800' color='primary' gutterBottom>
+            Persetujuan Karyawan
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Daftar pendaftar baru yang memerlukan verifikasi ({employees.length} pending)
+          </Typography>
+        </Box>
+      </Box>
+
       <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ p: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
-          <Box>
-            <Typography variant="h5" sx={{ mb: 0.5 }}>Persetujuan Karyawan</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Daftar pendaftar baru yang memerlukan verifikasi ({employees.length} pending)
-            </Typography>
-          </Box>
+        <Box sx={{ p: 5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 4 }}>
           <TextField
             size='small'
             placeholder='Cari Nama / Email...'
