@@ -24,7 +24,7 @@ func LoginWithPin(userID string, pin string) (models.User, error) {
 		return user, errors.New("PIN sedang terkunci, silakan coba lagi nanti")
 	}
 
-	if !utils.CheckPin(pin, user.Pin) {
+	if !utils.CheckPin(user.Pin, pin) {
 		user.InvalidPinAttempts++
 		if user.InvalidPinAttempts >= 5 {
 			lockedUntil := time.Now().Add(5 * time.Minute)

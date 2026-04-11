@@ -289,7 +289,7 @@ const EmployeeList = () => {
                       <IconButton color='primary' size='small' onClick={(e) => { e.stopPropagation(); handleOpenDetail(row); }}>
                         <i className='ri-eye-line' />
                       </IconButton>
-                      <IconButton color='error' size='small' onClick={(e) => { e.stopPropagation(); setSelectedEmployee(row); handleAction('status'); }}>
+                      <IconButton color={row.status === 'ACTIVE' ? 'error' : 'success'} size='small' onClick={(e) => { e.stopPropagation(); setSelectedEmployee(row); handleAction('status'); }}>
                         <i className={row.status === 'ACTIVE' ? 'ri-user-unfollow-line' : 'ri-user-add-line'} />
                       </IconButton>
                     </TableCell>

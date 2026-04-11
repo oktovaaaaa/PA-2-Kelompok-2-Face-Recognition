@@ -8,6 +8,7 @@ import (
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -207,6 +208,27 @@ func ChangePassword(c *gin.Context) {
 	utils.Success(c, "Password berhasil diperbarui", nil)
 }
 
+// VerifyPassword — hanya verifikasi apakah password yang dimasukkan benar
+func VerifyPassword(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	var body struct {
+		Password string `json:"password"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		utils.Error(c, "Data tidak valid")
+		return
+	}
+
+	if !utils.CheckPassword(user.Password, body.Password) {
+		utils.Error(c, "Password yang Anda masukkan salah")
+		return
+	}
+
+	utils.Success(c, "Password sesuai", nil)
+}
+
 // ChangePin — ubah PIN sendiri (verifikasi PIN Lama ATAU OTP)
 func ChangePin(c *gin.Context) {
 	userCtx, _ := c.Get("user")
@@ -297,9 +319,16 @@ func DeleteAccount(c *gin.Context) {
 		return
 	}
 
+	// Validasi tambahan: Nama user harus ada agar frasa bisa dibuat
+	if strings.TrimSpace(dbUser.Name) == "" {
+		utils.Error(c, "Nama akun tidak terdeteksi di database. Harap hubungi admin atau lengkapi profil Anda.")
+		return
+	}
+
 	// Validasi 2: Cek frasa konfirmasi
-	if body.ConfirmationPhrase != "SAYA YAKIN" {
-		utils.Error(c, "Frasa konfirmasi tidak sesuai. Ketik \"SAYA YAKIN\" untuk melanjutkan")
+	expectedPhrase := fmt.Sprintf("SAYA YAKIN MENGHAPUS AKUN %s", strings.ToUpper(dbUser.Name))
+	if body.ConfirmationPhrase != expectedPhrase {
+		utils.Error(c, fmt.Sprintf("Frasa konfirmasi tidak sesuai. Ketik \"%s\" untuk melanjutkan", expectedPhrase))
 		return
 	}
 
@@ -338,5 +367,5 @@ func DeleteAccount(c *gin.Context) {
 		}
 	}
 
-	utils.Success(c, "Akun berhasil dihapus secara permanen", nil)
+	utils.Success(c, "Proses Resign dan Hapus Akun Berhasil", nil)
 }

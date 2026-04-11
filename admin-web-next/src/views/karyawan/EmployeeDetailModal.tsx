@@ -314,7 +314,12 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
             <Stack direction='row' spacing={3}>
                 <ActionButton icon='ri-key-line' label='Reset Perangkat' color='warning' onClick={() => onAction('reset')} />
                 <ActionButton icon='ri-edit-box-line' label='Set Jabatan' color='primary' onClick={() => onAction('position')} />
-                <ActionButton icon='ri-user-unfollow-line' label='Pecat/Nonaktif' color='error' onClick={() => onAction('status')} />
+                <ActionButton 
+                  icon={isActive ? 'ri-user-unfollow-line' : 'ri-user-add-line'} 
+                  label={isActive ? 'Pecat/Nonaktif' : 'Pekerjakan Lagi'} 
+                  color={isActive ? 'error' : 'success'} 
+                  onClick={() => onAction('status')} 
+                />
             </Stack>
           </Grid>
 

@@ -11,6 +11,7 @@ import {
 } from '@mui/material'
 import { settingService, CompanyLocation } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 // Import Leaflet CSS
 import 'leaflet/dist/leaflet.css'
@@ -37,6 +38,21 @@ const LocationSettings = () => {
     radius: 100,
     is_active: true
   })
+
+  // Confirmation State
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: 'warning' | 'error' | 'info';
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    type: 'warning'
+  });
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('')
@@ -142,11 +158,7 @@ const LocationSettings = () => {
     }
   }
 
-  const handleSave = async () => {
-    if (!form.name) {
-      showNotification('Nama lokasi wajib diisi.', 'error')
-      return
-    }
+  const executeSave = async () => {
     setActionLoading(true)
     try {
       if (isEditing && editingId) {
@@ -159,11 +171,27 @@ const LocationSettings = () => {
       setIsEditing(false)
       setEditingId(null)
       loadLocations()
+      setForm({ name: '', latitude: -6.2088, longitude: 106.8456, radius: 100, is_active: true });
     } catch (error) {
       showNotification('Gagal menyimpan lokasi.', 'error')
     } finally {
       setActionLoading(false)
     }
+  }
+
+  const handleSave = async () => {
+    if (!form.name) {
+      showNotification('Nama lokasi wajib diisi.', 'error')
+      return
+    }
+
+    setConfirmState({
+      open: true,
+      title: isEditing ? 'Perbarui Lokasi?' : 'Simpan Lokasi?',
+      message: `Apakah Anda yakin ingin ${isEditing ? 'memperbarui' : 'menyimpan'} lokasi "${form.name}"?`,
+      onConfirm: executeSave,
+      type: 'info'
+    });
   }
 
   const handleEdit = (loc: CompanyLocation) => {
@@ -181,15 +209,22 @@ const LocationSettings = () => {
     if (editor) editor.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Hapus lokasi ini?')) return
-    try {
-      await settingService.deleteLocation(id)
-      showNotification('Lokasi dihapus.', 'success')
-      loadLocations()
-    } catch (e) {
-      showNotification('Gagal menghapus lokasi.', 'error')
-    }
+  const handleDelete = async (id: string, name: string) => {
+    setConfirmState({
+      open: true,
+      title: 'Hapus Lokasi?',
+      message: `Tindakan ini akan menghapus "${name}" secara permanen. Karyawan yang terdaftar di area ini tidak akan bisa melakukan absensi.`,
+      onConfirm: async () => {
+        try {
+          await settingService.deleteLocation(id)
+          showNotification('Lokasi dihapus.', 'success')
+          loadLocations()
+        } catch (e) {
+          showNotification('Gagal menghapus lokasi.', 'error')
+        }
+      },
+      type: 'error'
+    });
   }
 
   if (loading) return null
@@ -344,7 +379,7 @@ const LocationSettings = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Hapus">
-                          <IconButton edge="end" color="error" onClick={() => handleDelete(loc.id)}>
+                          <IconButton edge="end" color="error" onClick={() => handleDelete(loc.id, loc.name)}>
                             <i className="ri-delete-bin-7-line" />
                           </IconButton>
                         </Tooltip>
@@ -375,6 +410,14 @@ const LocationSettings = () => {
           </CardContent>
         </Card>
       </Grid>
+      <ConfirmDialog 
+        open={confirmState.open}
+        onClose={() => setConfirmState({ ...confirmState, open: false })}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+      />
     </Grid>
   )
 }

@@ -843,8 +843,8 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
           ListTile(
             onTap: _showDeleteAccountFlow,
             leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
-            title: const Text('Hapus Akun Permanen', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
-            subtitle: const Text('Tindakan ini tidak dapat dibatalkan', style: TextStyle(fontSize: 12, color: Colors.red)),
+            title: const Text('Resign & Hapus Akun', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
+            subtitle: const Text('Data riwayat tetap tersimpan di perusahaan', style: TextStyle(fontSize: 12, color: Colors.red)),
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.red),
           ),
         ],
@@ -1167,6 +1167,12 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
   }
 
   void _showDeleteAccountFlow() async {
+    final name = (_profile?['name'] ?? '').toString();
+    if (name.isEmpty || name == '-') {
+      AppDialog.showError(context, 'Data profil belum dimuat sepenuhnya. Harap tunggu sebentar atau muat ulang halaman.');
+      return;
+    }
+
     // STEP 1: Konfirmasi awal
     final step1 = await AppDialog.showConfirm(
       context,
@@ -1219,15 +1225,33 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  onPressed: passwordLoading ? null : () {
+                  onPressed: passwordLoading ? null : () async {
                     if (passwordCtrl.text.trim().isEmpty) {
                       AppDialog.showError(context, 'Password tidak boleh kosong');
                       return;
                     }
-                    passwordFromStep2 = passwordCtrl.text.trim();
-                    Navigator.pop(context);
+                    
+                    setModalState(() => passwordLoading = true);
+                    try {
+                      final res = await ApiClient.post('/api/profile/verify-password', {
+                        'password': passwordCtrl.text.trim(),
+                      });
+                      
+                      if (res.success) {
+                        passwordFromStep2 = passwordCtrl.text.trim();
+                        if (context.mounted) Navigator.pop(context);
+                      } else {
+                        if (context.mounted) AppDialog.showError(context, res.message ?? 'Password salah');
+                        setModalState(() => passwordLoading = false);
+                      }
+                    } catch (e) {
+                      if (context.mounted) AppDialog.showError(context, 'Terjadi kesalahan verifikasi: $e');
+                      setModalState(() => passwordLoading = false);
+                    }
                   },
-                  child: const Text('Verifikasi & Lanjutkan', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: passwordLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Verifikasi & Lanjutkan', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1282,16 +1306,23 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
               const SizedBox(height: 20),
               RichText(
                 text: TextSpan(
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-                  children: const [
-                    TextSpan(text: 'Ketik '),
-                    TextSpan(text: 'SAYA YAKIN', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.red, letterSpacing: 2)),
-                    TextSpan(text: ' pada kotak di bawah untuk menghapus akun Anda secara permanen.'),
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                  children: [
+                    const TextSpan(text: 'Ketik '),
+                    TextSpan(
+                      text: 'SAYA YAKIN MENGHAPUS AKUN ${(_profile?['name'] ?? '').toString().toUpperCase()}', 
+                      style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.red, fontSize: 13)
+                    ),
+                    const TextSpan(text: ' pada kotak di bawah untuk memproses pengunduran diri dan penghapusan akun.'),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              AppTextField(controller: phraseCtrl, label: 'Ketik "SAYA YAKIN"', prefixIcon: Icons.text_fields_rounded),
+              AppTextField(
+                controller: phraseCtrl, 
+                label: 'Ketik frasa di atas', 
+                prefixIcon: Icons.text_fields_rounded
+              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -1303,28 +1334,29 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: deleteLoading ? null : () async {
-                    if (phraseCtrl.text.trim() != 'SAYA YAKIN') {
-                      AppDialog.showError(context, 'Frasa konfirmasi harus persis: SAYA YAKIN');
+                    final expectedPhrase = 'SAYA YAKIN MENGHAPUS AKUN ${(_profile?['name'] ?? '').toString().toUpperCase()}';
+                    if (phraseCtrl.text.trim() != expectedPhrase) {
+                      AppDialog.showError(context, 'Frasa konfirmasi harus persis: $expectedPhrase');
                       return;
                     }
                     setModalState(() => deleteLoading = true);
                     try {
                       final res = await ApiClient.delete('/api/profile', body: {
                         'password': passwordFromStep2,
-                        'confirmation_phrase': 'SAYA YAKIN',
+                        'confirmation_phrase': expectedPhrase,
                       });
                       if (!mounted) return;
                       if (res.success) {
                         Navigator.pop(context);
                         await SessionStorage.clear();
                         if (!mounted) return;
-                        AppDialog.showSuccess(context, 'Akun Anda telah dihapus secara permanen');
+                        AppDialog.showSuccess(context, 'Proses Resign dan Hapus Akun Berhasil');
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (_) => const LandingScreen()),
                           (route) => false,
                         );
                       } else {
-                        AppDialog.showError(context, res.message ?? 'Gagal menghapus akun');
+                        AppDialog.showError(context, res.message ?? 'Gagal memproses pengunduran diri');
                         setModalState(() => deleteLoading = false);
                       }
                     } catch (e) {
@@ -1339,7 +1371,7 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                         children: [
                           Icon(Icons.delete_forever_rounded),
                           SizedBox(width: 8),
-                          Text('Hapus Akun Permanen', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text('Resign & Hapus Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ],
                       ),
                 ),

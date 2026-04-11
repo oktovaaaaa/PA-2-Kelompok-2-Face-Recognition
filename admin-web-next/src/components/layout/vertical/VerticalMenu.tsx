@@ -61,14 +61,10 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-line' /> }}
         menuSectionStyles={menuSectionStyles(theme)}
       >
-        {/* Public Section */}
-        <MenuItem href='/landing' icon={<i className='ri-earth-line' />}>
-          Halaman Beranda
-        </MenuItem>
 
         {/* Dashboard Section */}
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>
-          Ringkasan Dashboard
+          Dashboard
         </MenuItem>
 
         <MenuSection label='Manajemen SDM'>
