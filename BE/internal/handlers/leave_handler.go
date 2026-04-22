@@ -183,13 +183,13 @@ func AdminCreateLeave(c *gin.Context) {
 	adminUser := userCtx.(models.User)
 
 	var body struct {
-		UserID          string   `json:"user_id"`
-		Type            string   `json:"type"`
-		Title           string   `json:"title"`
-		Description     string   `json:"description"`
-		Date            string   `json:"date"`  // format YYYY-MM-DD (legacy/single)
-		Dates           []string `json:"dates"` // format [YYYY-MM-DD, ...]
-		Status          string   `json:"status"` // PENDING/APPROVED
+		UserID      string   `json:"user_id"`
+		Type        string   `json:"type"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Date        string   `json:"date"`   // format YYYY-MM-DD (legacy/single)
+		Dates       []string `json:"dates"`  // format [YYYY-MM-DD, ...]
+		Status      string   `json:"status"` // PENDING/APPROVED
 	}
 	if err := c.ShouldBindJSON(&body); err != nil || body.UserID == "" || body.Type == "" {
 		utils.Error(c, "Data tidak lengkap")
@@ -353,11 +353,13 @@ func EmployeeDeleteLeave(c *gin.Context) {
 	}
 
 	leave.IsDeletedByEmployee = true
-	
-	// Jika status masih PENDING, maka pembatalan oleh karyawan otomatis menghapus 
+
+	// Jika status masih PENDING, maka pembatalan oleh karyawan otomatis menghapus
 	// pengajuan tersebut dari daftar antrean Admin (is_deleted_by_admin = true)
 	if leave.Status == "PENDING" {
 		leave.IsDeletedByAdmin = true
+		// Hapus notifikasi untuk admin karena pengajuan dibatalkan
+		services.DeleteNotificationsByRefID(leave.ID)
 	}
 
 	database.DB.Save(&leave)
@@ -380,6 +382,15 @@ func EmployeeBulkDeleteLeaves(c *gin.Context) {
 	if err := c.ShouldBindJSON(&body); err != nil || len(body.IDs) == 0 {
 		utils.Error(c, "Daftar ID tidak valid")
 		return
+	}
+
+	// Jika ada yang statusnya PENDING, hilangkan juga dari daftar Admin (Batalkan Pengajuan)
+	var pendingLeaves []models.LeaveRequest
+	database.DB.Where("id IN ? AND status = ?", body.IDs, "PENDING").Find(&pendingLeaves)
+
+	for _, pl := range pendingLeaves {
+		database.DB.Model(&models.LeaveRequest{}).Where("id = ?", pl.ID).Update("is_deleted_by_admin", true)
+		services.DeleteNotificationsByRefID(pl.ID)
 	}
 
 	// Soft-delete: Tandai is_deleted_by_employee = true

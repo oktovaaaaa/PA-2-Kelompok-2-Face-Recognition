@@ -431,7 +431,7 @@ class _AdminEmployeeTabState extends State<AdminEmployeeTab> with SingleTickerPr
             const SizedBox(height: 4),
             Center(
               child: Chip(
-                label: Text(emp['status'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                label: Text((emp['status'] ?? '') == 'ACTIVE' ? 'Aktif' : 'Diberhentikan', style: const TextStyle(color: Colors.white, fontSize: 12)),
                 backgroundColor: isActive ? Colors.green : Colors.red,
               ),
             ),

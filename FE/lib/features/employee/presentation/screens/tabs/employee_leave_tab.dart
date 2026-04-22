@@ -539,7 +539,7 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                      _deleteLeave(l['id'], isPending: status == 'PENDING');
+                      _deleteLeave(l['id'], isPending: status.toString().toUpperCase() == 'PENDING');
                     },
                     icon: Icon(status == 'PENDING' ? Icons.cancel_outlined : Icons.delete_outline_rounded, size: 20),
                     label: Text(status == 'PENDING' ? 'Batalkan Pengajuan' : 'Hapus Riwayat', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -719,7 +719,7 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                               final id = l['id'].toString();
                               final status = l['status'] ?? '';
                               final color = _statusColors[status] ?? Colors.grey;
-                              final isPending = status == 'PENDING';
+                              final isPending = status.toString().toUpperCase() == 'PENDING';
                               final isSelected = _selectedIds.contains(id);
 
                               return AnimatedOpacity(
@@ -814,16 +814,25 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                                                   const SizedBox(height: 8),
                                                   PopupMenuButton<String>(
                                                     icon: const Icon(Icons.more_horiz_rounded, color: Colors.grey, size: 20),
-                                                    onSelected: (v) {
-                                                      if (v == 'edit') _showForm(existing: l);
-                                                      if (v == 'delete') _deleteLeave(id);
-                                                      if (v == 'detail') _showDetailView(l);
-                                                    },
+                                                      onSelected: (v) {
+                                                        if (v == 'edit') _showForm(existing: l);
+                                                        if (v == 'delete') _deleteLeave(id, isPending: isPending);
+                                                        if (v == 'detail') _showDetailView(l);
+                                                      },
                                                     itemBuilder: (_) => [
                                                       const PopupMenuItem(value: 'detail', child: Row(children: [Icon(Icons.visibility_rounded, size: 16), SizedBox(width: 8), Text('Detail')])),
                                                       if (isPending)
                                                         const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_rounded, size: 16), SizedBox(width: 8), Text('Edit')])),
-                                                      const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_rounded, size: 16, color: Colors.red), SizedBox(width: 8), Text('Hapus', style: TextStyle(color: Colors.red))])),
+                                                      PopupMenuItem(
+                                                        value: 'delete', 
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(isPending ? Icons.cancel_outlined : Icons.delete_rounded, size: 16, color: Colors.red), 
+                                                            const SizedBox(width: 8), 
+                                                            Text(isPending ? 'Batalkan Pengajuan' : 'Hapus Riwayat', style: const TextStyle(color: Colors.red))
+                                                          ]
+                                                        )
+                                                      ),
                                                     ],
                                                   ),
                                                 ],

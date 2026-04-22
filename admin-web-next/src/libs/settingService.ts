@@ -15,7 +15,7 @@ export const BASE_URL = 'http://localhost:8080';
 export const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
     if (url.startsWith('http')) return url;
-    
+
     // Ensure no double slashes
     const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
     return `${BASE_URL}/${cleanUrl}`;
@@ -30,6 +30,7 @@ export interface Profile {
     birth_date: string;
     address: string;
     photo_url: string;
+    role: string;
     bank_name?: string;
     bank_account_number?: string;
 }
@@ -199,7 +200,7 @@ export const settingService = {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal memuat data denda.');
-        
+
         return {
             data: data.data.data as ManualPenalty[],
             total: data.data.total as number

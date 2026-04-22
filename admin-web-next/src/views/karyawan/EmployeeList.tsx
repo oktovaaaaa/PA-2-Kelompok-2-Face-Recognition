@@ -34,21 +34,21 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Divider } fro
 
 const EmployeeList = () => {
   const { showNotification } = useNotification()
-  
+
   // States
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'RESIGNED'>('ACTIVE')
   const [searchQuery, setSearchQuery] = useState('')
-  
+
   // Modal States
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isPositionOpen, setIsPositionOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [confirmConfig, setConfirmConfig] = useState<{
-    title: string, 
-    message: string, 
+    title: string,
+    message: string,
     type: 'warning' | 'error' | 'info',
     action: () => void
   } | null>(null)
@@ -120,8 +120,8 @@ const EmployeeList = () => {
       setConfirmConfig({
         title: isFiring ? 'Pecat Karyawan' : 'Aktifkan Kembali',
         type: isFiring ? 'error' : 'info',
-        message: isFiring 
-          ? `Apakah Anda yakin ingin memecat ${selectedEmployee.name}? Status akan menjadi RESIGNED.` 
+        message: isFiring
+          ? `Apakah Anda yakin ingin memecat ${selectedEmployee.name}? Status akan menjadi RESIGNED.`
           : `Aktifkan kembali ${selectedEmployee.name}?`,
         action: async () => {
           if (isFiring) {
@@ -148,7 +148,7 @@ const EmployeeList = () => {
   const handleFinalFire = async () => {
     if (!selectedEmployee) return
     const requiredPhrase = `SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${selectedEmployee.name.toUpperCase()}`
-    
+
     if (firePhrase.trim().toUpperCase() !== requiredPhrase) {
       setFireError(`Harap ketik frasa konfirmasi dengan benar.`)
       return
@@ -170,18 +170,18 @@ const EmployeeList = () => {
   const handleAssignPosition = async (posId: string) => {
     if (!selectedEmployee) return
     try {
-        await employeeService.assignPosition(selectedEmployee.id, posId)
-        setIsPositionOpen(false)
-        showNotification('Jabatan berhasil diperbarui!', 'success')
-        loadData()
-        const updated = employees.find(e => e.id === selectedEmployee.id)
-        if (updated) setSelectedEmployee({...updated, position_id: posId})
+      await employeeService.assignPosition(selectedEmployee.id, posId)
+      setIsPositionOpen(false)
+      showNotification('Jabatan berhasil diperbarui!', 'success')
+      loadData()
+      const updated = employees.find(e => e.id === selectedEmployee.id)
+      if (updated) setSelectedEmployee({ ...updated, position_id: posId })
     } catch (error) {
-        showNotification('Gagal memperbarui jabatan.', 'error')
+      showNotification('Gagal memperbarui jabatan.', 'error')
     }
   }
 
-  const filteredEmployees = employees.filter(emp => 
+  const filteredEmployees = employees.filter(emp =>
     emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     emp.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -204,15 +204,15 @@ const EmployeeList = () => {
 
       <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ px: 5, py: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, flexWrap: 'wrap' }}>
-          <Tabs 
-            value={statusFilter} 
+          <Tabs
+            value={statusFilter}
             onChange={(_, val) => setStatusFilter(val)}
             sx={{ borderBottom: 0 }}
           >
             <Tab label="Aktif" value="ACTIVE" />
             <Tab label="Diberhentikan" value="RESIGNED" />
           </Tabs>
-          
+
           <TextField
             size='small'
             placeholder='Cari Nama / Email...'
@@ -249,23 +249,23 @@ const EmployeeList = () => {
               </TableHead>
               <TableBody>
                 {paginatedEmployees.length === 0 ? (
-                    <TableRow>
-                        <TableCell colSpan={5} align='center' sx={{ py: 10 }}>
-                            <Typography color='textSecondary'>Tidak ada data karyawan ditemukan.</Typography>
-                        </TableCell>
-                    </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5} align='center' sx={{ py: 10 }}>
+                      <Typography color='textSecondary'>Tidak ada data karyawan ditemukan.</Typography>
+                    </TableCell>
+                  </TableRow>
                 ) : paginatedEmployees.map((row) => (
-                  <TableRow 
-                    key={row.id} 
-                    hover 
+                  <TableRow
+                    key={row.id}
+                    hover
                     onClick={() => handleOpenDetail(row)}
                     sx={{ cursor: 'pointer', '&:last-child td, &:last-child th': { border: 0 } }}
                   >
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar 
+                        <Avatar
                           src={row.photo_url ? `http://localhost:8080${row.photo_url}` : undefined}
-                          sx={{ mr: 3, width: 34, height: 34 }} 
+                          sx={{ mr: 3, width: 34, height: 34 }}
                         >
                           {row.name.charAt(0)}
                         </Avatar>
@@ -273,22 +273,22 @@ const EmployeeList = () => {
                       </Box>
                     </TableCell>
                     <TableCell>
-                        <Typography variant='body2'>{row.email}</Typography>
+                      <Typography variant='body2'>{row.email}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip 
-                        label={row.position_name || 'Unassigned'} 
-                        size='small' 
+                      <Chip
+                        label={row.position_name || 'Unassigned'}
+                        size='small'
                         variant='outlined'
                         sx={{ bgcolor: 'background.paper', color: 'primary.main' }}
                         color={row.position_name ? 'primary' : 'default'}
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <Chip 
-                        label={row.status === 'ACTIVE' ? 'Aktif' : 'Nonaktif'} 
-                        color={row.status === 'ACTIVE' ? 'success' : 'error'} 
-                        size='small' 
+                      <Chip
+                        label={row.status === 'ACTIVE' ? 'Aktif' : 'Diberhentikan'}
+                        color={row.status === 'ACTIVE' ? 'success' : 'error'}
+                        size='small'
                         variant='outlined'
                       />
                     </TableCell>
@@ -319,14 +319,14 @@ const EmployeeList = () => {
       </Card>
 
       {/* Modals & Dialogs */}
-      <EmployeeDetailModal 
-        open={isDetailOpen} 
-        onClose={() => setIsDetailOpen(false)} 
+      <EmployeeDetailModal
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
         employee={selectedEmployee}
         onAction={handleAction}
       />
 
-      <PositionAssignModal 
+      <PositionAssignModal
         open={isPositionOpen}
         onClose={() => setIsPositionOpen(false)}
         employeeName={selectedEmployee?.name || ''}
@@ -334,10 +334,10 @@ const EmployeeList = () => {
         onAssign={handleAssignPosition}
       />
 
-      <ConfirmDialog 
+      <ConfirmDialog
         open={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
-        onConfirm={confirmConfig?.action || (() => {})}
+        onConfirm={confirmConfig?.action || (() => { })}
         title={confirmConfig?.title || ''}
         message={confirmConfig?.message || ''}
         type={confirmConfig?.type}
@@ -358,16 +358,16 @@ const EmployeeList = () => {
           </Alert>
           <Typography variant="body2" sx={{ mb: 4 }}>
             Ketik frasa di bawah ini untuk memproses pemecatan:
-            <Box sx={{ 
-              display: 'block', 
-              fontWeight: '800', 
-              color: '#991b1b', 
-              mt: 2, 
-              letterSpacing: 1, 
-              textAlign: 'center', 
-              p: 3, 
-              bgcolor: '#fef2f2', 
-              borderRadius: 2, 
+            <Box sx={{
+              display: 'block',
+              fontWeight: '800',
+              color: '#991b1b',
+              mt: 2,
+              letterSpacing: 1,
+              textAlign: 'center',
+              p: 3,
+              bgcolor: '#fef2f2',
+              borderRadius: 2,
               border: '1px solid #fecaca',
               fontSize: '0.85rem',
               lineHeight: 1.5,
@@ -376,9 +376,9 @@ const EmployeeList = () => {
               SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA {selectedEmployee?.name.toUpperCase()}
             </Box>
           </Typography>
-          <TextField 
-            fullWidth 
-            label="Ketik Frasa Konfirmasi" 
+          <TextField
+            fullWidth
+            label="Ketik Frasa Konfirmasi"
             placeholder="Ketik frasa di atas"
             value={firePhrase}
             onChange={(e) => {
@@ -392,9 +392,9 @@ const EmployeeList = () => {
         </DialogContent>
         <DialogActions sx={{ px: 6, pb: 4 }}>
           <Button onClick={() => setIsFireConfirmOpen(false)} variant="outlined">Batal</Button>
-          <Button 
-            onClick={handleFinalFire} 
-            variant="contained" 
+          <Button
+            onClick={handleFinalFire}
+            variant="contained"
             color="error"
             disabled={fireLoading || firePhrase.trim().toUpperCase() !== `SAYA YAKIN UNTUK MEMBERHENTIKAN KARYAWAN YANG BERNAMA ${selectedEmployee?.name.toUpperCase()}`}
             startIcon={fireLoading ? <CircularProgress size={16} color="inherit" /> : <i className="ri-delete-bin-7-line" />}

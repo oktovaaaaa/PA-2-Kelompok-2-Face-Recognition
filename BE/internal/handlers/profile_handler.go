@@ -21,18 +21,18 @@ func GetMyProfile(c *gin.Context) {
 	user := userCtx.(models.User)
 
 	type ProfileResponse struct {
-		ID           string  `json:"id"`
-		Name         string  `json:"name"`
-		Email        string  `json:"email"`
-		Phone        string  `json:"phone"`
-		BirthPlace   string  `json:"birth_place"`
-		BirthDate    string  `json:"birth_date"`
-		Address      string  `json:"address"`
-		PhotoURL     string  `json:"photo_url"`
-		Role         string  `json:"role"`
-		Status       string  `json:"status"`
-		PositionID   string  `json:"position_id"`
-		PositionName string  `json:"position_name"`
+		ID                string  `json:"id"`
+		Name              string  `json:"name"`
+		Email             string  `json:"email"`
+		Phone             string  `json:"phone"`
+		BirthPlace        string  `json:"birth_place"`
+		BirthDate         string  `json:"birth_date"`
+		Address           string  `json:"address"`
+		PhotoURL          string  `json:"photo_url"`
+		Role              string  `json:"role"`
+		Status            string  `json:"status"`
+		PositionID        string  `json:"position_id"`
+		PositionName      string  `json:"position_name"`
 		Salary            float64 `json:"salary"`
 		CompanyID         string  `json:"company_id"`
 		BankName          string  `json:"bank_name"`
@@ -40,20 +40,20 @@ func GetMyProfile(c *gin.Context) {
 	}
 
 	resp := ProfileResponse{
-		ID:         user.ID,
-		Name:       user.Name,
-		Email:      user.Email,
-		Phone:      user.Phone,
-		BirthPlace: user.BirthPlace,
-		BirthDate:  user.BirthDate,
-		Address:    user.Address,
-		PhotoURL:   user.PhotoURL,
-		Role:       user.Role,
-		Status:     user.Status,
-		PositionID:         "",
-		CompanyID:          user.CompanyID,
-		BankName:           user.BankName,
-		BankAccountNumber:  user.BankAccountNumber,
+		ID:                user.ID,
+		Name:              user.Name,
+		Email:             user.Email,
+		Phone:             user.Phone,
+		BirthPlace:        user.BirthPlace,
+		BirthDate:         user.BirthDate,
+		Address:           user.Address,
+		PhotoURL:          user.PhotoURL,
+		Role:              user.Role,
+		Status:            user.Status,
+		PositionID:        "",
+		CompanyID:         user.CompanyID,
+		BankName:          user.BankName,
+		BankAccountNumber: user.BankAccountNumber,
 	}
 
 	if user.PositionID != nil {
@@ -74,10 +74,10 @@ func UpdateMyProfile(c *gin.Context) {
 	user := userCtx.(models.User)
 
 	var body struct {
-		Name       string `json:"name"`
-		Phone      string `json:"phone"`
-		BirthPlace string `json:"birth_place"`
-		BirthDate  string `json:"birth_date"`
+		Name              string `json:"name"`
+		Phone             string `json:"phone"`
+		BirthPlace        string `json:"birth_place"`
+		BirthDate         string `json:"birth_date"`
 		Address           string `json:"address"`
 		PhotoURL          string `json:"photo_url"`
 		BankName          string `json:"bank_name"`
@@ -108,10 +108,10 @@ func UpdateMyProfile(c *gin.Context) {
 
 	database.DB.Save(&dbUser)
 	utils.Success(c, "Profil berhasil diperbarui", gin.H{
-		"name":        dbUser.Name,
-		"phone":       dbUser.Phone,
-		"birth_place": dbUser.BirthPlace,
-		"birth_date":  dbUser.BirthDate,
+		"name":                dbUser.Name,
+		"phone":               dbUser.Phone,
+		"birth_place":         dbUser.BirthPlace,
+		"birth_date":          dbUser.BirthDate,
 		"address":             dbUser.Address,
 		"photo_url":           dbUser.PhotoURL,
 		"bank_name":           dbUser.BankName,
@@ -172,30 +172,21 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	// 1. Verifikasi Identitas
-	verified := false
-
-	// Cek Password Lama (jika diisi)
-	if body.OldPassword != "" {
-		if utils.CheckPassword(user.Password, body.OldPassword) {
-			verified = true
-		} else {
-			utils.Error(c, "Password lama salah")
-			return
-		}
+	// Wajib mengisi keduanya: Password Lama DAN Kode OTP
+	if body.OldPassword == "" || body.OtpCode == "" {
+		utils.Error(c, "Harap masukkan password lama DAN kode OTP untuk verifikasi")
+		return
 	}
 
-	// Cek OTP (jika diisi dan belum terverifikasi lewat password lama)
-	if !verified && body.OtpCode != "" {
-		if err := services.VerifyOTP(user.Email, body.OtpCode); err == nil {
-			verified = true
-		} else {
-			utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
-			return
-		}
+	// Cek Password Lama
+	if !utils.CheckPassword(user.Password, body.OldPassword) {
+		utils.Error(c, "Password lama salah")
+		return
 	}
 
-	if !verified {
-		utils.Error(c, "Harap masukkan password lama atau kode OTP untuk verifikasi")
+	// Cek OTP
+	if err := services.VerifyOTP(user.Email, body.OtpCode); err != nil {
+		utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
 		return
 	}
 
@@ -251,30 +242,21 @@ func ChangePin(c *gin.Context) {
 	}
 
 	// 1. Verifikasi Identitas
-	verified := false
-
-	// Cek PIN Lama (jika diisi)
-	if body.OldPin != "" {
-		if utils.CheckPin(user.Pin, body.OldPin) {
-			verified = true
-		} else {
-			utils.Error(c, "PIN lama salah")
-			return
-		}
+	// Wajib mengisi keduanya: PIN Lama DAN Kode OTP
+	if body.OldPin == "" || body.OtpCode == "" {
+		utils.Error(c, "Harap masukkan PIN lama DAN kode OTP untuk verifikasi")
+		return
 	}
 
-	// Cek OTP (jika diisi dan belum terverifikasi lewat PIN lama)
-	if !verified && body.OtpCode != "" {
-		if err := services.VerifyOTP(user.Email, body.OtpCode); err == nil {
-			verified = true
-		} else {
-			utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
-			return
-		}
+	// Cek PIN Lama
+	if !utils.CheckPin(user.Pin, body.OldPin) {
+		utils.Error(c, "PIN lama salah")
+		return
 	}
 
-	if !verified {
-		utils.Error(c, "Harap masukkan PIN lama atau kode OTP untuk verifikasi")
+	// Cek OTP
+	if err := services.VerifyOTP(user.Email, body.OtpCode); err != nil {
+		utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
 		return
 	}
 
@@ -406,13 +388,13 @@ func DeleteAccount(c *gin.Context) {
 		dbUser.DeviceID = ""
 		dbUser.FcmToken = ""
 		dbUser.Password = "" // Kosongkan password agar tidak bisa login sama sekali
-		
+
 		// Lepaskan email dan phone (Email Release)
 		dbUser.Email = fmt.Sprintf("%s_DELETED_%d", dbUser.Email, timestamp)
 		if dbUser.Phone != "" {
 			dbUser.Phone = fmt.Sprintf("%s_DELETED_%d", dbUser.Phone, timestamp)
 		}
-		
+
 		if err := database.DB.Save(&dbUser).Error; err != nil {
 			utils.Error(c, "Gagal memproses penghapusan akun: "+err.Error())
 			return

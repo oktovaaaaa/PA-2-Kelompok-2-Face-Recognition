@@ -70,13 +70,13 @@ const months = [
 const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
   const theme = useTheme()
   const [chartType, setChartType] = useState<'donut' | 'line'>('donut')
-  
+
   // Filter States
   const [filterType, setFilterType] = useState<string>('month')
   const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString())
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [availableYears, setAvailableYears] = useState<string[]>([])
-  
+
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
@@ -98,7 +98,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
       const yearsData = await employeeService.getAttendanceYears()
       setAvailableYears(yearsData)
       if (yearsData.length > 0 && !yearsData.includes(new Date().getFullYear().toString())) {
-          setSelectedYear(yearsData[0])
+        setSelectedYear(yearsData[0])
       }
     } catch (error) {
       console.error('Error loading years:', error)
@@ -112,30 +112,30 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
       const data = await employeeService.getEmployeeAttendance(employee.id, filterType, selectedMonth, selectedYear)
       const records = data || []
       setAttendanceRecords(records)
-      
+
       const newStats = {
-          present: 0,
-          late: 0,
-          absent: 0,
-          leave: 0,
-          sick: 0,
-          early_leave: 0,
-          working: 0,
-          not_yet: 0,
-          total: records.length
+        present: 0,
+        late: 0,
+        absent: 0,
+        leave: 0,
+        sick: 0,
+        early_leave: 0,
+        working: 0,
+        not_yet: 0,
+        total: records.length
       }
 
       records.forEach((r: any) => {
-          const s = r.status.toUpperCase()
-          if (s === 'PRESENT') newStats.present++
-          else if (s === 'LATE') newStats.late++
-          else if (s === 'ABSENT') newStats.absent++
-          else if (s === 'LEAVE') newStats.leave++
-          else if (s === 'SICK') newStats.sick++
-          else if (s === 'EARLY_LEAVE') newStats.early_leave++
-          else if (s === 'LATE_EARLY_LEAVE') newStats.late_early_leave++
-          else if (s === 'WORKING') newStats.working++
-          else if (s === 'NOT_YET') newStats.not_yet++
+        const s = r.status.toUpperCase()
+        if (s === 'PRESENT') newStats.present++
+        else if (s === 'LATE') newStats.late++
+        else if (s === 'ABSENT') newStats.absent++
+        else if (s === 'LEAVE') newStats.leave++
+        else if (s === 'SICK') newStats.sick++
+        else if (s === 'EARLY_LEAVE') newStats.early_leave++
+        else if (s === 'LATE_EARLY_LEAVE') newStats.late_early_leave++
+        else if (s === 'WORKING') newStats.working++
+        else if (s === 'NOT_YET') newStats.not_yet++
       })
 
       setStats(newStats)
@@ -198,80 +198,80 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
 
   // --- LINE CHART WITH MULTI-COLOR MARKERS ---
   const lineData = attendanceRecords.slice(0, 15).reverse()
-  
+
   const getStatusColor = (status: string) => {
-      const s = status.toUpperCase();
-      if (s === 'PRESENT') return statusColors.PRESENT;
-      if (s === 'LATE') return statusColors.LATE;
-      if (s === 'LEAVE' || s === 'SICK') return statusColors.LEAVE_SICK;
-      if (s === 'EARLY_LEAVE') return statusColors.EARLY_LEAVE;
-      if (s === 'LATE_EARLY_LEAVE') return statusColors.LATE_EARLY_LEAVE;
-      if (s === 'WORKING') return statusColors.WORKING;
-      if (s === 'NOT_YET') return statusColors.NOT_YET;
-      return statusColors.ABSENT;
+    const s = status.toUpperCase();
+    if (s === 'PRESENT') return statusColors.PRESENT;
+    if (s === 'LATE') return statusColors.LATE;
+    if (s === 'LEAVE' || s === 'SICK') return statusColors.LEAVE_SICK;
+    if (s === 'EARLY_LEAVE') return statusColors.EARLY_LEAVE;
+    if (s === 'LATE_EARLY_LEAVE') return statusColors.LATE_EARLY_LEAVE;
+    if (s === 'WORKING') return statusColors.WORKING;
+    if (s === 'NOT_YET') return statusColors.NOT_YET;
+    return statusColors.ABSENT;
   }
 
   const discreteMarkers: any[] = lineData.map((r, index) => ({
-      seriesIndex: 0,
-      dataPointIndex: index,
-      fillColor: getStatusColor(r.status),
-      strokeColor: '#FFF',
-      size: 6
+    seriesIndex: 0,
+    dataPointIndex: index,
+    fillColor: getStatusColor(r.status),
+    strokeColor: '#FFF',
+    size: 6
   }))
 
   const lineSeries = [
-      {
-          name: 'Kehadiran',
-          data: lineData.map(r => {
-              const s = r.status.toUpperCase();
-              if (s === 'PRESENT') return 100;
-              if (s === 'LATE') return 80;
-              if (s === 'LEAVE' || s === 'SICK') return 60;
-              if (s === 'EARLY_LEAVE') return 40;
-              if (s === 'LATE_EARLY_LEAVE') return 20;
-              return 0; // ABSENT / WORKING / NOT_YET
-          })
-      }
+    {
+      name: 'Kehadiran',
+      data: lineData.map(r => {
+        const s = r.status.toUpperCase();
+        if (s === 'PRESENT') return 100;
+        if (s === 'LATE') return 80;
+        if (s === 'LEAVE' || s === 'SICK') return 60;
+        if (s === 'EARLY_LEAVE') return 40;
+        if (s === 'LATE_EARLY_LEAVE') return 20;
+        return 0; // ABSENT / WORKING / NOT_YET
+      })
+    }
   ]
 
   const lineOptions: ApexOptions = {
     chart: { type: 'line', toolbar: { show: false }, zoom: { enabled: false } },
-    stroke: { curve: 'smooth', width: 3, colors: ['#CBD5E1'] }, 
-    markers: { 
-        size: 0, // Base size 0, will be overridden by discrete
-        discrete: discreteMarkers,
-        hover: { size: 8 } 
+    stroke: { curve: 'smooth', width: 3, colors: ['#CBD5E1'] },
+    markers: {
+      size: 0, // Base size 0, will be overridden by discrete
+      discrete: discreteMarkers,
+      hover: { size: 8 }
     },
     xaxis: {
-        categories: lineData.map(r => r.date.substring(5)),
-        labels: { style: { fontSize: '10px' } }
+      categories: lineData.map(r => r.date.substring(5)),
+      labels: { style: { fontSize: '10px' } }
     },
     yaxis: {
-        max: 100, min: 0,
-        tickAmount: 4, // 5 levels: 0, 25, 50, 75, 100
-        labels: {
-            style: { fontWeight: '600' },
-            formatter: (val) => {
-                if (val >= 100) return 'Hadir';
-                if (val >= 80) return 'Telat';
-                if (val >= 60) return 'Izin';
-                if (val >= 40) return 'Plg Kerja';
-                if (val >= 20) return 'Telat&Plg';
-                return 'Alpha';
-            }
+      max: 100, min: 0,
+      tickAmount: 4, // 5 levels: 0, 25, 50, 75, 100
+      labels: {
+        style: { fontWeight: '600' },
+        formatter: (val) => {
+          if (val >= 100) return 'Hadir';
+          if (val >= 80) return 'Telat';
+          if (val >= 60) return 'Izin';
+          if (val >= 40) return 'Plg Kerja';
+          if (val >= 20) return 'Telat&Plg';
+          return 'Alpha';
         }
+      }
     },
     tooltip: {
-        y: {
-            formatter: (val: number) => {
-                if (val >= 100) return 'Hadir';
-                if (val >= 80) return 'Terlambat';
-                if (val >= 60) return 'Izin/Sakit';
-                if (val >= 40) return 'Pulang Awal';
-                if (val >= 20) return 'Telat & Pulang Awal';
-                return 'Alpha';
-            }
+      y: {
+        formatter: (val: number) => {
+          if (val >= 100) return 'Hadir';
+          if (val >= 80) return 'Terlambat';
+          if (val >= 60) return 'Izin/Sakit';
+          if (val >= 40) return 'Pulang Awal';
+          if (val >= 20) return 'Telat & Pulang Awal';
+          return 'Alpha';
         }
+      }
     }
   }
 
@@ -295,7 +295,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
               <Box>
                 <Typography variant='h5' fontWeight='800'>{employee.name}</Typography>
                 <Typography variant='body2' color='textSecondary' mb={1}>{employee.email}</Typography>
-                <Chip label={employee.status} color={isActive ? 'success' : 'error'} size='small' variant='outlined' />
+                <Chip label={employee.status === 'ACTIVE' ? 'Aktif' : 'Diberhentikan'} color={isActive ? 'success' : 'error'} size='small' variant='outlined' />
               </Box>
             </Box>
 
@@ -307,19 +307,19 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
             </Stack>
 
             <Divider sx={{ my: 6 }} />
-            
+
             <Typography variant='caption' fontWeight='800' sx={{ textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 3 }}>
-                Aksi Cepat
+              Aksi Cepat
             </Typography>
             <Stack direction='row' spacing={3}>
-                <ActionButton icon='ri-key-line' label='Reset Perangkat' color='warning' onClick={() => onAction('reset')} />
-                <ActionButton icon='ri-edit-box-line' label='Set Jabatan' color='primary' onClick={() => onAction('position')} />
-                <ActionButton 
-                  icon={isActive ? 'ri-user-unfollow-line' : 'ri-user-add-line'} 
-                  label={isActive ? 'Pecat/Nonaktif' : 'Pekerjakan Lagi'} 
-                  color={isActive ? 'error' : 'success'} 
-                  onClick={() => onAction('status')} 
-                />
+              <ActionButton icon='ri-key-line' label='Reset Perangkat' color='warning' onClick={() => onAction('reset')} />
+              <ActionButton icon='ri-edit-box-line' label='Set Jabatan' color='primary' onClick={() => onAction('position')} />
+              <ActionButton
+                icon={isActive ? 'ri-user-unfollow-line' : 'ri-user-add-line'}
+                label={isActive ? 'Pecat/Nonaktif' : 'Pekerjakan Lagi'}
+                color={isActive ? 'error' : 'success'}
+                onClick={() => onAction('status')}
+              />
             </Stack>
           </Grid>
 
@@ -336,65 +336,65 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
                 </Box>
 
                 <Grid container spacing={3} sx={{ mb: 6 }}>
+                  <Grid item xs={6} sm={4}>
+                    <FormControl fullWidth size='small'>
+                      <InputLabel>Periode</InputLabel>
+                      <Select value={filterType} label="Periode" onChange={(e) => setFilterType(e.target.value)}>
+                        <MenuItem value="today">Hari Ini</MenuItem>
+                        <MenuItem value="week">Minggu Ini</MenuItem>
+                        <MenuItem value="month">Per Bulan</MenuItem>
+                        <MenuItem value="year">Per Tahun</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  {(filterType === 'month' || filterType === 'year') && (
                     <Grid item xs={6} sm={4}>
-                        <FormControl fullWidth size='small'>
-                            <InputLabel>Periode</InputLabel>
-                            <Select value={filterType} label="Periode" onChange={(e) => setFilterType(e.target.value)}>
-                                <MenuItem value="today">Hari Ini</MenuItem>
-                                <MenuItem value="week">Minggu Ini</MenuItem>
-                                <MenuItem value="month">Per Bulan</MenuItem>
-                                <MenuItem value="year">Per Tahun</MenuItem>
-                            </Select>
-                        </FormControl>
+                      <FormControl fullWidth size='small'>
+                        <InputLabel>Bulan</InputLabel>
+                        <Select value={selectedMonth} label="Bulan" onChange={(e) => setSelectedMonth(e.target.value)}>
+                          {months.map(m => (<MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>))}
+                        </Select>
+                      </FormControl>
                     </Grid>
-                    {(filterType === 'month' || filterType === 'year') && (
-                        <Grid item xs={6} sm={4}>
-                            <FormControl fullWidth size='small'>
-                                <InputLabel>Bulan</InputLabel>
-                                <Select value={selectedMonth} label="Bulan" onChange={(e) => setSelectedMonth(e.target.value)}>
-                                    {months.map(m => (<MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                    )}
-                    <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size='small'>
-                            <InputLabel>Tahun</InputLabel>
-                            <Select value={selectedYear} label="Tahun" onChange={(e) => setSelectedYear(e.target.value)}>
-                                {availableYears.map(y => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
+                  )}
+                  <Grid item xs={12} sm={4}>
+                    <FormControl fullWidth size='small'>
+                      <InputLabel>Tahun</InputLabel>
+                      <Select value={selectedYear} label="Tahun" onChange={(e) => setSelectedYear(e.target.value)}>
+                        {availableYears.map(y => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
                 </Grid>
 
                 {loading ? (
-                    <Box sx={{ height: 280, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><CircularProgress size={30} /></Box>
+                  <Box sx={{ height: 280, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><CircularProgress size={30} /></Box>
                 ) : (
-                    <Box sx={{ height: 280 }}>
-                        <ReactApexChart options={chartType === 'donut' ? donutOptions : lineOptions} series={chartType === 'donut' ? donutSeries : lineSeries} type={chartType} height='100%' />
-                    </Box>
+                  <Box sx={{ height: 280 }}>
+                    <ReactApexChart options={chartType === 'donut' ? donutOptions : lineOptions} series={chartType === 'donut' ? donutSeries : lineSeries} type={chartType} height='100%' />
+                  </Box>
                 )}
 
                 <Box sx={{ mt: 6 }}>
-                    <Typography variant='caption' fontWeight='800' sx={{ color: 'text.secondary', display: 'block', mb: 3 }}>
-                        KETERANGAN STATUS
-                    </Typography>
-                    <Grid container spacing={2}>
-                        <StatLegend color={statusColors.PRESENT} label='Hadir' count={stats?.present} />
-                        <StatLegend color={statusColors.LATE} label='Terlambat' count={stats?.late} />
-                        <StatLegend color={statusColors.LEAVE_SICK} label='Izin/Sakit' count={(stats?.leave || 0) + (stats?.sick || 0)} />
-                        <StatLegend color={statusColors.ABSENT} label='Alpha' count={stats?.absent} />
-                        <StatLegend color={statusColors.EARLY_LEAVE} label='Pulang di jam kerja' count={stats?.early_leave} />
-                        <StatLegend color={statusColors.LATE_EARLY_LEAVE} label='Terlambat & Pulang di jam kerja' count={stats?.late_early_leave} />
-                        
-                        {/* CONDITIONAL LEGEND */}
-                        {isTodayFilter && (
-                            <>
-                                <StatLegend color={statusColors.NOT_YET} label='Belum Hadir' count={stats?.not_yet} />
-                                <StatLegend color={statusColors.WORKING} label='Sedang Bekerja' count={stats?.working} />
-                            </>
-                        )}
-                    </Grid>
+                  <Typography variant='caption' fontWeight='800' sx={{ color: 'text.secondary', display: 'block', mb: 3 }}>
+                    KETERANGAN STATUS
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <StatLegend color={statusColors.PRESENT} label='Hadir' count={stats?.present} />
+                    <StatLegend color={statusColors.LATE} label='Terlambat' count={stats?.late} />
+                    <StatLegend color={statusColors.LEAVE_SICK} label='Izin/Sakit' count={(stats?.leave || 0) + (stats?.sick || 0)} />
+                    <StatLegend color={statusColors.ABSENT} label='Alpha' count={stats?.absent} />
+                    <StatLegend color={statusColors.EARLY_LEAVE} label='Pulang di jam kerja' count={stats?.early_leave} />
+                    <StatLegend color={statusColors.LATE_EARLY_LEAVE} label='Terlambat & Pulang di jam kerja' count={stats?.late_early_leave} />
+
+                    {/* CONDITIONAL LEGEND */}
+                    {isTodayFilter && (
+                      <>
+                        <StatLegend color={statusColors.NOT_YET} label='Belum Hadir' count={stats?.not_yet} />
+                        <StatLegend color={statusColors.WORKING} label='Sedang Bekerja' count={stats?.working} />
+                      </>
+                    )}
+                  </Grid>
                 </Box>
               </CardContent>
             </Card>
@@ -409,28 +409,28 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
 }
 
 const InfoRow = ({ icon, label, value }: { icon: string, label: string, value: string }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Box sx={{ mr: 4, display: 'flex', p: 2, borderRadius: 2, bgcolor: '#F1F5F9' }}><i className={icon} style={{ fontSize: '20px', color: '#475569' }} /></Box>
-        <Box><Typography variant='caption' sx={{ display: 'block', color: 'text.secondary' }}>{label}</Typography><Typography variant='body2' fontWeight='700'>{value}</Typography></Box>
-    </Box>
+  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <Box sx={{ mr: 4, display: 'flex', p: 2, borderRadius: 2, bgcolor: '#F1F5F9' }}><i className={icon} style={{ fontSize: '20px', color: '#475569' }} /></Box>
+    <Box><Typography variant='caption' sx={{ display: 'block', color: 'text.secondary' }}>{label}</Typography><Typography variant='body2' fontWeight='700'>{value}</Typography></Box>
+  </Box>
 )
 
 const StatLegend = ({ color, label, count }: { color: string, label: string, count?: number }) => (
-    <Grid item xs={6}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderRadius: 1.5, border: '1px solid #F1F5F9', bgcolor: 'white' }}>
-            <Stack direction='row' spacing={2} alignItems='center'>
-                <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: color }} />
-                <Typography variant='body2' fontSize='11px' fontWeight='600'>{label}</Typography>
-            </Stack>
-            <Typography variant='body2' fontWeight='800'>{count || 0}</Typography>
-        </Box>
-    </Grid>
+  <Grid item xs={6}>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderRadius: 1.5, border: '1px solid #F1F5F9', bgcolor: 'white' }}>
+      <Stack direction='row' spacing={2} alignItems='center'>
+        <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: color }} />
+        <Typography variant='body2' fontSize='11px' fontWeight='600'>{label}</Typography>
+      </Stack>
+      <Typography variant='body2' fontWeight='800'>{count || 0}</Typography>
+    </Box>
+  </Grid>
 )
 
 const ActionButton = ({ icon, label, color, onClick }: { icon: string, label: string, color: any, onClick: () => void }) => (
-    <Tooltip title={label}>
-        <Button variant='outlined' color={color} onClick={onClick} sx={{ minWidth: 48, height: 48, borderRadius: 2, border: '2px solid' }}><i className={icon} style={{ fontSize: '22px' }} /></Button>
-    </Tooltip>
+  <Tooltip title={label}>
+    <Button variant='outlined' color={color} onClick={onClick} sx={{ minWidth: 48, height: 48, borderRadius: 2, border: '2px solid' }}><i className={icon} style={{ fontSize: '22px' }} /></Button>
+  </Tooltip>
 )
 
 export default EmployeeDetailModal

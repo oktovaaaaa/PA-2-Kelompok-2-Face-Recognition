@@ -28,10 +28,10 @@ const RoleDistributionChart = ({ distribution }: Props) => {
   const filteredData = Object.entries(distribution)
     .filter(([role]) => !role.toUpperCase().includes('SUPER_ADMIN') && !role.toUpperCase().includes('SUPER ADMIN'))
     .reduce((acc, [role, count]) => {
-        let label = role.replace('ROLE_', '').replace('_', ' ')
-        if (label === 'ADMIN') label = 'Boss'
-        if (label === 'EMPLOYEE') label = 'Karyawan'
-        return { ...acc, [label]: count }
+      let label = role.replace('ROLE_', '').replace('_', ' ')
+      if (label === 'ADMIN') label = 'Bos'
+      if (label === 'EMPLOYEE') label = 'Karyawan'
+      return { ...acc, [label]: count }
     }, {} as { [key: string]: number })
 
   const labels = Object.keys(filteredData)
@@ -47,25 +47,21 @@ const RoleDistributionChart = ({ distribution }: Props) => {
     colors: ['#6366F1', '#10B981', '#3B82F6'], // Custom colors: Indigo for Boss, Emerald for Karyawan
     dataLabels: { enabled: false },
     legend: {
-        show: true,
-        position: 'bottom',
-        horizontalAlign: 'center',
-        fontSize: '13px',
-        fontWeight: 600,
-        labels: {
-            colors: 'var(--mui-palette-text-secondary)'
-        },
-        markers: {
-            offsetY: 1,
-            offsetX: -4,
-            width: 10,
-            height: 10,
-            radius: 4
-        },
-        itemMargin: {
-            horizontal: 15,
-            vertical: 10
-        }
+      show: true,
+      position: 'bottom',
+      horizontalAlign: 'center',
+      fontSize: '13px',
+      fontWeight: 600,
+      labels: {
+        colors: 'var(--mui-palette-text-secondary)'
+      },
+      markers: {
+        size: 10
+      },
+      itemMargin: {
+        horizontal: 15,
+        vertical: 10
+      }
     },
     plotOptions: {
       pie: {
@@ -105,18 +101,18 @@ const RoleDistributionChart = ({ distribution }: Props) => {
 
   return (
     <Card className='shadow-lg rounded-[2rem] h-full border-none bg-[var(--mui-palette-background-paper)]'>
-        <CardContent className='p-8 h-full flex flex-col'>
-            <Typography variant='subtitle2' className='font-black uppercase tracking-[0.2em] text-[var(--mui-palette-text-primary)] mbe-8'>Distribusi Jabatan Pengguna</Typography>
-            <Box className='flex-grow flex justify-center items-center'>
-                {isMounted ? (
-                    <AppReactApexCharts type='donut' height={400} options={options} series={series} />
-                ) : (
-                    <Box className='h-[400px] flex items-center justify-center'>
-                         <i className='ri-loader-4-line animate-spin text-3xl text-primary' />
-                    </Box>
-                )}
+      <CardContent className='p-8 h-full flex flex-col'>
+        <Typography variant='subtitle2' className='font-black uppercase tracking-[0.2em] text-[var(--mui-palette-text-primary)] mbe-8'>Distribusi Jabatan Pengguna</Typography>
+        <Box className='flex-grow flex justify-center items-center'>
+          {isMounted ? (
+            <AppReactApexCharts type='donut' height={400} options={options} series={series} />
+          ) : (
+            <Box className='h-[400px] flex items-center justify-center'>
+              <i className='ri-loader-4-line animate-spin text-3xl text-primary' />
             </Box>
-        </CardContent>
+          )}
+        </Box>
+      </CardContent>
     </Card>
   )
 }

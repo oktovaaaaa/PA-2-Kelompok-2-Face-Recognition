@@ -23,3 +23,8 @@ func CreateNotification(userID, companyID, title, body, notifType, refID string)
 	}
 	database.DB.Create(&notif)
 }
+
+// DeleteNotificationsByRefID menghapus notifikasi berdasarkan RefID (misal: ID izin)
+func DeleteNotificationsByRefID(refID string) {
+	database.DB.Where("ref_id = ?", refID).Delete(&models.Notification{})
+}

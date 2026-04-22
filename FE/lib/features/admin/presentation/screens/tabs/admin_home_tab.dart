@@ -207,7 +207,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hi, ${_getShortName(_userName ?? 'Admin')}',
+                        'Hi, ${_getShortName(_userName ?? 'Bos')}',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -276,7 +276,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                         : null,
                     child: (_photoUrl == null || _photoUrl!.isEmpty)
                         ? Text(
-                            _getInitials(_userName ?? 'Admin'),
+                            _getInitials(_userName ?? 'Bos'),
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
                           )
                         : null,

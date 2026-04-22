@@ -114,7 +114,7 @@ const UserDropdown = () => {
                       <Typography className='font-medium' color='text.primary'>
                         {profile?.name || 'Admin'}
                       </Typography>
-                      <Typography variant='caption'>{profile?.role || 'Admin'}</Typography>
+                      <Typography variant='caption'>{profile?.role === 'ADMIN' ? 'Bos' : (profile?.role === 'EMPLOYEE' ? 'Karyawan' : profile?.role || 'Admin')}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />
@@ -122,10 +122,12 @@ const UserDropdown = () => {
                     <i className='ri-user-3-line' />
                     <Typography color='text.primary'>Profil Saya</Typography>
                   </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e, '/operasional')}>
-                    <i className='ri-settings-4-line' />
-                    <Typography color='text.primary'>Pengaturan</Typography>
-                  </MenuItem>
+                  {profile?.role !== 'SUPER_ADMIN' && (
+                    <MenuItem className='gap-3' onClick={e => handleDropdownClose(e, '/operasional')}>
+                      <i className='ri-settings-4-line' />
+                      <Typography color='text.primary'>Pengaturan</Typography>
+                    </MenuItem>
+                  )}
                   <MenuItem className='gap-3' onClick={e => handleDropdownClose(e, '/landing')}>
                     <i className='ri-earth-line' />
                     <Typography color='text.primary'>Halaman Beranda</Typography>

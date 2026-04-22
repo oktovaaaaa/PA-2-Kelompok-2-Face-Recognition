@@ -8,6 +8,7 @@ import (
 
 	"employee-system/internal/config"
 	"employee-system/internal/database"
+	"employee-system/internal/services"
 	"employee-system/routes"
 )
 
@@ -16,6 +17,7 @@ func main() {
 	config.LoadEnv()
 
 	database.ConnectDatabase()
+	services.StartScheduler()
 
 	r := routes.SetupRouter()
 
