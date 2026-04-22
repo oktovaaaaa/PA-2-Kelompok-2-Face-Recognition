@@ -2,7 +2,12 @@
 'use client'
 
 import OperationalPage from '@views/operasional/OperationalPage'
+import RoleGuard from '@/hocs/RoleGuard'
 
 export default function page() {
-  return <OperationalPage />
+  return (
+    <RoleGuard allowedRoles={['ADMIN', 'OWNER']}>
+      <OperationalPage />
+    </RoleGuard>
+  )
 }

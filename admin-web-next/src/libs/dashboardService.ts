@@ -87,5 +87,36 @@ export const dashboardService = {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal memuat log absensi.');
         return data.data as AttendanceLog[];
+    },
+
+    // SUPER ADMIN SERVICES
+    async getSuperAdminStats(): Promise<{ recent_companies: any[], recent_users: any[], stats: any }> {
+        const response = await fetch(`${API_URL}/super-admin/stats`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat statistik Super Admin.');
+        return data.data;
+    },
+
+    async getRegistrationTrend(year: number): Promise<number[]> {
+        const response = await fetch(`${API_URL}/super-admin/registration-trend?year=${year}`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat tren pendaftaran.');
+        return data.data as number[];
+    },
+
+    async getRegistrationYears(): Promise<number[]> {
+        const response = await fetch(`${API_URL}/super-admin/registration-years`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar tahun.');
+        return data.data as number[];
     }
 };

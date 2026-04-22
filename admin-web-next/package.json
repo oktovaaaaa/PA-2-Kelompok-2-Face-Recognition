@@ -33,10 +33,12 @@
     "react": "^18.3.1",
     "react-apexcharts": "^1.4.1",
     "react-dom": "^18.3.1",
+    "react-globe.gl": "^2.37.1",
     "react-leaflet": "^4.2.1",
     "react-perfect-scrollbar": "^1.5.8",
     "react-use": "^17.5.0",
     "server-only": "^0.0.1",
+    "three": "^0.184.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

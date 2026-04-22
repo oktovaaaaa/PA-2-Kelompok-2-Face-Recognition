@@ -1,11 +1,13 @@
 // src/app/(dashboard)/jabatan/page.tsx
-import PositionList from '@views/jabatan/PositionList'
+'use client'
 
-export const metadata = {
-  title: 'Manajemen Jabatan | Admin Dashboard',
-  description: 'Kelola struktur jabatan dan gaji pokok karyawan perusahaan.'
-}
+import PositionList from '@views/jabatan/PositionList'
+import RoleGuard from '@/hocs/RoleGuard'
 
 export default function JabatanPage() {
-  return <PositionList />
+  return (
+    <RoleGuard allowedRoles={['ADMIN', 'OWNER']}>
+      <PositionList />
+    </RoleGuard>
+  )
 }

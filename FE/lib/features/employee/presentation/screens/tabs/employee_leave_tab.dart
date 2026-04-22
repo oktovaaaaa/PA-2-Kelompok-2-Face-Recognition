@@ -334,12 +334,14 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
     );
   }
 
-  Future<void> _deleteLeave(String id) async {
+  Future<void> _deleteLeave(String id, {bool isPending = false}) async {
     final confirmed = await AppDialog.showConfirm(
       context,
-      title: 'Hapus Riwayat Izin',
-      message: 'Apakah Anda yakin ingin menghapus izin ini dari riwayat?',
-      confirmText: 'Ya, Hapus',
+      title: isPending ? 'Batalkan Pengajuan' : 'Hapus Riwayat Izin',
+      message: isPending 
+        ? 'Apakah Anda yakin ingin membatalkan pengajuan izin ini?' 
+        : 'Apakah Anda yakin ingin menghapus izin ini dari riwayat?',
+      confirmText: isPending ? 'Ya, Batalkan' : 'Ya, Hapus',
       confirmColor: Colors.red,
     );
     if (confirmed != true) return;
@@ -347,10 +349,10 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
       final res = await ApiClient.delete('/api/employee/leaves/$id');
       if (!mounted) return;
       if (res.success) {
-        AppDialog.showSuccess(context, 'Dihapus dari riwayat kamu');
+        AppDialog.showSuccess(context, isPending ? 'Pengajuan berhasil dibatalkan' : 'Dihapus dari riwayat kamu');
         _load();
       } else {
-        AppDialog.showError(context, res.message ?? 'Gagal menghapus riwayat');
+        AppDialog.showError(context, res.message ?? (isPending ? 'Gagal membatalkan' : 'Gagal menghapus riwayat'));
       }
     } catch (_) {}
   }
@@ -537,10 +539,10 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                      _deleteLeave(l['id']);
+                      _deleteLeave(l['id'], isPending: status == 'PENDING');
                     },
-                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                    label: const Text('Hapus Riwayat', style: TextStyle(fontWeight: FontWeight.bold)),
+                    icon: Icon(status == 'PENDING' ? Icons.cancel_outlined : Icons.delete_outline_rounded, size: 20),
+                    label: Text(status == 'PENDING' ? 'Batalkan Pengajuan' : 'Hapus Riwayat', style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

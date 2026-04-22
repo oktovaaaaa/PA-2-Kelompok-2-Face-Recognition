@@ -1,7 +1,7 @@
 // src/views/account-settings/security/index.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
@@ -10,12 +10,18 @@ import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
 import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const SecurityTab = () => {
   const { showNotification } = useNotification()
   
+  // States
+  const [role, setRole] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
   // Password States
   const [showOldPassword, setShowOldPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -23,16 +29,18 @@ const SecurityTab = () => {
   
   // PIN States
   const [pinData, setPinData] = useState({ old: '', new: '', otp: '' })
-  
-  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setRole(localStorage.getItem('role'))
+  }, [])
 
   const handleRequestOTP = async () => {
     setLoading(true)
     try {
       await settingService.requestOTP()
-      showNotification('Kode OTP telah dikirim ke email Anda.', 'info')
+      showNotification('Kode verifikasi OTP telah dikirim ke email Anda. Silakan cek kotak masuk.', 'info')
     } catch (error) {
-      showNotification('Gagal mengirim OTP.', 'error')
+      showNotification('Gagal mengirim kode OTP. Silakan coba lagi nanti.', 'error')
     } finally {
       setLoading(false)
     }
@@ -40,7 +48,7 @@ const SecurityTab = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!passwordData.new) return showNotification('Password baru wajib diisi.', 'warning')
+    if (!passwordData.new) return showNotification('Harap masukkan kata sandi baru Anda.', 'warning')
     setLoading(true)
     try {
       await settingService.changePassword({
@@ -48,10 +56,10 @@ const SecurityTab = () => {
         otp_code: passwordData.otp || undefined,
         new_password: passwordData.new
       })
-      showNotification('Password berhasil diperbarui!', 'success')
+      showNotification('Kata sandi Anda berhasil diperbarui!', 'success')
       setPasswordData({ old: '', new: '', otp: '' })
     } catch (error: any) {
-      showNotification(error.message || 'Gagal mengubah password.', 'error')
+      showNotification(error.message || 'Gagal memperbarui kata sandi.', 'error')
     } finally {
       setLoading(false)
     }
@@ -59,7 +67,7 @@ const SecurityTab = () => {
 
   const handleChangePIN = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (pinData.new.length !== 6) return showNotification('PIN harus 6 digit angka.', 'warning')
+    if (pinData.new.length !== 6) return showNotification('PIN harus terdiri dari tepat 6 digit angka.', 'warning')
     setLoading(true)
     try {
       await settingService.changePIN({
@@ -67,10 +75,10 @@ const SecurityTab = () => {
         otp_code: pinData.otp || undefined,
         new_pin: pinData.new
       })
-      showNotification('PIN berhasil diperbarui!', 'success')
+      showNotification('PIN Transaksi Anda berhasil diperbarui!', 'success')
       setPinData({ old: '', new: '', otp: '' })
     } catch (error: any) {
-      showNotification(error.message || 'Gagal mengubah PIN.', 'error')
+      showNotification(error.message || 'Gagal memperbarui PIN.', 'error')
     } finally {
       setLoading(false)
     }
@@ -79,15 +87,20 @@ const SecurityTab = () => {
   return (
     <Grid container spacing={6}>
       <Grid item xs={12}>
-        <Card>
-          <CardHeader title='Ganti Password' subheader='Pastikan menggunakan kombinasi karakter yang kuat.' />
+        <Card className='shadow-sm border-none'>
+          <CardHeader 
+            title='Keamanan Kata Sandi' 
+            subheader='Pastikan Anda menggunakan kombinasi karakter yang kuat agar akun tetap aman.'
+            titleTypographyProps={{ variant: 'h6', fontWeight: 'bold' }}
+          />
           <CardContent>
             <form onSubmit={handleChangePassword}>
               <Grid container spacing={5}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label='Password Lama'
+                    label='Kata Sandi Lama'
+                    placeholder='············'
                     type={showOldPassword ? 'text' : 'password'}
                     value={passwordData.old}
                     onChange={e => setPasswordData({ ...passwordData, old: e.target.value })}
@@ -104,7 +117,8 @@ const SecurityTab = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField 
-                    fullWidth label='Password Baru' 
+                    fullWidth label='Kata Sandi Baru' 
+                    placeholder='············'
                     type={showNewPassword ? 'text' : 'password'}
                     value={passwordData.new}
                     onChange={e => setPasswordData({ ...passwordData, new: e.target.value })}
@@ -121,15 +135,16 @@ const SecurityTab = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField 
-                    fullWidth label='Kode OTP (Opsional)' 
-                    helperText='Gunakan OTP jika lupa password lama.'
+                    fullWidth label='Kode OTP Verifikasi' 
+                    placeholder='Masukkan kode dari email'
+                    helperText='Gunakan kode OTP jika Anda lupa kata sandi lama.'
                     value={passwordData.otp}
                     onChange={e => setPasswordData({ ...passwordData, otp: e.target.value })}
                   />
                 </Grid>
-                <Grid item xs={12} className='flex gap-4 items-center'>
-                  <Button variant='contained' type='submit' disabled={loading}>
-                    {loading ? 'Memproses...' : 'Ubah Password'}
+                <Grid item xs={12} className='flex gap-4 items-center flex-wrap'>
+                  <Button variant='contained' type='submit' disabled={loading} startIcon={<i className='ri-save-3-line' />}>
+                    {loading ? 'Memproses...' : 'Ubah Kata Sandi'}
                   </Button>
                   <Button variant='outlined' color='secondary' onClick={handleRequestOTP}>
                     Minta Kode OTP
@@ -141,49 +156,59 @@ const SecurityTab = () => {
         </Card>
       </Grid>
 
-      <Grid item xs={12}>
-        <Card>
-          <CardHeader title='Ganti PIN Transaksi' subheader='PIN digunakan untuk verifikasi cepat di aplikasi mobile.' />
-          <CardContent>
-            <form onSubmit={handleChangePIN}>
-              <Grid container spacing={5}>
-                <Grid item xs={12} sm={6}>
-                  <TextField 
-                    fullWidth label='PIN Lama' 
-                    type='password'
-                    value={pinData.old}
-                    onChange={e => setPinData({ ...pinData, old: e.target.value })}
-                  />
+      {/* PIN Section - Only shown for non-Super Admins */}
+      {role !== 'SUPER_ADMIN' && (
+        <Grid item xs={12}>
+          <Card className='shadow-sm border-none'>
+            <CardHeader 
+              title='PIN Transaksi & Keamanan Lanjut' 
+              subheader='PIN digunakan untuk verifikasi cepat pada aplikasi mobile dan transaksi sistem.' 
+              titleTypographyProps={{ variant: 'h6', fontWeight: 'bold' }}
+            />
+            <CardContent>
+              <form onSubmit={handleChangePIN}>
+                <Grid container spacing={5}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth label='PIN Lama' 
+                      placeholder='······'
+                      type='password'
+                      value={pinData.old}
+                      onChange={e => setPinData({ ...pinData, old: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth label='PIN Baru (6 Angka)' 
+                      placeholder='······'
+                      inputProps={{ maxLength: 6 }}
+                      value={pinData.new}
+                      onChange={e => setPinData({ ...pinData, new: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField 
+                      fullWidth label='Kode OTP Verifikasi' 
+                      placeholder='Masukkan kode dari email'
+                      helperText='Gunakan kode OTP jika Anda lupa PIN transaksi lama.'
+                      value={pinData.otp}
+                      onChange={e => setPinData({ ...pinData, otp: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} className='flex gap-4 items-center flex-wrap'>
+                    <Button variant='contained' color='info' type='submit' disabled={loading} startIcon={<i className='ri-key-2-line' />}>
+                      {loading ? 'Memproses...' : 'Ubah PIN'}
+                    </Button>
+                    <Button variant='outlined' color='info' onClick={handleRequestOTP}>
+                      Minta Kode OTP
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField 
-                    fullWidth label='PIN Baru (6 Digit)' 
-                    inputProps={{ maxLength: 6 }}
-                    value={pinData.new}
-                    onChange={e => setPinData({ ...pinData, new: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField 
-                    fullWidth label='Kode OTP (Opsional)' 
-                    helperText='Gunakan OTP jika lupa PIN lama.'
-                    value={pinData.otp}
-                    onChange={e => setPinData({ ...pinData, otp: e.target.value })}
-                  />
-                </Grid>
-                <Grid item xs={12} className='flex gap-4 items-center'>
-                  <Button variant='contained' color='info' type='submit' disabled={loading}>
-                    {loading ? 'Memproses...' : 'Ubah PIN'}
-                  </Button>
-                  <Button variant='outlined' color='info' onClick={handleRequestOTP}>
-                    Minta Kode OTP
-                  </Button>
-                </Grid>
-              </Grid>
-            </form>
-          </CardContent>
-        </Card>
-      </Grid>
+              </form>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
     </Grid>
   )
 }

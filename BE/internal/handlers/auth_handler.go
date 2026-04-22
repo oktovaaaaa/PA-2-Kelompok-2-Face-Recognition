@@ -159,14 +159,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// FETCH USER UNTUK CEK ROLE
+	// FETCH USER UNTUK CEK ROLE & STATUS PERUSAHAAN
 	var user models.User
-	database.DB.Where("email = ?", body.Email).First(&user)
+	if err := database.DB.Preload("Company").Where("email = ?", body.Email).First(&user).Error; err == nil {
+		// Proteksi Perusahaan: Jika perusahaan nonaktif, blokir login (kecuali Super Admin)
+		if user.Role != "SUPER_ADMIN" && user.Company.Status == "INACTIVE" {
+			utils.Error(c, "Akses Diblokir: Perusahaan/Organisasi Anda telah dinonaktifkan oleh sistem.")
+			return
+		}
+	}
 
 	// PROTEKSI MULTI-LAPIS: Jika mencoba login ke Panel Admin, WAJIB ROLE ADMIN
 	if body.IsAdminPanel {
-		if user.Role != "ADMIN" {
-			utils.Error(c, "Akses Ditolak: Akun Anda adalah KARYAWAN, tidak diperbolehkan masuk ke Panel Admin.")
+		if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" {
+			utils.Error(c, "Akses Ditolak: Akun Anda tidak diperbolehkan masuk ke Panel Admin.")
 			return
 		}
 	}
@@ -213,9 +219,15 @@ func VerifyLoginOTP(c *gin.Context) {
 	}
 
 	var user models.User
-	err = database.DB.Where("LOWER(email) = LOWER(?)", body.Email).First(&user).Error
+	err = database.DB.Preload("Company").Where("LOWER(email) = LOWER(?)", body.Email).First(&user).Error
 	if err != nil {
 		utils.Error(c, "Data pengguna tidak ditemukan setelah verifikasi OTP")
+		return
+	}
+
+	// Proteksi Perusahaan: Jika perusahaan nonaktif, blokir login (kecuali Super Admin)
+	if user.Role != "SUPER_ADMIN" && user.Company.Status == "INACTIVE" {
+		utils.Error(c, "Akses Diblokir: Perusahaan/Organisasi Anda telah dinonaktifkan oleh sistem.")
 		return
 	}
 
@@ -276,10 +288,16 @@ func GoogleLogin(c *gin.Context) {
 	email := payload.Claims["email"].(string)
 
 	var user models.User
-	err = database.DB.Where("email = ?", email).First(&user).Error
+	err = database.DB.Preload("Company").Where("email = ?", email).First(&user).Error
 
 	if err != nil {
 		utils.Error(c, "Akun Google ini belum terdaftar di sistem")
+		return
+	}
+
+	// Proteksi Perusahaan: Jika perusahaan nonaktif, blokir login (kecuali Super Admin)
+	if user.Role != "SUPER_ADMIN" && user.Company.Status == "INACTIVE" {
+		utils.Error(c, "Akses Diblokir: Perusahaan/Organisasi Anda telah dinonaktifkan oleh sistem.")
 		return
 	}
 
@@ -328,8 +346,17 @@ func LoginPin(c *gin.Context) {
 	user, err := services.LoginWithPin(body.UserID, body.Pin)
 
 	if err != nil {
-
 		utils.Error(c, err.Error())
+		return
+	}
+
+	// Fetch company to check status (if not preloaded by services)
+	var company models.Company
+	database.DB.Where("id = ?", user.CompanyID).First(&company)
+
+	// Proteksi Perusahaan: Jika perusahaan nonaktif, blokir login (kecuali Super Admin)
+	if user.Role != "SUPER_ADMIN" && company.Status == "INACTIVE" {
+		utils.Error(c, "Akses Diblokir: Perusahaan/Organisasi Anda telah dinonaktifkan oleh sistem.")
 		return
 	}
 

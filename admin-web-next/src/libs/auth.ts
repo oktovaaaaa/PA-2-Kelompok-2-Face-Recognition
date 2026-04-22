@@ -53,7 +53,8 @@ export const authService = {
       throw new Error(data.message || 'Kode OTP tidak valid.');
     }
 
-    if (!data.data || !data.data.role || data.data.role.toUpperCase() !== 'ADMIN') {
+    const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'OWNER'];
+    if (!data.data || !data.data.role || !allowedRoles.includes(data.data.role.toUpperCase())) {
       throw new Error('Akun ini tidak memiliki akses Administrator.')
     }
 

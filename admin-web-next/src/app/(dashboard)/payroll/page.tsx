@@ -2,7 +2,12 @@
 'use client'
 
 import PayrollList from '@/views/payroll/PayrollList'
+import RoleGuard from '@/hocs/RoleGuard'
 
-export default function PayrollPage() {
-  return <PayrollList />
+export default function page() {
+  return (
+    <RoleGuard allowedRoles={['ADMIN', 'OWNER']}>
+      <PayrollList />
+    </RoleGuard>
+  )
 }

@@ -11,5 +11,8 @@ type Company struct {
 	Email     string    `json:"email"`
 	Phone     string    `json:"phone"`
 	LogoURL   string    `json:"logo_url"`
+	Latitude  float64   `json:"latitude"`
+	Longitude float64   `json:"longitude"`
+	Status    string    `json:"status" gorm:"default:ACTIVE"`
 	CreatedAt time.Time `json:"created_at"`
 }

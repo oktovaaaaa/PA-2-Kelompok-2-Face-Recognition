@@ -114,7 +114,7 @@ const UserDropdown = () => {
                       <Typography className='font-medium' color='text.primary'>
                         {profile?.name || 'Admin'}
                       </Typography>
-                      <Typography variant='caption'>Admin</Typography>
+                      <Typography variant='caption'>{profile?.role || 'Admin'}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />
@@ -144,7 +144,7 @@ const UserDropdown = () => {
                       }}
                       sx={{ '& .MuiButton-endIcon': { marginInlineStart: 1.5 } }}
                     >
-                      Logout
+                      Keluar
                     </Button>
                   </div>
                 </MenuList>

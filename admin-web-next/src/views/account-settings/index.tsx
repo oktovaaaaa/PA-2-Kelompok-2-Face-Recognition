@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { SyntheticEvent, ReactElement } from 'react'
 
 // MUI Imports
@@ -16,6 +16,12 @@ import TabPanel from '@mui/lab/TabPanel'
 const AccountSettings = ({ tabContentList }: { tabContentList: { [key: string]: ReactElement } }) => {
   // States
   const [activeTab, setActiveTab] = useState('account')
+  const [role, setRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem('role')
+    setRole(savedRole)
+  }, [])
 
   const handleChange = (event: SyntheticEvent, value: string) => {
     setActiveTab(value)
@@ -25,35 +31,57 @@ const AccountSettings = ({ tabContentList }: { tabContentList: { [key: string]: 
     <Box>
       {/* Page Header */}
       <Box sx={{ mb: 6 }}>
-        <Typography variant='h4' fontWeight='800' color='primary' gutterBottom>
+        <Typography variant='h4' fontWeight='800' color='primary' className='tracking-tight' gutterBottom>
           Pengaturan Akun
         </Typography>
-        <Typography variant='body2' color='text.secondary'>
-          Atur informasi pribadi, kata sandi, dan detail instansi Anda dalam satu tempat.
+        <Typography variant='body2' color='text.secondary' className='font-medium'>
+          Kelola informasi profil, keamanan kata sandi, dan prevensi akun Anda dalam satu panel kendali.
         </Typography>
       </Box>
 
       <TabContext value={activeTab}>
-      <Grid container spacing={6}>
-        <Grid item xs={12}>
-          <TabList onChange={handleChange} variant='scrollable'>
-            <Tab label='Akun Pribadi' icon={<i className='ri-user-3-line' />} iconPosition='start' value='account' />
-            <Tab
-              label='Keamanan'
-              icon={<i className='ri-lock-line' />}
-              iconPosition='start'
-              value='security'
-            />
-            <Tab label='Profil Instansi' icon={<i className='ri-business-center-line' />} iconPosition='start' value='company' />
-          </TabList>
+        <Grid container spacing={6}>
+          <Grid item xs={12}>
+            <TabList 
+              onChange={handleChange} 
+              variant='scrollable'
+              sx={{
+                borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' }
+              }}
+            >
+              <Tab 
+                label='Informasi Profil' 
+                icon={<i className='ri-user-settings-line text-lg' />} 
+                iconPosition='start' 
+                value='account' 
+                className='font-bold min-h-[60px]'
+              />
+              <Tab
+                label='Keamanan'
+                icon={<i className='ri-shield-keyhole-line text-lg' />}
+                iconPosition='start'
+                value='security'
+                className='font-bold min-h-[60px]'
+              />
+              {role !== 'SUPER_ADMIN' && (
+                <Tab 
+                  label='Detail Instansi' 
+                  icon={<i className='ri-building-line text-lg' />} 
+                  iconPosition='start' 
+                  value='company' 
+                  className='font-bold min-h-[60px]'
+                />
+              )}
+            </TabList>
+          </Grid>
+          <Grid item xs={12}>
+            <TabPanel value={activeTab} className='p-0 animate-fade-in'>
+              {tabContentList[activeTab]}
+            </TabPanel>
+          </Grid>
         </Grid>
-        <Grid item xs={12}>
-          <TabPanel value={activeTab} className='p-0'>
-            {tabContentList[activeTab]}
-          </TabPanel>
-        </Grid>
-      </Grid>
-    </TabContext>
+      </TabContext>
     </Box>
   )
 }

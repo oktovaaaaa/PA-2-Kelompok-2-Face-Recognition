@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"employee-system/internal/models"
+	"employee-system/internal/utils"
 
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -34,6 +36,7 @@ func ConnectDatabase() {
 	DB = db
 
 	AutoMigrate()
+	SeedSuperAdmin(DB)
 
 	fmt.Println("Database berhasil terkoneksi")
 }
@@ -59,4 +62,35 @@ func AutoMigrate() {
 		&models.Testimonial{},
 		&models.CompanyLocation{},
 	)
+}
+
+func SeedSuperAdmin(db *gorm.DB) {
+	fmt.Println("Memulai seeding Super Admin...")
+
+	email := "videntiiii@gmail.com"
+	password := "Videntiiii@2026"
+
+	var count int64
+	db.Model(&models.User{}).Where("email = ?", email).Count(&count)
+
+	if count == 0 {
+		hashPassword, _ := utils.HashPassword(password)
+		
+		superAdmin := models.User{
+			ID:       uuid.New().String(),
+			Name:     "Super Admin",
+			Email:    email,
+			Password: hashPassword,
+			Role:     "SUPER_ADMIN",
+			Status:   "ACTIVE",
+		}
+
+		if err := db.Create(&superAdmin).Error; err != nil {
+			fmt.Printf("Error seeding Super Admin: %v\n", err)
+		} else {
+			fmt.Println("Super Admin seeded successfully!")
+		}
+	} else {
+		fmt.Println("Super Admin already exists.")
+	}
 }

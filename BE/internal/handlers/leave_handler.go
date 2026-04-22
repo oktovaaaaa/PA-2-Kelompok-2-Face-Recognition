@@ -353,10 +353,17 @@ func EmployeeDeleteLeave(c *gin.Context) {
 	}
 
 	leave.IsDeletedByEmployee = true
+	
+	// Jika status masih PENDING, maka pembatalan oleh karyawan otomatis menghapus 
+	// pengajuan tersebut dari daftar antrean Admin (is_deleted_by_admin = true)
+	if leave.Status == "PENDING" {
+		leave.IsDeletedByAdmin = true
+	}
+
 	database.DB.Save(&leave)
 
 	// Hapus permanen jika kedua pihak sudah menghapus
-	if leave.IsDeletedByAdmin {
+	if leave.IsDeletedByAdmin && leave.IsDeletedByEmployee {
 		database.DB.Delete(&leave)
 	}
 	utils.Success(c, "Izin dihapus dari riwayat kamu", nil)

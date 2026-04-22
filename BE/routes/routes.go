@@ -8,11 +8,25 @@ import (
 	"employee-system/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"html/template"
+	"path/filepath"
+	"os"
 )
 
 func SetupRouter() *gin.Engine {
 
 	r := gin.Default()
+
+	// Load HTML Templates
+	// We use a custom template renderer to handle nested directories properly
+	templ := template.New("")
+	filepath.Walk("admin_web/templates", func(path string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && filepath.Ext(path) == ".html" {
+			templ.ParseFiles(path)
+		}
+		return nil
+	})
+	r.SetHTMLTemplate(templ)
 
 	// Enable CORS
 	r.Use(middleware.CORSMiddleware())
@@ -176,6 +190,25 @@ func SetupRouter() *gin.Engine {
 		employee.GET("/salaries/years", handlers.GetSalaryYears)
 		employee.GET("/salaries", handlers.GetMySalaries)
 		employee.PUT("/bank-info", handlers.UpdateBankInfo)
+	}
+
+	// Super Admin Web Routes (Server-side rendered)
+	superAdmin := r.Group("/super-admin")
+	superAdmin.Use(middleware.AuthMiddleware(), middleware.SuperAdminMiddleware())
+	{
+		superAdmin.GET("/dashboard", handlers.SuperAdminDashboard)
+	}
+
+	// Super Admin API Routes (For Next.js frontend)
+	superAdminAPI := api.Group("/super-admin")
+	superAdminAPI.Use(middleware.AuthMiddleware(), middleware.SuperAdminMiddleware())
+	{
+		superAdminAPI.GET("/stats", handlers.GetSuperAdminStats)
+		superAdminAPI.GET("/registration-trend", handlers.GetRegistrationTrend)
+		superAdminAPI.GET("/users", handlers.GetAllSystemUsers)
+		superAdminAPI.GET("/registration-years", handlers.GetRegistrationYears)
+		superAdminAPI.GET("/companies", handlers.GetAllCompanies)
+		superAdminAPI.PUT("/companies/:id/status", handlers.UpdateCompanyStatus)
 	}
 
 	return r

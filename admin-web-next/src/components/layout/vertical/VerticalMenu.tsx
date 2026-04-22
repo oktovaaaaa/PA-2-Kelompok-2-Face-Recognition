@@ -1,3 +1,6 @@
+// React Imports
+import { useState, useEffect } from 'react'
+
 // MUI Imports
 import Chip from '@mui/material/Chip'
 import { useTheme } from '@mui/material/styles'
@@ -39,6 +42,14 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
 
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
 
+  const [role, setRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    setRole(localStorage.getItem('role'))
+  }, [])
+
+  const isSuperAdmin = role === 'SUPER_ADMIN'
+
   return (
     // eslint-disable-next-line lines-around-comment
     /* Custom scrollbar instead of browser scroll, remove if you want browser scroll only */
@@ -64,53 +75,57 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
 
         {/* Dashboard Section */}
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>
-          Dashboard
+          Beranda
         </MenuItem>
 
-        <MenuSection label='Manajemen SDM'>
-          <MenuItem href='/persetujuan' icon={<i className='ri-user-received-line' />}>
-            Persetujuan Karyawan
-          </MenuItem>
-          <MenuItem href='/karyawan' icon={<i className='ri-user-line' />}>
-            Data Karyawan
-          </MenuItem>
-          <MenuItem href='/jabatan' icon={<i className='ri-briefcase-line' />}>
-            Manajemen Jabatan
-          </MenuItem>
-          <MenuItem href='/cuti' icon={<i className='ri-calendar-event-line' />}>
-            Cuti & Izin
-          </MenuItem>
-          <MenuItem href='/libur' icon={<i className='ri-calendar-todo-line' />}>
-            Hari Libur
-          </MenuItem>
-        </MenuSection>
+        {!isSuperAdmin ? (
+          <>
+            <MenuSection label='Manajemen SDM'>
+              <MenuItem href='/persetujuan' icon={<i className='ri-user-received-line' />}>
+                Persetujuan Karyawan
+              </MenuItem>
+              <MenuItem href='/karyawan' icon={<i className='ri-user-line' />}>
+                Data Karyawan
+              </MenuItem>
+              <MenuItem href='/jabatan' icon={<i className='ri-briefcase-line' />}>
+                Manajemen Jabatan
+              </MenuItem>
+              <MenuItem href='/cuti' icon={<i className='ri-calendar-event-line' />}>
+                Cuti & Izin
+              </MenuItem>
+              <MenuItem href='/libur' icon={<i className='ri-calendar-todo-line' />}>
+                Hari Libur
+              </MenuItem>
+            </MenuSection>
 
-        <MenuSection label='Laporan & Payroll'>
-          <MenuItem href='/absensi' icon={<i className='ri-file-list-3-line' />}>
-            Laporan Absensi
-          </MenuItem>
-          <MenuItem href='/payroll' icon={<i className='ri-money-dollar-circle-line' />}>
-            Laporan Payroll
-          </MenuItem>
-          <MenuItem href='/pelanggaran-bonus' icon={<i className='ri-medal-line' />}>
-            Bonus & Sanksi
-          </MenuItem>
-        </MenuSection>
+            <MenuSection label='Laporan & Payroll'>
+              <MenuItem href='/absensi' icon={<i className='ri-file-list-3-line' />}>
+                Laporan Absensi
+              </MenuItem>
+              <MenuItem href='/payroll' icon={<i className='ri-money-dollar-circle-line' />}>
+                Laporan Payroll
+              </MenuItem>
+              <MenuItem href='/pelanggaran-bonus' icon={<i className='ri-medal-line' />}>
+                Bonus & Sanksi
+              </MenuItem>
+            </MenuSection>
 
-        <MenuSection label='Aplikasi & Halaman'>
-          <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
-            Pengaturan Akun
-          </MenuItem>
-          <MenuItem href='/operasional' icon={<i className='ri-settings-4-line' />}>
-            Pengaturan Operasional
-          </MenuItem>
-        </MenuSection>
-
-        <MenuSection label='Misc'>
-          <MenuItem href='/404' icon={<i className='ri-question-line' />}>
-            Halaman 404
-          </MenuItem>
-        </MenuSection>
+            <MenuSection label='Aplikasi & Halaman'>
+              <MenuItem href='/account-settings' icon={<i className='ri-user-settings-line' />}>
+                Pengaturan Akun
+              </MenuItem>
+              <MenuItem href='/operasional' icon={<i className='ri-settings-4-line' />}>
+                Pengaturan Operasional
+              </MenuItem>
+            </MenuSection>
+          </>
+        ) : (
+          <MenuSection label='Manajemen Sistem'>
+             <MenuItem href='/pengguna' icon={<i className='ri-community-line' />}>
+               Daftar Seluruh Pengguna
+             </MenuItem>
+          </MenuSection>
+        )}
       </Menu>
     </ScrollWrapper>
   )

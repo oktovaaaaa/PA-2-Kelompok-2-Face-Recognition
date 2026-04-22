@@ -1,6 +1,13 @@
 // src/app/(dashboard)/persetujuan/page.tsx
-import EmployeeApproval from '@views/karyawan/EmployeeApproval'
+'use client'
 
-export default function PersetujuanPage() {
-  return <EmployeeApproval />
+import EmployeeApproval from '@views/karyawan/EmployeeApproval'
+import RoleGuard from '@/hocs/RoleGuard'
+
+export default function page() {
+  return (
+    <RoleGuard allowedRoles={['ADMIN', 'OWNER']}>
+      <EmployeeApproval />
+    </RoleGuard>
+  )
 }

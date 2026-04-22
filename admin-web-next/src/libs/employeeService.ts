@@ -214,5 +214,43 @@ export const employeeService = {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal menolak karyawan.');
         return data;
+    },
+
+    // SUPER ADMIN SERVICES
+    async getAllSystemUsers(status?: string) {
+        let url = `${API_URL}/super-admin/users`;
+        if (status) url += `?status=${status}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal mengambil data seluruh user.');
+        return data.data as Employee[];
+    },
+
+    async getAllCompanies() {
+        const response = await fetch(`${API_URL}/super-admin/companies`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar perusahaan.');
+        return data.data as any[];
+    },
+
+    async updateCompanyStatus(id: string, status: string) {
+        const response = await fetch(`${API_URL}/super-admin/companies/${id}/status`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ status })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal memperbarui status perusahaan.');
+        return data.data;
     }
 };
