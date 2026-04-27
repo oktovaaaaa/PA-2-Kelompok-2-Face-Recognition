@@ -34,7 +34,7 @@ func CreateTestimonial(c *gin.Context) {
 		Rating:      input.Rating,
 		Description: input.Description,
 		PhotoURL:    input.PhotoURL,
-		IsApproved:  true, // Auto-approve for now as requested by user's test cycle
+		IsApproved:  true, 
 	}
 
 	if err := database.DB.Create(&testimonial).Error; err != nil {

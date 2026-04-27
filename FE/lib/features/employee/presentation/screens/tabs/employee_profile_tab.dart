@@ -741,6 +741,9 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
   }
 
   void _showChangePinModal() {
+    final oldPinCtrl = TextEditingController();
+    final newPinCtrl = TextEditingController();
+    final otpCtrl = TextEditingController();
     final repo = AuthRepository();
     bool loading = false;
     bool sendingOtp = false;

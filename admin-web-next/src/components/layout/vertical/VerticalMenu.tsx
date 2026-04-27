@@ -124,6 +124,9 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
              <MenuItem href='/pengguna' icon={<i className='ri-community-line' />}>
                Daftar Seluruh Pengguna
              </MenuItem>
+             <MenuItem href='/testimoni' icon={<i className='ri-chat-smile-3-line' />}>
+               Kelola Testimoni
+             </MenuItem>
           </MenuSection>
         )}
       </Menu>

@@ -15,10 +15,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetMyProfile — mendapatkan profil diri sendiri (admin & karyawan)
 func GetMyProfile(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	user := userCtx.(models.User)
+	userID, _ := c.Get("user_id")
+	
+	var user models.User
+	if err := database.DB.Preload("Company").Where("id = ?", userID).First(&user).Error; err != nil {
+		utils.Error(c, "Profil tidak ditemukan")
+		return
+	}
 
 	type ProfileResponse struct {
 		ID                string  `json:"id"`

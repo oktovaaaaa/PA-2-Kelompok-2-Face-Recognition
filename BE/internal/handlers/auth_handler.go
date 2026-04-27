@@ -255,7 +255,7 @@ func VerifyLoginOTP(c *gin.Context) {
 		}
 	}
 
-	token, _ := services.GenerateToken(user.ID)
+	token, _ := services.GenerateToken(user.ID, user.Role, user.CompanyID)
 
 	utils.Success(c, "Login berhasil", gin.H{
 		"token":     token,
@@ -373,7 +373,7 @@ func LoginPin(c *gin.Context) {
 		}
 	}
 
-	token, _ := services.GenerateToken(user.ID)
+	token, _ := services.GenerateToken(user.ID, user.Role, user.CompanyID)
 
 	utils.Success(c, "Login berhasil", gin.H{
 		"token": token,
@@ -432,4 +432,36 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	utils.Success(c, "Password berhasil diperbarui", nil)
+}
+
+// GetInternalUsers - Endpoint internal untuk menyediakan data user ke service lain (Microservices)
+func GetInternalUsers(c *gin.Context) {
+	companyID := c.Query("company_id")
+	if companyID == "" {
+		c.JSON(400, gin.H{"error": "company_id required"})
+		return
+	}
+
+	var users []models.User
+	database.DB.Preload("Position").Where("company_id = ?", companyID).Find(&users)
+	c.JSON(200, users)
+}
+
+// GetInternalUserByID - Endpoint internal untuk mengambil data 1 user spesifik
+func GetInternalUserByID(c *gin.Context) {
+	id := c.Query("id")
+	var user models.User
+	if err := database.DB.Preload("Position").First(&user, "id = ?", id).Error; err != nil {
+		c.JSON(404, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(200, user)
+}
+
+// GetInternalAdmins - Endpoint internal untuk mengambil daftar admin di suatu perusahaan
+func GetInternalAdmins(c *gin.Context) {
+	companyID := c.Query("company_id")
+	var admins []models.User
+	database.DB.Where("company_id = ? AND role = ?", companyID, "ADMIN").Find(&admins)
+	c.JSON(200, admins)
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useNotification } from '@/contexts/NotificationContext'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { googleLogout } from '@react-oauth/google'
@@ -32,6 +33,7 @@ const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [windowWidth, setWindowWidth] = useState(0)
+  const { showNotification } = useNotification()
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
 
@@ -97,20 +99,20 @@ const LandingPage = () => {
         const data = await res.json()
         setTestiForm({ ...testiForm, photo_url: data.data.url })
       } else {
-        alert('Gagal mengupload foto')
+        showNotification('Gagal mengupload foto', 'error')
       }
-    } catch (err) { alert('Terjadi kesalahan saat upload') }
+    } catch (err) { showNotification('Terjadi kesalahan saat upload', 'error') }
     setIsUploading(false)
   }
 
   const handleTestiSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isUploading) {
-      alert('Tunggu hingga foto selesai diupload!')
+      showNotification('Tunggu hingga foto selesai diupload!', 'warning')
       return
     }
     if (testiForm.rating === 0) {
-      alert('Silakan pilih rating minimal 1 bintang!')
+      showNotification('Silakan pilih rating minimal 1 bintang!', 'warning')
       return
     }
     try {
@@ -120,11 +122,17 @@ const LandingPage = () => {
         body: JSON.stringify(testiForm)
       })
       if (res.ok) {
-        alert('Testimoni berhasil dikirim!')
+        showNotification('Testimoni berhasil dikirim!', 'success')
         setShowTestimonialModal(false)
+        setTestiForm({
+          name: '',
+          rating: 0,
+          description: '',
+          photo_url: ''
+        })
         fetchTestimonials()
       }
-    } catch (err) { alert('Gagal mengirim testimoni') }
+    } catch (err) { showNotification('Gagal mengirim testimoni', 'error') }
   }
 
   // Raw features array stays same...
@@ -528,17 +536,12 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <div className='marquee-row row-left'>
             <div className='marquee-content'>
               {(() => {
-                const displayData = testimonials.length > 0 ? testimonials : [
-                  { name: 'Budi Santoso', description: 'VIDENTI sangat memudahkan manajemen absensi di pabrik kami. Sangat akurat!', rating: 5 },
-                  { name: 'Siti Aminah', description: 'Fitur payroll otomatisnya menghemat waktu HRD kami hingga 70%. Luar biasa!', rating: 5 },
-                  { name: 'Andi Wijaya', description: 'Topik pengenalan wajahnya sangat cepat, bahkan dalam kondisi minim cahaya.', rating: 4 },
-                  { name: 'Dewi Lestari', description: 'Dashboard admin sangat intuitif dan mudah dipahami oleh staf baru.', rating: 5 }
-                ];
+                const displayData = testimonials;
                 const tripled = [...displayData, ...displayData, ...displayData];
                 return tripled.map((testi, idx) => {
                   const originalIndex = idx % displayData.length;
                   const avatarSrc = testi.photo_url 
-                    ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
+                    ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${testi.photo_url}`
                     : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
 
                   return (
@@ -569,12 +572,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <div className='marquee-row row-right'>
             <div className='marquee-content'>
               {(() => {
-                const displayData = testimonials.length > 0 ? testimonials : [
-                  { name: 'Joko Widodo', description: 'Implementasi gampang dan tim supportnya sangat responsif membantu.', rating: 5 },
-                  { name: 'Rina Marlina', description: 'Karyawan saya senang karena bisa absensi langsung dari HP masing-masing.', rating: 5 },
-                  { name: 'Anton Setiawan', description: 'Analitiknya sangat detail, membantu saya memantau produktivitas tim.', rating: 4 },
-                  { name: 'Maya Putri', description: 'Harga berlangganannya sangat terjangkau dibanding kompetitor lain.', rating: 5 }
-                ];
+                const displayData = testimonials;
                 const tripled = [...displayData, ...displayData, ...displayData];
                 const reversed = [...tripled].reverse();
                 
@@ -582,7 +580,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                   const L = displayData.length;
                   const originalIndex = (L * 3 - 1 - idx) % L;
                   const avatarSrc = testi.photo_url 
-                    ? `${process.env.NEXT_PUBLIC_API_URL}${testi.photo_url}` 
+                    ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${testi.photo_url}`
                     : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
 
                   return (
@@ -621,7 +619,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               <form onSubmit={handleTestiSubmit}>
                 <div className='input-group'>
                   <label>Nama Lengkap</label>
-                  <input type='text' required placeholder='Nama anda...' onChange={e => setTestiForm({...testiForm, name: e.target.value})} />
+                  <input type='text' required placeholder='Nama anda...' value={testiForm.name} onChange={e => setTestiForm({...testiForm, name: e.target.value})} />
                 </div>
                 <div className='input-group'>
                   <label>Rating Kepuasan Anda *</label>
@@ -641,7 +639,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                 </div>
                 <div className='input-group'>
                   <label>Pesan Ulasan</label>
-                  <textarea required rows={4} placeholder='Tulis ulasan anda...' onChange={e => setTestiForm({...testiForm, description: e.target.value})}></textarea>
+                  <textarea required rows={4} placeholder='Tulis ulasan anda...' value={testiForm.description} onChange={e => setTestiForm({...testiForm, description: e.target.value})}></textarea>
                 </div>
                 <div className='input-group'>
                   <label>Upload Foto Profil {isUploading && '(Sabar sedang mengupload...)'}</label>

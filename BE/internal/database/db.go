@@ -16,7 +16,7 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase() {
+func ConnectDatabase(serviceName string) {
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
@@ -30,38 +30,18 @@ func ConnectDatabase() {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		panic("Gagal koneksi database")
+		panic("Gagal koneksi database " + serviceName)
 	}
 
 	DB = db
 
-	AutoMigrate()
-	SeedSuperAdmin(DB)
-
-	fmt.Println("Database berhasil terkoneksi")
+	fmt.Printf("[%s] Database %s berhasil terkoneksi\n", serviceName, os.Getenv("DB_NAME"))
 }
 
-func AutoMigrate() {
-
-	DB.AutoMigrate(
-		&models.Company{},
-		&models.Position{},
-		&models.User{},
-		&models.Salary{},
-		&models.InviteToken{},
-		&models.OTP{},
-		&models.Session{},
-		&models.Attendance{},
-		&models.AttendanceSettings{},
-		&models.LeaveRequest{},
-		&models.Notification{},
-		&models.SalaryPayment{},
-		&models.Holiday{},
-		&models.Penalty{},
-		&models.Bonus{},
-		&models.Testimonial{},
-		&models.CompanyLocation{},
-	)
+func AutoMigrate(models ...interface{}) {
+	if len(models) > 0 {
+		DB.AutoMigrate(models...)
+	}
 }
 
 func SeedSuperAdmin(db *gorm.DB) {

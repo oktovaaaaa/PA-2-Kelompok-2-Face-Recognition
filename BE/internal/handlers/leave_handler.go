@@ -8,6 +8,8 @@ import (
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,8 +18,7 @@ import (
 
 // ===== ADMIN HANDLERS =====
 
-// AdminGetLeaveRequests — admin melihat semua izin karyawan perusahaannya
-// Query params: status=PENDING|APPROVED|REJECTED (opsional)
+// AdminGetLeaveRequests — admin melihat semua izin karyawan perusahaannya (Microservices version)
 func AdminGetLeaveRequests(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
@@ -27,45 +28,59 @@ func AdminGetLeaveRequests(c *gin.Context) {
 	year := c.Query("year")
 	search := c.Query("search")
 
+	// 1. Fetch Employees from Auth Service (Port 8081)
+	var employees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
+		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
+		return
+	}
+
+	// Create map for easy lookup and filter by search
+	userMap := make(map[string]models.User)
+	var filteredUserIDs []string
+	for _, emp := range employees {
+		if search != "" && !strings.Contains(strings.ToLower(emp.Name), strings.ToLower(search)) {
+			continue
+		}
+		userMap[emp.ID] = emp
+		filteredUserIDs = append(filteredUserIDs, emp.ID)
+	}
+
+	// 2. Fetch Leave Requests from Attendance DB
+	var leaves []models.LeaveRequest
+	query := database.DB.Where("company_id = ? AND is_deleted_by_admin = ? AND user_id IN ?", adminUser.CompanyID, false, filteredUserIDs)
+
+	if status != "" && status != "ALL" {
+		query = query.Where("status = ?", status)
+	}
+	if year != "" {
+		query = query.Where("EXTRACT(YEAR FROM created_at) = ?", year)
+	}
+	if month != "" && month != "0" {
+		query = query.Where("EXTRACT(MONTH FROM created_at) = ?", month)
+	}
+
+	query.Order("CASE WHEN status = 'PENDING' THEN 0 ELSE 1 END, created_at ASC").Find(&leaves)
+
+	// 3. Transform to Result structure
 	type LeaveWithUser struct {
-		ID              string    `json:"id"`
-		UserID          string    `json:"user_id"`
-		UserName        string    `json:"user_name"`
-		UserEmail       string    `json:"user_email"`
-		UserPhoto       string    `json:"user_photo"`
-		Type            string    `json:"type"`
-		Title           string    `json:"title"`
-		Description     string    `json:"description"`
-		PhotoURL        string    `json:"photo_url"`
-		Status          string    `json:"status"`
-		AdminNote       string    `json:"admin_note"`
-		ConfirmedHonest bool      `json:"confirmed_honest"`
-		Dates           string    `json:"dates"`
-		CreatedAt       time.Time `json:"created_at"`
+		models.LeaveRequest
+		UserName  string `json:"user_name"`
+		UserEmail string `json:"user_email"`
+		UserPhoto string `json:"user_photo"`
 	}
 
 	var result []LeaveWithUser
-	query := database.DB.Model(&models.LeaveRequest{}).
-		Select("leave_requests.id, leave_requests.user_id, leave_requests.type, leave_requests.title, leave_requests.description, leave_requests.photo_url, leave_requests.status, leave_requests.admin_note, leave_requests.confirmed_honest, leave_requests.dates, leave_requests.created_at, users.name as user_name, users.email as user_email, users.photo_url as user_photo").
-		Joins("left join users on users.id = leave_requests.user_id").
-		Where("leave_requests.company_id = ? AND leave_requests.is_deleted_by_admin = ?", adminUser.CompanyID, false)
-
-	if status != "" && status != "ALL" {
-		query = query.Where("leave_requests.status = ?", status)
+	for _, l := range leaves {
+		res := LeaveWithUser{LeaveRequest: l}
+		if u, ok := userMap[l.UserID]; ok {
+			res.UserName = u.Name
+			res.UserEmail = u.Email
+			res.UserPhoto = u.PhotoURL
+		}
+		result = append(result, res)
 	}
-
-	if year != "" {
-		query = query.Where("EXTRACT(YEAR FROM leave_requests.created_at) = ?", year)
-	}
-	if month != "" && month != "0" {
-		query = query.Where("EXTRACT(MONTH FROM leave_requests.created_at) = ?", month)
-	}
-
-	if search != "" {
-		query = query.Where("users.name ILIKE ?", "%"+search+"%")
-	}
-
-	query.Order("CASE WHEN leave_requests.status = 'PENDING' THEN 0 ELSE 1 END, leave_requests.created_at ASC").Find(&result)
 
 	utils.Success(c, "Daftar izin karyawan", result)
 }
@@ -293,13 +308,16 @@ func EmployeeCreateLeave(c *gin.Context) {
 		return
 	}
 
-	// Cari admin perusahaan ini untuk kirim notifikasi
-	var admin models.User
-	if err := database.DB.Where("company_id = ? AND role = ?", emp.CompanyID, "ADMIN").First(&admin).Error; err == nil {
-		services.CreateNotification(admin.ID, emp.CompanyID, "Pengajuan Izin Baru",
-			emp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
-		services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",
-			emp.Name+" mengajukan "+body.Type+": "+body.Title)
+	// 2. Cari admin perusahaan ini untuk kirim notifikasi (via Auth Service)
+	var admins []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/admins?company_id=%s", emp.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &admins); err == nil {
+		for _, admin := range admins {
+			services.CreateNotification(admin.ID, emp.CompanyID, "Pengajuan Izin Baru",
+				emp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
+			services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",
+				emp.Name+" mengajukan "+body.Type+": "+body.Title)
+		}
 	}
 
 	utils.Success(c, "Izin berhasil diajukan", leave)

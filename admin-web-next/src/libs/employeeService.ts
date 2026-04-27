@@ -252,5 +252,39 @@ export const employeeService = {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Gagal memperbarui status perusahaan.');
         return data.data;
+    },
+
+    // TESTIMONIAL SERVICES
+    async getAllTestimonials() {
+        const response = await fetch(`${API_URL}/super-admin/testimonials`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar testimoni.');
+        return data.data;
+    },
+
+    async deleteTestimonial(id: number) {
+        const response = await fetch(`${API_URL}/super-admin/testimonials/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menghapus testimoni.');
+        return data;
+    },
+
+    async approveTestimonial(id: number) {
+        const response = await fetch(`${API_URL}/super-admin/testimonials/${id}/approve`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal menyetujui testimoni.');
+        return data;
     }
 };

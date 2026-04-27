@@ -3,9 +3,9 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"employee-system/internal/database"
@@ -45,7 +45,7 @@ type LateTier struct {
 	Penalty float64 `json:"penalty"`
 }
 
-// GetMySalaries - Employee view (Only shows past months since joining)
+// GetMySalaries - Employee view (Microservices version)
 func GetMySalaries(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
@@ -60,17 +60,21 @@ func GetMySalaries(c *gin.Context) {
 	ensureSalariesGenerated(userID)
 
 	var salaries []models.Salary
-	query := database.DB.Preload("User").Preload("User.Position").Preload("Payments").
-		Joins("JOIN users ON users.id = salaries.user_id").
-		Where("salaries.user_id = ? AND salaries.year = ?", userID, yearStr)
+	query := database.DB.Preload("Payments").
+		Where("user_id = ? AND year = ?", userID, yearStr)
 
 	if monthStr != "" && monthStr != "0" {
-		query = query.Where("salaries.month = ?", monthStr)
+		query = query.Where("month = ?", monthStr)
 	}
 
-	if err := query.Order("salaries.month DESC").Find(&salaries).Error; err != nil {
+	if err := query.Order("month DESC").Find(&salaries).Error; err != nil {
 		utils.Error(c, "Gagal mengambil riwayat gaji")
 		return
+	}
+
+	// Link user info for display (User is already in context)
+	for i := range salaries {
+		salaries[i].User = user
 	}
 
 	utils.Success(c, "Berhasil mengambil riwayat gaji", salaries)
@@ -97,7 +101,7 @@ func GetSalaryYears(c *gin.Context) {
 	utils.Success(c, "Berhasil mengambil daftar tahun", years)
 }
 
-// AdminGetSalaries - Admin view with filters
+// AdminGetSalaries - Admin view with filters (Microservices version)
 func AdminGetSalaries(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	admin := userCtx.(models.User)
@@ -107,68 +111,59 @@ func AdminGetSalaries(c *gin.Context) {
 	positionID := c.Query("position_id")
 	search := c.Query("search")
 
-	// Proactive Generation & Cleanup: Pastikan data akurat sesuai tanggal bergabung
+	// 1. Fetch Employees from Auth Service (Port 8081)
+	var employees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", admin.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
+		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
+		return
+	}
+
+	// 2. Filter employees in memory (mimic previous DB filters)
+	var filteredUserIDs []string
+	userMap := make(map[string]models.User)
+	for _, emp := range employees {
+		// Filter by Position
+		if positionID != "" && (emp.PositionID == nil || *emp.PositionID != positionID) {
+			continue
+		}
+		// Filter by Search
+		if search != "" && !strings.Contains(strings.ToLower(emp.Name), strings.ToLower(search)) {
+			continue
+		}
+		filteredUserIDs = append(filteredUserIDs, emp.ID)
+		userMap[emp.ID] = emp
+	}
+
+	// Proactive Generation: Ensure salaries exist for filtered users
 	if month > 0 && year > 0 {
-		var employees []models.User
-		database.DB.Where("role = ? AND company_id = ?", "EMPLOYEE", admin.CompanyID).Find(&employees)
-
-		targetMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
-
-		for _, emp := range employees {
-			joinMonth := time.Date(emp.CreatedAt.Year(), emp.CreatedAt.Month(), 1, 0, 0, 0, 0, time.Local)
-
-			if targetMonth.Before(joinMonth) {
-				// Hapus data sampah jika ada (Pembersihan Database)
-				database.DB.Where("user_id = ? AND month = ? AND year = ?", emp.ID, month, year).Delete(&models.Salary{})
-				continue
-			}
-
-			// Generate/Update data valid
-			generateSalary(emp.ID, month, year)
+		for _, userID := range filteredUserIDs {
+			generateSalary(userID, month, year)
 		}
 	}
 
-	// [AUTO-CLEANUP] Bersihkan data gaji & absensi ADMIN yang tidak sengaja terbentuk
-	database.DB.Exec("DELETE FROM salaries WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' AND company_id = ?)", admin.CompanyID)
-	database.DB.Exec("DELETE FROM attendances WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' AND company_id = ?)", admin.CompanyID)
-	database.DB.Exec("UPDATE users SET position_id = NULL WHERE role = 'ADMIN' AND company_id = ?", admin.CompanyID)
-
+	// 3. Fetch Salaries from Payroll DB
 	var salaries []models.Salary
-	query := database.DB.Preload("User").Preload("User.Position").Preload("Payments").
-		Joins("JOIN users ON users.id = salaries.user_id").
-		Where("users.company_id = ? AND users.role = ?", admin.CompanyID, "EMPLOYEE")
+	query := database.DB.Preload("Payments").Where("user_id IN ?", filteredUserIDs)
 
 	if month > 0 && year > 0 {
-		periodEnd := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local).AddDate(0, 1, 0)
-		query = query.Where("salaries.month = ? AND salaries.year = ? AND users.created_at < ?", month, year, periodEnd)
+		query = query.Where("month = ? AND year = ?", month, year)
 	} else {
 		if month > 0 {
-			query = query.Where("salaries.month = ?", month)
+			query = query.Where("month = ?", month)
 		}
 		if year > 0 {
-			query = query.Where("salaries.year = ?", year)
+			query = query.Where("year = ?", year)
 		}
 	}
 
-	// Filter by User (hanya karyawan)
-	userSubQuery := database.DB.Model(&models.User{}).Where("company_id = ? AND role = ?", admin.CompanyID, "EMPLOYEE")
-	if positionID != "" {
-		userSubQuery = userSubQuery.Where("position_id = ?", positionID)
-	}
-	if search != "" {
-		userSubQuery = userSubQuery.Where("LOWER(name) LIKE LOWER(?)", "%"+search+"%")
-	}
+	query.Order("year desc, month desc").Find(&salaries)
 
-	var userIDs []string
-	userSubQuery.Pluck("id", &userIDs)
-
-	if len(userIDs) > 0 || (positionID == "" && search == "") {
-		if positionID != "" || search != "" {
-			query = query.Where("salaries.user_id IN ?", userIDs)
+	// 4. Manually link User data back to Salary objects
+	for i := range salaries {
+		if u, ok := userMap[salaries[i].UserID]; ok {
+			salaries[i].User = u
 		}
-		query.Order("year desc, month desc").Find(&salaries)
-	} else {
-		salaries = []models.Salary{}
 	}
 
 	utils.Success(c, "Berhasil mengambil data payroll", salaries)
@@ -176,17 +171,12 @@ func AdminGetSalaries(c *gin.Context) {
 
 // AdminPaySalary - Process payment (supports installments)
 func AdminPaySalary(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	admin := userCtx.(models.User)
-
 	salaryID := c.Param("id")
 	amountStr := c.PostForm("amount")
 
 	var salary models.Salary
-	if err := database.DB.Joins("JOIN users ON users.id = salaries.user_id").
-		Where("salaries.id = ? AND users.company_id = ?", salaryID, admin.CompanyID).
-		First(&salary).Error; err != nil {
-		utils.Error(c, "Data gaji tidak ditemukan atau Anda tidak memiliki akses")
+	if err := database.DB.Where("id = ?", salaryID).First(&salary).Error; err != nil {
+		utils.Error(c, "Data gaji tidak ditemukan")
 		return
 	}
 
@@ -385,8 +375,12 @@ func repairDuplicates(userID string, month int, year int) {
 }
 
 func generateSalary(userID string, month int, year int) {
+	// 1. Fetch User data from Auth Service (Microservices)
 	var user models.User
-	if err := database.DB.Preload("Position").First(&user, "id = ?", userID).Error; err != nil {
+	
+	utils.CallInternalAPI(fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID), &user)
+
+	if user.ID == "" {
 		return
 	}
 
@@ -471,130 +465,20 @@ func generateSalary(userID string, month int, year int) {
 }
 
 func CalculateAdjustments(userID string, month int, year int) (float64, float64, string, string) {
-	var user models.User
-	database.DB.First(&user, "id = ?", userID)
-
-	var settingsList []models.AttendanceSettings
-	database.DB.Where("company_id = ?", user.CompanyID).Limit(1).Find(&settingsList)
-	var settings models.AttendanceSettings
-	if len(settingsList) > 0 {
-		settings = settingsList[0]
+	// 1. Call Attendance Service (Port 8082) to get attendance-based adjustments
+	url := fmt.Sprintf("http://localhost:8082/api/internal/salary-adjustments?user_id=%s&month=%d&year=%d", userID, month, year)
+	
+	var result struct {
+		Deductions       float64 `json:"deductions"`
+		Bonuses          float64 `json:"bonuses"`
+		DeductionDetails string  `json:"deduction_details"`
+		BonusDetails     string  `json:"bonus_details"`
 	}
 
-	// Parse Tiers
-	var tiers []LateTier
-	if settings.LatePenaltyTiers != "" {
-		json.Unmarshal([]byte(settings.LatePenaltyTiers), &tiers)
+	if err := utils.CallInternalAPI(url, &result); err != nil {
+		fmt.Printf("[Payroll] Error fetching adjustments from Attendance: %v\n", err)
+		return 0, 0, "", ""
 	}
 
-	// Get Attendances for this month
-	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
-	endDate := startDate.AddDate(0, 1, 0)
-
-	var attendances []models.Attendance
-	database.DB.Where("user_id = ? AND date >= ? AND date < ?", userID, startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).Find(&attendances)
-
-	// Tentukan batas akhir pencarian (jangan melewati hari ini jika bulan berjalan)
-	calculationEnd := endDate
-	now := time.Now()
-	if year == now.Year() && month == int(now.Month()) {
-		calculationEnd = time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()) 
-		if calculationEnd.After(endDate) {
-			calculationEnd = endDate
-		}
-	}
-
-	// 1. Map record yang ada untuk lookup cepat
-	existingRecords := make(map[string]models.Attendance)
-	for _, att := range attendances {
-		existingRecords[att.Date] = att
-	}
-
-	totalDeduction := 0.0
-	totalBonus := 0.0
-	deductionDetails := ""
-	bonusDetails := ""
-
-	// 2. Loop setiap tanggal dalam range bulan ini (Denda Absensi)
-	for d := startDate; d.Before(calculationEnd); d = d.AddDate(0, 0, 1) {
-		dateStr := d.Format("2006-01-02")
-		
-		if dateStr < user.CreatedAt.Format("2006-01-02") {
-			continue
-		}
-
-		if att, exists := existingRecords[dateStr]; exists {
-			checkInEnd := parseT(dateStr, settings.CheckInEnd, now.Location())
-			lateDeduction := 0.0
-			if att.CheckInTime != nil && att.CheckInTime.After(checkInEnd) {
-				lateDeduction = calculateLatePenalty(*att.CheckInTime, checkInEnd, settings.LatePenalty, settings.LatePenaltyTiers)
-			}
-
-			earlyDeduction := 0.0
-			isEarly := false
-			if att.CheckInTime != nil {
-				if att.CheckOutTime == nil {
-					if dateStr < now.Format("2006-01-02") || (dateStr == now.Format("2006-01-02") && now.After(parseT(dateStr, settings.CheckOutEnd, now.Location()))) {
-						isEarly = true
-						earlyDeduction = settings.EarlyLeavePenalty
-					}
-				} else {
-					if att.CheckOutTime.Before(parseT(dateStr, settings.CheckOutStart, now.Location())) {
-						isEarly = true
-						earlyDeduction = settings.EarlyLeavePenalty
-					}
-				}
-			}
-
-			if lateDeduction > 0 && isEarly {
-				totalDeduction += lateDeduction + earlyDeduction
-				deductionDetails += "Terlambat & Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(lateDeduction+earlyDeduction) + "); "
-			} else if lateDeduction > 0 {
-				totalDeduction += lateDeduction
-				deductionDetails += "Terlambat pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(lateDeduction) + "); "
-			} else if isEarly {
-				totalDeduction += earlyDeduction
-				deductionDetails += "Pulang di jam kerja pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(earlyDeduction) + "); "
-			} else if att.SalaryDeduction > 0 && att.Status != "LATE" && att.Status != "EARLY_LEAVE" && att.Status != "LATE_EARLY_LEAVE" {
-				totalDeduction += att.SalaryDeduction
-				deductionDetails += att.Status + " pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(att.SalaryDeduction) + "); "
-			}
-		} else {
-			isHold, _ := isHoliday(user.CompanyID, d)
-			if !isHold {
-				if dateStr == now.Format("2006-01-02") {
-					loc := now.Location()
-					checkOutEnd := parseT(dateStr, settings.CheckOutEnd, loc)
-					if now.Before(checkOutEnd) {
-						continue 
-					}
-				}
-
-				if settings.AlphaPenalty > 0 {
-					totalDeduction += settings.AlphaPenalty
-					deductionDetails += "Alpha pada " + formatDateIndo(dateStr) + " (" + utils.FormatRupiah(settings.AlphaPenalty) + "); "
-				}
-			}
-		}
-	}
-
-	// 3. Tambahkan Denda Manual (Non-Absensi)
-	var manualPenalties []models.Penalty
-	database.DB.Where("user_id = ? AND date LIKE ?", userID, fmt.Sprintf("%d-%02d-%%", year, month)).Find(&manualPenalties)
-
-	for _, p := range manualPenalties {
-		totalDeduction += p.Amount
-		deductionDetails += p.Title + " (" + utils.FormatRupiah(p.Amount) + "); "
-	}
-
-	// 4. Tambahkan Bonus Manual [NEW]
-	var bonuses []models.Bonus
-	database.DB.Where("user_id = ? AND date LIKE ?", userID, fmt.Sprintf("%d-%02d-%%", year, month)).Find(&bonuses)
-
-	for _, b := range bonuses {
-		totalBonus += b.Amount
-		bonusDetails += b.Title + " (" + utils.FormatRupiah(b.Amount) + "); "
-	}
-
-	return totalDeduction, totalBonus, deductionDetails, bonusDetails
+	return result.Deductions, result.Bonuses, result.DeductionDetails, result.BonusDetails
 }

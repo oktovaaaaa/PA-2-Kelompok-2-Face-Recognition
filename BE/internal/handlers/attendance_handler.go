@@ -647,13 +647,25 @@ func AdminGetAttendanceHistory(c *gin.Context) {
 	var firstRecordDate string
 	database.DB.Model(&models.Attendance{}).Where("company_id = ?", adminUser.CompanyID).Order("date asc").Limit(1).Select("date").Scan(&firstRecordDate)
 
-	// 1. Ambil Semua Karyawan Aktif Perusahaan ini
+	// 1. Ambil Semua Karyawan dari Auth Service (Microservices)
 	var employees []models.User
-	empQuery := database.DB.Where("company_id = ? AND role = ? AND status = ?", adminUser.CompanyID, "EMPLOYEE", "ACTIVE")
-	if userID != "" {
-		empQuery = empQuery.Where("id = ?", userID)
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
+		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
+		return
 	}
-	empQuery.Find(&employees)
+
+	// Filter karyawan jika ada user_id spesifik
+	if userID != "" {
+		var filtered []models.User
+		for _, emp := range employees {
+			if emp.ID == userID {
+				filtered = append(filtered, emp)
+				break
+			}
+		}
+		employees = filtered
+	}
 
 	// 2. Tentukan Rentang Tanggal
 	var start, end string
@@ -1709,4 +1721,25 @@ func DeleteCompanyLocation(c *gin.Context) {
 	}
 
 	utils.Success(c, "Lokasi berhasil dihapus", nil)
+}
+
+// GetInternalSalaryAdjustments - Endpoint internal untuk menghitung potongan/bonus berdasarkan absensi (Microservices)
+func GetInternalSalaryAdjustments(c *gin.Context) {
+	userID := c.Query("user_id")
+	month, _ := strconv.Atoi(c.Query("month"))
+	year, _ := strconv.Atoi(c.Query("year"))
+
+	if userID == "" || month == 0 || year == 0 {
+		c.JSON(400, gin.H{"error": "missing parameters"})
+		return
+	}
+
+	deductions, bonuses, deductionDetails, bonusDetails := CalculateAdjustments(userID, month, year)
+
+	c.JSON(200, gin.H{
+		"deductions":        deductions,
+		"bonuses":           bonuses,
+		"deduction_details": deductionDetails,
+		"bonus_details":     bonusDetails,
+	})
 }

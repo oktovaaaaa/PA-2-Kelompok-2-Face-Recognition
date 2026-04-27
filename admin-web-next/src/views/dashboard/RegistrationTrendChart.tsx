@@ -33,6 +33,15 @@ const RegistrationTrendChart = ({ data, year, years, onYearChange }: Props) => {
   }, [])
 
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+  
+  // Dynamic colors based on trend (Up = Green, Down = Red, Same = Blue)
+  const barColors = data.map((val, index) => {
+    if (index === 0) return '#10B981' // January default green
+    const prevVal = data[index - 1]
+    if (val > prevVal) return '#10B981' // Success/Growth Green
+    if (val < prevVal) return '#EF4444' // Decline Red
+    return '#3B82F6' // Neutral/Same Blue
+  })
 
   const options: ApexOptions = {
     chart: {
@@ -64,12 +73,12 @@ const RegistrationTrendChart = ({ data, year, years, onYearChange }: Props) => {
         formatter: (val: number) => Math.round(val).toString()
       }
     },
-    colors: [chartType === 'bar' ? '#3B82F6' : '#6366F1'],
+    colors: chartType === 'bar' ? barColors : ['#6366F1'],
     plotOptions: {
       bar: {
         borderRadius: 6,
         columnWidth: '35%',
-        distributed: false,
+        distributed: chartType === 'bar',
       }
     },
     fill: {
