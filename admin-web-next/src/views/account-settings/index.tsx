@@ -4,6 +4,9 @@
 import { useState, useEffect } from 'react'
 import type { SyntheticEvent, ReactElement } from 'react'
 
+// Next Imports
+import { useRouter, useSearchParams } from 'next/navigation'
+
 // MUI Imports
 import Grid from '@mui/material/Grid'
 import Tab from '@mui/material/Tab'
@@ -14,8 +17,12 @@ import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
 
 const AccountSettings = ({ tabContentList }: { tabContentList: { [key: string]: ReactElement } }) => {
+  // Hooks
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
   // States
-  const [activeTab, setActiveTab] = useState('account')
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'account')
   const [role, setRole] = useState<string | null>(null)
 
   useEffect(() => {
@@ -23,8 +30,17 @@ const AccountSettings = ({ tabContentList }: { tabContentList: { [key: string]: 
     setRole(savedRole)
   }, [])
 
+  // Sync state with URL when searchParams change
+  useEffect(() => {
+    const currentTab = searchParams.get('tab')
+    if (currentTab && currentTab !== activeTab) {
+      setActiveTab(currentTab)
+    }
+  }, [searchParams, activeTab])
+
   const handleChange = (event: SyntheticEvent, value: string) => {
     setActiveTab(value)
+    router.push(`/account-settings?tab=${value}`)
   }
 
   return (

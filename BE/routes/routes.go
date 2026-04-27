@@ -98,10 +98,6 @@ func SetupAuthRouter() *gin.Engine {
 		admin.GET("/employees", handlers.GetEmployees)
 		admin.POST("/employees/fire", handlers.FireEmployee)
 		admin.POST("/employees/reactivate", handlers.ReactivateEmployee)
-		admin.GET("/locations", handlers.GetCompanyLocations)
-		admin.POST("/locations", handlers.CreateCompanyLocation)
-		admin.PUT("/locations/:id", handlers.UpdateCompanyLocation)
-		admin.DELETE("/locations/:id", handlers.DeleteCompanyLocation)
 	}
 
 	// Super Admin API Routes
@@ -156,6 +152,10 @@ func SetupAttendanceRouter() *gin.Engine {
 		admin.PUT("/holidays/:id", handlers.UpdateHoliday)
 		admin.DELETE("/holidays/:id", handlers.DeleteHoliday)
 		admin.DELETE("/holidays/past", handlers.DeletePastHolidays)
+		admin.GET("/locations", handlers.GetCompanyLocations)
+		admin.POST("/locations", handlers.CreateCompanyLocation)
+		admin.PUT("/locations/:id", handlers.UpdateCompanyLocation)
+		admin.DELETE("/locations/:id", handlers.DeleteCompanyLocation)
 	}
 
 	employee := api.Group("/employee")

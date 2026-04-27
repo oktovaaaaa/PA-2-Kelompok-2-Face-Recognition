@@ -23,6 +23,7 @@ func main() {
 		&models.AttendanceSettings{},
 		&models.LeaveRequest{},
 		&models.Holiday{},
+		&models.CompanyLocation{},
 	)
 
 	// 4. Setup Router (Only Attendance Routes)

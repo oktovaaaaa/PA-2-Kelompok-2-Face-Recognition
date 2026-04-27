@@ -58,6 +58,7 @@ const SecurityTab = () => {
   }
 
   const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!passwordData.old) return showNotification('Harap masukkan kata sandi lama Anda.', 'warning')
     if (!passwordData.new) return showNotification('Harap masukkan kata sandi baru Anda.', 'warning')
     if (!passwordData.otp) return showNotification('Harap masukkan kode OTP verifikasi.', 'warning')
@@ -79,6 +80,7 @@ const SecurityTab = () => {
   }
 
   const handleChangePIN = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!pinData.old) return showNotification('Harap masukkan PIN lama Anda.', 'warning')
     if (pinData.new.length !== 6) return showNotification('PIN baru harus terdiri dari tepat 6 digit angka.', 'warning')
     if (!pinData.otp) return showNotification('Harap masukkan kode OTP verifikasi.', 'warning')

@@ -145,13 +145,20 @@ func RequestProfileOTP(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
-	code, err := services.GenerateOTP(user.Email)
+	// Ambil data lengkap user dari DB untuk mendapatkan Email
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan")
+		return
+	}
+
+	code, err := services.GenerateOTP(dbUser.Email)
 	if err != nil {
 		utils.Error(c, "Gagal membuat OTP: "+err.Error())
 		return
 	}
 
-	services.SendOTPEmail(user.Email, code)
+	services.SendOTPEmail(dbUser.Email, code)
 	utils.Success(c, "OTP berhasil dikirim ke email Anda", nil)
 }
 
@@ -159,6 +166,13 @@ func RequestProfileOTP(c *gin.Context) {
 func ChangePassword(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
+
+	// Ambil data lengkap user dari DB
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan")
+		return
+	}
 
 	var body struct {
 		OldPassword string `json:"old_password"`
@@ -175,21 +189,20 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// 1. Verifikasi Identitas
-	// Wajib mengisi keduanya: Password Lama DAN Kode OTP
+	// 1. Verifikasi Identitas (Wajib PIN Lama + OTP)
 	if body.OldPassword == "" || body.OtpCode == "" {
 		utils.Error(c, "Harap masukkan password lama DAN kode OTP untuk verifikasi")
 		return
 	}
 
 	// Cek Password Lama
-	if !utils.CheckPassword(user.Password, body.OldPassword) {
+	if !utils.CheckPassword(dbUser.Password, body.OldPassword) {
 		utils.Error(c, "Password lama salah")
 		return
 	}
 
 	// Cek OTP
-	if err := services.VerifyOTP(user.Email, body.OtpCode); err != nil {
+	if err := services.VerifyOTP(dbUser.Email, body.OtpCode); err != nil {
 		utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
 		return
 	}
@@ -230,6 +243,13 @@ func ChangePin(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
+	// Ambil data lengkap user dari DB
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan")
+		return
+	}
+
 	var body struct {
 		OldPin  string `json:"old_pin"`
 		OtpCode string `json:"otp_code"`
@@ -245,21 +265,20 @@ func ChangePin(c *gin.Context) {
 		return
 	}
 
-	// 1. Verifikasi Identitas
-	// Wajib mengisi keduanya: PIN Lama DAN Kode OTP
+	// 1. Verifikasi Identitas (Wajib PIN Lama + OTP)
 	if body.OldPin == "" || body.OtpCode == "" {
 		utils.Error(c, "Harap masukkan PIN lama DAN kode OTP untuk verifikasi")
 		return
 	}
 
 	// Cek PIN Lama
-	if !utils.CheckPin(user.Pin, body.OldPin) {
+	if !utils.CheckPin(dbUser.Pin, body.OldPin) {
 		utils.Error(c, "PIN lama salah")
 		return
 	}
 
 	// Cek OTP
-	if err := services.VerifyOTP(user.Email, body.OtpCode); err != nil {
+	if err := services.VerifyOTP(dbUser.Email, body.OtpCode); err != nil {
 		utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
 		return
 	}
