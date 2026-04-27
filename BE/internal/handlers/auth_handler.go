@@ -465,3 +465,23 @@ func GetInternalAdmins(c *gin.Context) {
 	database.DB.Where("company_id = ? AND role = ?", companyID, "ADMIN").Find(&admins)
 	c.JSON(200, admins)
 }
+
+// GetInternalUserCount - Endpoint internal untuk menghitung jumlah user dengan filter tertentu
+func GetInternalUserCount(c *gin.Context) {
+	companyID := c.Query("company_id")
+	status := c.Query("status")
+	role := c.Query("role")
+
+	query := database.DB.Model(&models.User{}).Where("company_id = ?", companyID)
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if role != "" {
+		query = query.Where("role = ?", role)
+	}
+
+	var count int64
+	query.Count(&count)
+
+	c.JSON(200, gin.H{"count": count})
+}

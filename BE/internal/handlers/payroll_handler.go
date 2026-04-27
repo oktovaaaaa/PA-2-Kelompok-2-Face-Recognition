@@ -410,7 +410,7 @@ func generateSalary(userID string, month int, year int) {
 	}
 
 	// Hitung Penyesuaian (Bonuses & Deductions)
-	deductions, bonuses, deductionDetails, bonusDetails := CalculateAdjustments(userID, month, year)
+	deductions, bonuses, deductionDetails, bonusDetails := FetchAdjustmentsFromAttendance(userID, month, year)
 
 	// Update or Create
 	var salary models.Salary
@@ -464,7 +464,7 @@ func generateSalary(userID string, month int, year int) {
 	database.DB.Save(&salary)
 }
 
-func CalculateAdjustments(userID string, month int, year int) (float64, float64, string, string) {
+func FetchAdjustmentsFromAttendance(userID string, month int, year int) (float64, float64, string, string) {
 	// 1. Call Attendance Service (Port 8082) to get attendance-based adjustments
 	url := fmt.Sprintf("http://localhost:8082/api/internal/salary-adjustments?user_id=%s&month=%d&year=%d", userID, month, year)
 	
@@ -477,8 +477,48 @@ func CalculateAdjustments(userID string, month int, year int) (float64, float64,
 
 	if err := utils.CallInternalAPI(url, &result); err != nil {
 		fmt.Printf("[Payroll] Error fetching adjustments from Attendance: %v\n", err)
-		return 0, 0, "", ""
 	}
 
-	return result.Deductions, result.Bonuses, result.DeductionDetails, result.BonusDetails
+	totalDeductions := result.Deductions
+	totalBonuses := result.Bonuses
+	deductionDetails := result.DeductionDetails
+	bonusDetails := result.BonusDetails
+
+	// 2. Fetch Manual Penalties from Local DB (Payroll Service)
+	var manualPenalties []models.Penalty
+	database.DB.Where("user_id = ? AND month(date) = ? AND year(date) = ?", userID, month, year).Find(&manualPenalties)
+	for _, p := range manualPenalties {
+		totalDeductions += p.Amount
+		deductionDetails += fmt.Sprintf("%s: %s (Rp%.0f); ", p.Date, p.Title, p.Amount)
+	}
+
+	// 3. Fetch Manual Bonuses from Local DB (Payroll Service)
+	var manualBonuses []models.Bonus
+	database.DB.Where("user_id = ? AND month(date) = ? AND year(date) = ?", userID, month, year).Find(&manualBonuses)
+	for _, b := range manualBonuses {
+		totalBonuses += b.Amount
+		bonusDetails += fmt.Sprintf("%s: %s (Rp%.0f); ", b.Date, b.Title, b.Amount)
+	}
+
+	return totalDeductions, totalBonuses, deductionDetails, bonusDetails
+}
+
+// GetInternalSalary - Endpoint internal untuk mengambil data gaji (Microservices)
+func GetInternalSalary(c *gin.Context) {
+	userID := c.Query("user_id")
+	month, _ := strconv.Atoi(c.Query("month"))
+	year, _ := strconv.Atoi(c.Query("year"))
+
+	if userID == "" || month == 0 || year == 0 {
+		c.JSON(400, gin.H{"error": "missing parameters"})
+		return
+	}
+
+	// Pastikan data gaji sudah digenerate/diupdate
+	ensureSalariesGenerated(userID)
+
+	var salary models.Salary
+	database.DB.Where("user_id = ? AND month = ? AND year = ?", userID, month, year).First(&salary)
+
+	c.JSON(200, salary)
 }

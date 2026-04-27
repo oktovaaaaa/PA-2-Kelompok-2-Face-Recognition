@@ -406,18 +406,17 @@ func GetTodayAttendance(c *gin.Context) {
 		}
 	}
 
-	// Hitung total denda dan bonus bulan ini untuk estimasi gaji
-	var totalDeductionMonth float64
-	var totalBonusMonth float64
-
-	// Gunakan logika bersama agar sinkron dengan tab Gaji
-	// Ini akan menghitung semua denda absensi + denda manual + denda Alpha otomatis + Bonus
-	totalDeductionMonth, totalBonusMonth, _, _ = CalculateAdjustments(emp.ID, int(now.Month()), now.Year())
-
-	// [NEW] Terakhir, ambil TotalSalary final dari tabel salaries agar dashboard 100% konsisten
+	// [NEW] Terakhir, ambil TotalSalary final dari Payroll Service agar dashboard 100% konsisten
 	var salary models.Salary
-	database.DB.Where("user_id = ? AND month = ? AND year = ?", emp.ID, int(now.Month()), now.Year()).First(&salary)
+	payrollURL := fmt.Sprintf("http://localhost:8083/api/internal/salary?user_id=%s&month=%d&year=%d", emp.ID, int(now.Month()), now.Year())
+	if err := utils.CallInternalAPI(payrollURL, &salary); err != nil {
+		fmt.Printf("[Attendance] Gagal mengambil data gaji dari Payroll Service: %v\n", err)
+	}
 	estimatedTotalSalary := salary.TotalSalary
+
+	// Hitung total denda bulan ini untuk estimasi gaji (Hanya berbasis absensi di sini)
+	totalDeductionMonth, _, _, _ := CalculateAttendanceAdjustments(emp.ID, int(now.Month()), now.Year())
+	totalBonusMonth := 0.0 // Attendance service tidak tahu tentang bonus manual
 
 	utils.Success(c, "Status absensi hari ini", gin.H{
 		"date":                   today,
@@ -1011,9 +1010,17 @@ func AdminGetDashboardSummary(c *gin.Context) {
 	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "LEAVE").Count(&leave)
 	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "SICK").Count(&sick)
 
-	// 4. Total Karyawan Aktif
+	// 4. Total Karyawan Aktif (Ambil dari Auth Service via Internal API)
 	var totalEmployees int64
-	database.DB.Model(&models.User{}).Where("company_id = ? AND status = ? AND role = ?", admin.CompanyID, "ACTIVE", "EMPLOYEE").Count(&totalEmployees)
+	var empResult struct {
+		Count int64 `json:"count"`
+	}
+	authCountURL := fmt.Sprintf("http://localhost:8081/api/internal/users/count?company_id=%s&status=ACTIVE&role=EMPLOYEE", admin.CompanyID)
+	if err := utils.CallInternalAPI(authCountURL, &empResult); err == nil {
+		totalEmployees = empResult.Count
+	} else {
+		fmt.Printf("[Attendance] Gagal mengambil jumlah karyawan dari Auth Service: %v\n", err)
+	}
 
 	// 5. Logika Alpha vs Belum Absen vs Pulang di Jam Kerja
 	var absentCount, notYetCount, earlyLeaveCount, lateEarlyLeaveCount, displayWorking int64
@@ -1734,7 +1741,7 @@ func GetInternalSalaryAdjustments(c *gin.Context) {
 		return
 	}
 
-	deductions, bonuses, deductionDetails, bonusDetails := CalculateAdjustments(userID, month, year)
+	deductions, bonuses, deductionDetails, bonusDetails := CalculateAttendanceAdjustments(userID, month, year)
 
 	c.JSON(200, gin.H{
 		"deductions":        deductions,
@@ -1742,4 +1749,76 @@ func GetInternalSalaryAdjustments(c *gin.Context) {
 		"deduction_details": deductionDetails,
 		"bonus_details":     bonusDetails,
 	})
+}
+
+// CalculateAttendanceAdjustments - Menghitung denda/bonus murni dari data absensi
+func CalculateAttendanceAdjustments(userID string, month int, year int) (float64, float64, string, string) {
+	var emp models.User
+	// Ambil data karyawan via internal API Auth Service (Port 8081)
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID)
+	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
+		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service: %v\n", err)
+		return 0, 0, "", ""
+	}
+
+	var settings models.AttendanceSettings
+	database.DB.Where("company_id = ?", emp.CompanyID).First(&settings)
+
+	// Range tanggal
+	startT := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
+	endT := startT.AddDate(0, 1, -1)
+	now := time.Now()
+	if endT.After(now) {
+		endT = now
+	}
+
+	// Ambil semua record absensi bulan ini
+	var records []models.Attendance
+	database.DB.Where("user_id = ? AND date >= ? AND date <= ?", userID, startT.Format("2006-01-02"), endT.Format("2006-01-02")).Find(&records)
+
+	existingDates := make(map[string]bool)
+	totalDeduction := 0.0
+	deductionDetails := ""
+
+	for _, r := range records {
+		existingDates[r.Date] = true
+		
+		// 1. Denda dari Record (Telat / Pulang Awal yang sudah tercatat)
+		if r.SalaryDeduction > 0 {
+			totalDeduction += r.SalaryDeduction
+			deductionDetails += fmt.Sprintf("%s: Rp%.0f; ", r.Date, r.SalaryDeduction)
+		}
+
+		// 2. Deteksi Lupa Check-out (Jika record ada tapi CheckOutTime kosong)
+		if r.CheckInTime != nil && r.CheckOutTime == nil {
+			if r.Date < now.Format("2006-01-02") || (r.Date == now.Format("2006-01-02") && now.After(parseT(r.Date, settings.CheckOutEnd, now.Location()))) {
+				totalDeduction += settings.EarlyLeavePenalty
+				deductionDetails += fmt.Sprintf("%s: Lupa Check-out (Rp%.0f); ", r.Date, settings.EarlyLeavePenalty)
+			}
+		}
+	}
+
+	// 3. Denda Alpha (Hari kerja yang terlewat)
+	for d := startT; !d.After(endT); d = d.AddDate(0, 0, 1) {
+		dateStr := d.Format("2006-01-02")
+		if dateStr < emp.CreatedAt.Format("2006-01-02") {
+			continue
+		}
+
+		if !existingDates[dateStr] {
+			holiday, _ := isHoliday(emp.CompanyID, d)
+			if !holiday {
+				// Cek jika hari ini belum berakhir
+				if dateStr == now.Format("2006-01-02") {
+					if now.Before(parseT(dateStr, settings.CheckOutEnd, now.Location())) {
+						continue
+					}
+				}
+				totalDeduction += settings.AlphaPenalty
+				deductionDetails += fmt.Sprintf("%s: Alpha (Rp%.0f); ", dateStr, settings.AlphaPenalty)
+			}
+		}
+	}
+
+	return totalDeduction, 0, deductionDetails, ""
 }

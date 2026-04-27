@@ -40,6 +40,7 @@ func SetupAuthRouter() *gin.Engine {
 		api.POST("/auth/register-admin", handlers.RegisterAdmin)
 		api.GET("/internal/users", handlers.GetInternalUsers)
 		api.GET("/internal/users/single", handlers.GetInternalUserByID)
+		api.GET("/internal/users/count", handlers.GetInternalUserCount)
 		api.GET("/internal/admins", handlers.GetInternalAdmins)
 	}
 
@@ -184,6 +185,8 @@ func SetupPayrollRouter() *gin.Engine {
 		api.GET("/health", func(c *gin.Context) {
 			utils.Success(c, "Payroll Service berjalan", nil)
 		})
+		// Endpoint internal
+		api.GET("/internal/salary", handlers.GetInternalSalary)
 	}
 
 	admin := api.Group("/admin")
