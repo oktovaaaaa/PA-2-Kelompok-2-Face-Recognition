@@ -253,9 +253,14 @@ const BonusManager = () => {
             </Table>
           </TableContainer>
           <TablePagination
-            component="div" count={totalCount} rowsPerPage={rowsPerPage} page={page}
+            component="div"
+            count={totalCount}
+            rowsPerPage={rowsPerPage}
+            page={page}
             onPageChange={(e, p) => setPage(p)}
             onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            labelRowsPerPage="Baris per halaman:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
           />
         </Card>
       </Grid>

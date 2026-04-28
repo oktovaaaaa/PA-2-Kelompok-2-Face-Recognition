@@ -7,7 +7,7 @@ import "time"
 type Bonus struct {
 	ID          string    `gorm:"primaryKey" json:"id"`
 	UserID      string    `gorm:"index" json:"user_id"`
-	User        User      `gorm:"foreignKey:UserID" json:"user"`
+	User        User      `gorm:"-" json:"user"`
 	
 	Title       string    `json:"title"`
 	Description string    `json:"description"`

@@ -239,7 +239,8 @@ const EmployeeApproval = () => {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Baris per halaman"
+          labelRowsPerPage="Baris per halaman:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
         />
       </Card>
 

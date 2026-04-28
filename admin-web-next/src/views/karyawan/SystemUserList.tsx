@@ -315,6 +315,7 @@ const SystemUserList = () => {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="Baris per halaman:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
         />
       </Card>
 
@@ -353,23 +354,23 @@ const SystemUserList = () => {
 
               <Grid container spacing={6}>
                 <Grid item xs={6}>
-                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Email Address</Typography>
+                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Alamat Email</Typography>
                   <Typography variant='body2' className='font-black'>{selectedUser.email}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Phone Number</Typography>
+                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Nomor Telepon</Typography>
                   <Typography variant='body2' className='font-black'>{selectedUser.phone || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Position / Role</Typography>
+                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Jabatan / Peran</Typography>
                   <Typography variant='body2' className='font-black'>{selectedUser.position?.name || selectedUser.role}</Typography>
                 </Grid>
                 <Grid item xs={6}>
-                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Joined At</Typography>
+                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Bergabung Pada</Typography>
                   <Typography variant='body2' className='font-black'>{formatFullDate(selectedUser.created_at)}</Typography>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Address</Typography>
+                  <Typography variant='caption' className='block font-bold uppercase text-slate-400 mbe-1'>Alamat Lengkap</Typography>
                   <Typography variant='body2' className='font-medium'>{selectedUser.address || 'Alamat belum dilengkapi.'}</Typography>
                 </Grid>
               </Grid>

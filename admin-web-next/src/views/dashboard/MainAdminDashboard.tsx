@@ -74,11 +74,11 @@ const MainAdminDashboard = () => {
                 <Card className='bg-gradient-to-r from-slate-900 to-blue-900 text-white shadow-xl rounded-3xl overflow-hidden border-none'>
                     <CardContent className='p-8 flex flex-col sm:flex-row justify-between items-center gap-6'>
                         <Box className='flex items-center gap-6'>
-                            <Box className='p-1 border-2 border-white/20 rounded-full'>
+                            <Box className='flex-shrink-0 w-[72px] h-[72px] p-1 border-2 border-white/20 rounded-full flex items-center justify-center overflow-hidden shadow-2xl'>
                                 <img 
                                     src={formatImageUrl(profile?.photo_url) || '/images/avatars/1.png'} 
                                     alt='Avatar' 
-                                    className='w-16 h-16 rounded-full object-cover shadow-lg'
+                                    className='w-full h-full rounded-full object-cover'
                                 />
                             </Box>
                             <Box>

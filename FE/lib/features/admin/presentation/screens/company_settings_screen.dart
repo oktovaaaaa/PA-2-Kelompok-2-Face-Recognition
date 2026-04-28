@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/utils/error_mapper.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../common/widgets/app_text_field.dart';
@@ -75,27 +76,86 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan Perusahaan')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(20),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Column(
+          children: [
+            // Premium Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 64, left: 16, right: 16, bottom: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Row(
                 children: [
-                  AppTextField(controller: _name, label: 'Nama Perusahaan', validator: _required),
-                  const SizedBox(height: 12),
-                  AppTextField(controller: _email, label: 'Email Perusahaan', keyboardType: TextInputType.emailAddress, validator: _required),
-                  const SizedBox(height: 12),
-                  AppTextField(controller: _phone, label: 'Telepon Perusahaan', keyboardType: TextInputType.phone, validator: _required),
-                  const SizedBox(height: 12),
-                  AppTextField(controller: _address, label: 'Alamat Perusahaan', validator: _required),
-                  const SizedBox(height: 24),
-                  PrimaryButton(title: 'Simpan', onPressed: _save, loading: _saving),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Pengaturan Perusahaan',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
+                  : Form(
+                      key: _formKey,
+                      child: ListView(
+                        padding: const EdgeInsets.all(24),
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.03),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                )
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                AppTextField(controller: _name, label: 'Nama Perusahaan', validator: _required, prefixIcon: Icons.business_rounded),
+                                const SizedBox(height: 16),
+                                AppTextField(controller: _email, label: 'Email Perusahaan', keyboardType: TextInputType.emailAddress, validator: _required, prefixIcon: Icons.email_rounded),
+                                const SizedBox(height: 16),
+                                AppTextField(controller: _phone, label: 'Telepon Perusahaan', keyboardType: TextInputType.phone, validator: _required, prefixIcon: Icons.phone_rounded),
+                                const SizedBox(height: 16),
+                                AppTextField(controller: _address, label: 'Alamat Perusahaan', validator: _required, prefixIcon: Icons.location_on_rounded, maxLines: 2),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          PrimaryButton(title: 'Simpan Perubahan', onPressed: _save, loading: _saving),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -123,6 +123,10 @@ func AdminGetSalaries(c *gin.Context) {
 	var filteredUserIDs []string
 	userMap := make(map[string]models.User)
 	for _, emp := range employees {
+		// Filter hanya ROLE EMPLOYEE (Admin tidak perlu masuk laporan payroll)
+		if emp.Role != "EMPLOYEE" {
+			continue
+		}
 		// Filter by Position
 		if positionID != "" && (emp.PositionID == nil || *emp.PositionID != positionID) {
 			continue
@@ -486,7 +490,8 @@ func FetchAdjustmentsFromAttendance(userID string, month int, year int) (float64
 
 	// 2. Fetch Manual Penalties from Local DB (Payroll Service)
 	var manualPenalties []models.Penalty
-	database.DB.Where("user_id = ? AND month(date) = ? AND year(date) = ?", userID, month, year).Find(&manualPenalties)
+	queryDate := fmt.Sprintf("%d-%02d-%%", year, month)
+	database.DB.Where("user_id = ? AND date LIKE ?", userID, queryDate).Find(&manualPenalties)
 	for _, p := range manualPenalties {
 		totalDeductions += p.Amount
 		deductionDetails += fmt.Sprintf("%s: %s (Rp%.0f); ", p.Date, p.Title, p.Amount)
@@ -494,7 +499,7 @@ func FetchAdjustmentsFromAttendance(userID string, month int, year int) (float64
 
 	// 3. Fetch Manual Bonuses from Local DB (Payroll Service)
 	var manualBonuses []models.Bonus
-	database.DB.Where("user_id = ? AND month(date) = ? AND year(date) = ?", userID, month, year).Find(&manualBonuses)
+	database.DB.Where("user_id = ? AND date LIKE ?", userID, queryDate).Find(&manualBonuses)
 	for _, b := range manualBonuses {
 		totalBonuses += b.Amount
 		bonusDetails += fmt.Sprintf("%s: %s (Rp%.0f); ", b.Date, b.Title, b.Amount)

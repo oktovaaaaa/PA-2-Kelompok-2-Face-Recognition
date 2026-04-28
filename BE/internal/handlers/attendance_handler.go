@@ -436,8 +436,12 @@ func GetTodayAttendance(c *gin.Context) {
 func GetMyAttendanceHistory(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	emp := userCtx.(models.User)
-	// Refresh from DB agar data CreatedAt 100% akurat
-	database.DB.First(&emp, "id = ?", emp.ID)
+	// [FIX MICROSERVICES] Refresh from Auth Service agar data CreatedAt 100% akurat
+	var authUser models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", emp.ID)
+	if err := utils.CallInternalAPI(authURL, &authUser); err == nil {
+		emp = authUser
+	}
 
 	filter := c.Query("filter")
 	month := c.Query("month")
@@ -647,11 +651,19 @@ func AdminGetAttendanceHistory(c *gin.Context) {
 	database.DB.Model(&models.Attendance{}).Where("company_id = ?", adminUser.CompanyID).Order("date asc").Limit(1).Select("date").Scan(&firstRecordDate)
 
 	// 1. Ambil Semua Karyawan dari Auth Service (Microservices)
-	var employees []models.User
+	var allEmployees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
-	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
+	if err := utils.CallInternalAPI(authURL, &allEmployees); err != nil {
 		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
 		return
+	}
+
+	// Filter hanya ROLE EMPLOYEE (Admin tidak perlu masuk laporan absensi)
+	var employees []models.User
+	for _, emp := range allEmployees {
+		if emp.Role == "EMPLOYEE" {
+			employees = append(employees, emp)
+		}
 	}
 
 	// Filter karyawan jika ada user_id spesifik
@@ -1214,9 +1226,19 @@ func AdminGetDetailedDashboardSummary(c *gin.Context) {
 		end = today
 	}
 
-	// 2. Ambil Karyawan Aktif
+	// 2. Ambil Karyawan Aktif via Internal API (Auth Service)
+	var allEmployees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &allEmployees); err != nil {
+		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service: %v\n", err)
+	}
+
 	var employees []models.User
-	database.DB.Where("company_id = ? AND role = ? AND status = ?", adminUser.CompanyID, "EMPLOYEE", "ACTIVE").Find(&employees)
+	for _, emp := range allEmployees {
+		if emp.Role == "EMPLOYEE" && emp.Status == "ACTIVE" {
+			employees = append(employees, emp)
+		}
+	}
 	totalEmp := len(employees)
 
 	// 3. Ambil Pengaturan
@@ -1280,8 +1302,8 @@ func AdminGetDetailedDashboardSummary(c *gin.Context) {
 					summary["late_early_leave"]++
 				}
 
-				// DETEKSI DINAMIS UNTUK HARI INI
-				if dateStr == today && att.CheckOutTime == nil && now.After(checkOutEndT) {
+				// DETEKSI DINAMIS (Lupa Check-out atau Pulang Awal)
+				if att.CheckOutTime == nil && (dateStr < today || (dateStr == today && now.After(checkOutEndT))) {
 					if strings.ToUpper(att.Status) == "LATE" {
 						// Pindahkan dari 'late' ke 'late_early_leave'
 						summary["late_early_leave"]++
@@ -1345,8 +1367,19 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 	now := time.Now()
 	loc := now.Location()
 
+	// Ambil Karyawan Aktif via Internal API (Auth Service)
+	var allEmployees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &allEmployees); err != nil {
+		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service: %v\n", err)
+	}
+
 	var employees []models.User
-	database.DB.Model(&models.User{}).Where("company_id = ? AND role = ? AND status = ?", adminUser.CompanyID, "EMPLOYEE", "ACTIVE").Find(&employees)
+	for _, emp := range allEmployees {
+		if emp.Role == "EMPLOYEE" && emp.Status == "ACTIVE" {
+			employees = append(employees, emp)
+		}
+	}
 	totalEmp := len(employees)
 
 	today := now.Format("2006-01-02")
@@ -1373,7 +1406,20 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND (status = 'LEAVE' OR status = 'SICK')", adminUser.CompanyID, pattern).Count(&ls)
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'EARLY_LEAVE'", adminUser.CompanyID, pattern).Count(&el)
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE_EARLY_LEAVE'", adminUser.CompanyID, pattern).Count(&lel)
-			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE_EARLY_LEAVE'", adminUser.CompanyID, pattern).Count(&lel)
+
+			// DETEKSI DINAMIS (Lupa Check-out atau Pulang Awal)
+			var pToEl, lToLel int64
+			if now.After(checkOutEndT) {
+				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT' AND check_out_time IS NULL AND date <= ?", adminUser.CompanyID, pattern, today).Count(&pToEl)
+				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE' AND check_out_time IS NULL AND date <= ?", adminUser.CompanyID, pattern, today).Count(&lToLel)
+			} else {
+				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT' AND check_out_time IS NULL AND date < ?", adminUser.CompanyID, pattern, today).Count(&pToEl)
+				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE' AND check_out_time IS NULL AND date < ?", adminUser.CompanyID, pattern, today).Count(&lToLel)
+			}
+			p -= pToEl
+			el += pToEl
+			l -= lToLel
+			lel += lToLel
 
 			// Untuk tahunan, Alpha dihitung per bulan: (TotalEmp * hari_kerja_per_bulan) - total_absen? 
             // Agak kompleks tanpa calendar. Sederhananya, kita akumulasi Alpha harian untuk bulan tersebut.
@@ -1437,10 +1483,10 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = 'EARLY_LEAVE'", adminUser.CompanyID, dateStr).Count(&el)
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = 'LATE_EARLY_LEAVE'", adminUser.CompanyID, dateStr).Count(&lel)
 
-			// DETEKSI DINAMIS UNTUK HARI INI DI GRAFIK BULANAN
-			if dateStr == today && now.After(checkOutEndT) {
+			// DETEKSI DINAMIS (Lupa Check-out atau Pulang Awal)
+			if dateStr < today || (dateStr == today && now.After(checkOutEndT)) {
 				var recordsToday []models.Attendance
-				database.DB.Where("company_id = ? AND date = ?", adminUser.CompanyID, today).Find(&recordsToday)
+				database.DB.Where("company_id = ? AND date = ?", adminUser.CompanyID, dateStr).Find(&recordsToday)
 				for _, r := range recordsToday {
 					if r.CheckOutTime == nil {
 						if strings.ToUpper(r.Status) == "LATE" {
@@ -1518,10 +1564,10 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = 'EARLY_LEAVE'", adminUser.CompanyID, dateStr).Count(&el)
 			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = 'LATE_EARLY_LEAVE'", adminUser.CompanyID, dateStr).Count(&lel)
 
-			// DETEKSI DINAMIS UNTUK HARI INI DI GRAFIK MINGGUAN/DEFAULT
-			if dateStr == today && now.After(checkOutEndT) {
+			// DETEKSI DINAMIS (Lupa Check-out atau Pulang Awal)
+			if dateStr < today || (dateStr == today && now.After(checkOutEndT)) {
 				var recordsToday []models.Attendance
-				database.DB.Where("company_id = ? AND date = ?", adminUser.CompanyID, today).Find(&recordsToday)
+				database.DB.Where("company_id = ? AND date = ?", adminUser.CompanyID, dateStr).Find(&recordsToday)
 				for _, r := range recordsToday {
 					if r.CheckOutTime == nil {
 						if strings.ToUpper(r.Status) == "LATE" {

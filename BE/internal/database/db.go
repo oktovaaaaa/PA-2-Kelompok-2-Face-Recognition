@@ -9,7 +9,6 @@ import (
 	"employee-system/internal/models"
 	"employee-system/internal/utils"
 
-	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -47,30 +46,51 @@ func AutoMigrate(models ...interface{}) {
 func SeedSuperAdmin(db *gorm.DB) {
 	fmt.Println("Memulai seeding Super Admin...")
 
+	// 1. Pastikan Perusahaan SYSTEM ada
+	var systemCompany models.Company
+	err := db.Where("id = ?", "SYSTEM").First(&systemCompany).Error
+	if err != nil {
+		systemCompany = models.Company{
+			ID:      "SYSTEM",
+			Name:    "System Administration",
+			Address: "System",
+			Email:   "videntiiii@gmail.com",
+			Phone:   "000",
+		}
+		db.Create(&systemCompany)
+		fmt.Println("System company created.")
+	}
+
 	email := "videntiiii@gmail.com"
-	password := "Videntiiii@2026"
+	password := "Videnti@2026"
 
-	var count int64
-	db.Model(&models.User{}).Where("email = ?", email).Count(&count)
+	var user models.User
+	err = db.Where("email = ?", email).First(&user).Error
 
-	if count == 0 {
+	if err != nil {
 		hashPassword, _ := utils.HashPassword(password)
 		
 		superAdmin := models.User{
-			ID:       uuid.New().String(),
-			Name:     "Super Admin",
-			Email:    email,
-			Password: hashPassword,
-			Role:     "SUPER_ADMIN",
-			Status:   "ACTIVE",
+			ID:        "SUPER-ADMIN-ID",
+			CompanyID: "SYSTEM",
+			Name:      "Super Admin",
+			Email:     email,
+			Password:  hashPassword,
+			Role:      "SUPER_ADMIN",
+			Status:    "ACTIVE",
 		}
 
 		if err := db.Create(&superAdmin).Error; err != nil {
 			fmt.Printf("Error seeding Super Admin: %v\n", err)
 		} else {
-			fmt.Println("Super Admin seeded successfully!")
+			fmt.Println("Super Admin seeded successfully: videntiiii@gmail.com / Videnti@2026")
 		}
 	} else {
-		fmt.Println("Super Admin already exists.")
+		// Update existing superadmin to ensure it has the right company and role
+		user.CompanyID = "SYSTEM"
+		user.Role = "SUPER_ADMIN"
+		user.Status = "ACTIVE"
+		db.Save(&user)
+		fmt.Println("Super Admin already exists. Updated CompanyID to SYSTEM.")
 	}
 }

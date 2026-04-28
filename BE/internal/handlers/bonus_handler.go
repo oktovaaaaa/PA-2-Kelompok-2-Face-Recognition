@@ -35,9 +35,15 @@ func AdminCreateBonus(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	admin := userCtx.(models.User)
 
-	// Verifikasi: Apakah target UserID ada di perusahaan yang sama dengan Admin?
+	// [FIX MICROSERVICES] Verifikasi via Auth Service (Port 8081)
 	var checkUser models.User
-	if err := database.DB.Where("id = ? AND company_id = ?", input.UserID, admin.CompanyID).First(&checkUser).Error; err != nil {
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", input.UserID)
+	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
+		utils.Error(c, "Karyawan tidak ditemukan atau gangguan koneksi service")
+		return
+	}
+
+	if checkUser.CompanyID != admin.CompanyID {
 		utils.Error(c, "Karyawan tidak ditemukan di instansi Anda")
 		return
 	}
@@ -52,7 +58,7 @@ func AdminCreateBonus(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&bonus).Error; err != nil {
-		utils.Error(c, "Gagal mencatat bonus")
+		utils.Error(c, "Gagal mencatat bonus: "+err.Error())
 		return
 	}
 
@@ -61,23 +67,20 @@ func AdminCreateBonus(c *gin.Context) {
 	generateSalary(input.UserID, int(t.Month()), t.Year())
 
 	// Kirim Notifikasi ke Karyawan
-	var employee models.User
-	if err := database.DB.Select("id, company_id, fcm_token").Where("id = ?", input.UserID).First(&employee).Error; err == nil {
-		notif := models.Notification{
-			ID:        uuid.New().String(),
-			UserID:    input.UserID,
-			CompanyID: employee.CompanyID,
-			Title:     "Bonus Baru!",
-			Body:      fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title),
-			Type:      "BONUS_RECEIVED",
-			IsRead:    false,
-			CreatedAt: time.Now(),
-		}
-		database.DB.Create(&notif)
-
-		// Push Notification via FCM
-		services.SendPushNotification(employee.ID, notif.Title, notif.Body)
+	notif := models.Notification{
+		ID:        uuid.New().String(),
+		UserID:    input.UserID,
+		CompanyID: checkUser.CompanyID,
+		Title:     "Bonus Baru!",
+		Body:      fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title),
+		Type:      "BONUS_RECEIVED",
+		IsRead:    false,
+		CreatedAt: time.Now(),
 	}
+	database.DB.Create(&notif)
+
+	// Push Notification via FCM
+	services.SendPushNotification(checkUser.ID, notif.Title, notif.Body)
 
 	utils.Success(c, "Bonus berhasil dicatat dan notifikasi dikirim", bonus)
 }
@@ -93,14 +96,41 @@ func AdminGetBonuses(c *gin.Context) {
 	year := c.Query("year")
 	search := c.Query("search")
 
-	// 1. Definisikan filter dasar (Security filter berdasarkan company_id)
-	// Kita gunakan subquery agar lebih stabil dan tidak konflik dengan kolom di tabel Bonus
-	userIDSQuery := database.DB.Model(&models.User{}).Select("id").Where("company_id = ?", adminUser.CompanyID)
-	
-	// Query utama untuk mengambil data
-	query := database.DB.Model(&models.Bonus{}).Where("user_id IN (?)", userIDSQuery)
+	// [FIX MICROSERVICES] 1. Ambil list user ID dari perusahan ini via Auth Service
+	var employees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
+		utils.Error(c, "Gagal mengambil data karyawan")
+		return
+	}
 
-	// 2. Tambahkan Filter Pencarian & Waktu
+	userMap := make(map[string]models.User)
+	var userIDs []string
+	for _, e := range employees {
+		// Filter search di memori jika ada
+		if search != "" {
+			if !utils.CaseInsensitiveContains(e.Name, search) {
+				continue
+			}
+		}
+		userIDs = append(userIDs, e.ID)
+		userMap[e.ID] = e
+	}
+
+	if len(userIDs) == 0 && search != "" {
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": []models.Bonus{}, "total": 0})
+		return
+	}
+	
+	// Query utama untuk mengambil data Bonus lokal
+	query := database.DB.Model(&models.Bonus{})
+	if search != "" {
+		query = query.Where("user_id IN (?) OR title ILIKE ?", userIDs, "%"+search+"%")
+	} else {
+		query = query.Where("user_id IN (?)", userIDs)
+	}
+
+	// 2. Tambahkan Filter Waktu
 	if year != "" {
 		if month != "" && month != "0" {
 			mInt, _ := strconv.Atoi(month)
@@ -113,46 +143,25 @@ func AdminGetBonuses(c *gin.Context) {
 		query = query.Where("date LIKE ?", fmt.Sprintf("%%-%02d-%%", mInt))
 	}
 
-	if search != "" {
-		// Cari bonus berdasarkan nama user atau judul bonus
-		searchUserQuery := database.DB.Model(&models.User{}).Select("id").Where("name ILIKE ?", "%"+search+"%")
-		query = query.Where("(user_id IN (?) OR title ILIKE ?)", searchUserQuery, "%"+search+"%")
-	}
-
-	// 3. HITUNG TOTAL (Gunakan instance baru agar tidak mengganggu query utama)
+	// 3. HITUNG TOTAL
 	var total int64
-	// Kita buat query baru khusus untuk count agar tidak tercemar pagination
-	countQuery := database.DB.Model(&models.Bonus{}).Where("user_id IN (?)", userIDSQuery)
-	// Apply filters yang sama ke countQuery
-	if year != "" || month != "" {
-		// (Ulangi filter waktu singkat untuk countQuery)
-		if year != "" {
-			if month != "" && month != "0" {
-				mInt, _ := strconv.Atoi(month)
-				countQuery = countQuery.Where("date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, mInt))
-			} else {
-				countQuery = countQuery.Where("date LIKE ?", year+"-%")
-			}
-		} else {
-			mInt, _ := strconv.Atoi(month)
-			countQuery = countQuery.Where("date LIKE ?", fmt.Sprintf("%%-%02d-%%", mInt))
-		}
-	}
-	if search != "" {
-		searchUserQuery := database.DB.Model(&models.User{}).Select("id").Where("name ILIKE ?", "%"+search+"%")
-		countQuery = countQuery.Where("(user_id IN (?) OR title ILIKE ?)", searchUserQuery, "%"+search+"%")
-	}
-	countQuery.Count(&total)
+	query.Count(&total)
 
 	// 4. AMBIL DATA DENGAN PAGINATION
 	var bonuses []models.Bonus
 	offset := (page - 1) * limit
-	if err := query.Preload("User").
-		Order("date DESC, created_at DESC").
+	if err := query.Order("date DESC, created_at DESC").
 		Limit(limit).Offset(offset).
 		Find(&bonuses).Error; err != nil {
 		utils.Error(c, "Gagal mengambil data bonus")
 		return
+	}
+
+	// 5. Tempelkan data User ke hasil
+	for i := range bonuses {
+		if u, ok := userMap[bonuses[i].UserID]; ok {
+			bonuses[i].User = u
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -170,10 +179,16 @@ func AdminDeleteBonus(c *gin.Context) {
 	admin := userCtx.(models.User)
 
 	var bonus models.Bonus
-	if err := database.DB.Joins("JOIN users ON users.id = bonuses.user_id").
-		Where("bonuses.id = ? AND users.company_id = ?", id, admin.CompanyID).
-		First(&bonus).Error; err != nil {
-		utils.Error(c, "Data bonus tidak ditemukan atau Anda tidak memiliki akses")
+	if err := database.DB.Where("id = ?", id).First(&bonus).Error; err != nil {
+		utils.Error(c, "Data bonus tidak ditemukan")
+		return
+	}
+
+	// [FIX MICROSERVICES] Verifikasi kepemilikan user via Auth Service
+	var checkUser models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", bonus.UserID)
+	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil || checkUser.CompanyID != admin.CompanyID {
+		utils.Error(c, "Anda tidak memiliki akses ke data ini")
 		return
 	}
 
@@ -194,13 +209,24 @@ func AdminGetBonusYears(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
+	// [FIX MICROSERVICES] Ambil user IDs dulu
+	var employees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	utils.CallInternalAPI(authURL, &employees)
+
+	var userIDs []string
+	for _, e := range employees {
+		userIDs = append(userIDs, e.ID)
+	}
+
 	var years []string
-	database.DB.Table("bonuses").
-		Select("DISTINCT EXTRACT(YEAR FROM TO_DATE(bonuses.date, 'YYYY-MM-DD'))::text as year").
-		Joins("JOIN users ON users.id = bonuses.user_id").
-		Where("users.company_id = ?", adminUser.CompanyID).
-		Order("year DESC").
-		Scan(&years)
+	if len(userIDs) > 0 {
+		database.DB.Table("bonuses").
+			Select("DISTINCT EXTRACT(YEAR FROM TO_DATE(bonuses.date, 'YYYY-MM-DD'))::text as year").
+			Where("user_id IN (?)", userIDs).
+			Order("year DESC").
+			Scan(&years)
+	}
 	
 	if len(years) == 0 {
 		years = append(years, strconv.Itoa(time.Now().Year()))

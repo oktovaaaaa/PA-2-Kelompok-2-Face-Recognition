@@ -15,7 +15,10 @@ func SendOTPEmail(email string, otp string) error {
 
 	m.SetHeader("From", os.Getenv("SMTP_EMAIL"))
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", fmt.Sprintf("🔐 [%s] Kode OTP Aplikasi Facrec", otp))
+	m.SetHeader("Subject", fmt.Sprintf("🔐 [%s] Kode OTP Videnti", otp))
+
+	// Embed logo
+	m.Embed("assets/videnti.png")
 
 	htmlBody := fmt.Sprintf(`
 	<!DOCTYPE html>
@@ -27,7 +30,8 @@ func SendOTPEmail(email string, otp string) error {
 			body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; margin: 0; padding: 0; }
 			.container { max-width: 500px; margin: 40px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #E2E8F0; }
 			.header { background: linear-gradient(135deg, #0F172A 0%%, #1E3A8A 100%%); padding: 40px 20px; text-align: center; color: #ffffff; }
-			.header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+			.logo { width: 80px; height: 80px; margin-bottom: 15px; }
+			.header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
 			.content { padding: 40px 30px; text-align: center; color: #1E293B; }
 			.content h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #64748B; margin-bottom: 24px; }
 			.otp-box { background-color: #F1F5F9; border-radius: 16px; padding: 24px; display: inline-block; margin: 0 auto 30px; border: 2px solid #E2E8F0; }
@@ -45,7 +49,8 @@ func SendOTPEmail(email string, otp string) error {
 	<body>
 		<div class="container">
 			<div class="header">
-				<h1>APLIKASI FACREC</h1>
+				<img src="cid:videnti.png" alt="Videnti Logo" class="logo">
+				<h1>VIDENTI</h1>
 			</div>
 			<div class="content">
 				<h2>Verifikasi Keamanan</h2>
@@ -58,19 +63,19 @@ func SendOTPEmail(email string, otp string) error {
 				</div>
 				
 				<p class="instruction">Kode ini akan kedaluwarsa dalam <strong>5 menit</strong>.</p>
-
+ 
 				<div class="safety-card">
 					<span class="safety-title">⚠️ PERINGATAN KEAMANAN:</span>
 					<p class="safety-text">
 						• <strong>JANGAN PERNAH</strong> memberitahukan kode ini kepada siapapun.<br>
-						• Tim Aplikasi Facrec tidak pernah meminta kode OTP Anda via telepon, chat, atau media apapun.<br>
+						• Tim Videnti tidak pernah meminta kode OTP Anda via telepon, chat, atau media apapun.<br>
 						• Jika Anda tidak melakukan permintaan ini, segera amankan akun Anda.
 					</p>
 				</div>
 			</div>
 			<div class="footer">
 				<p>&copy; 2026 PA-2-Kelompok-2 Face Recognition Team</p>
-				<p>Butuh bantuan? Email ke <a href="mailto:admin@facrec.id" style="color: #2563EB; text-decoration: none;">admin@facrec.id</a></p>
+				<p>Butuh bantuan? Hubungi kami di <a href="mailto:videntiiii@gmail.com" style="color: #2563EB; text-decoration: none;">videntiiii@gmail.com</a></p>
 			</div>
 		</div>
 	</body>

@@ -19,6 +19,7 @@ func main() {
 
 	// 3. AutoMigrate only Attendance related tables
 	database.AutoMigrate(
+		&models.User{}, // [FIX] Add User table structure to allow foreign keys
 		&models.Attendance{},
 		&models.AttendanceSettings{},
 		&models.LeaveRequest{},

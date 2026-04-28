@@ -237,6 +237,7 @@ const PayrollList = () => {
           onPageChange={(_, newPage) => setPage(newPage)}
           onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
           labelRowsPerPage="Baris per halaman:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
         />
       </Card>
 

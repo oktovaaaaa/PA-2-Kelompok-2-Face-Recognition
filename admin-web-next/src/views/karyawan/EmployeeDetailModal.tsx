@@ -185,7 +185,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
             show: true,
             total: {
               show: true,
-              label: 'Total Record',
+              label: 'Total Data',
               fontSize: '12px',
               color: '#64748B',
               formatter: () => stats ? (stats.total || 0).toString() : '0'
@@ -303,7 +303,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
               <InfoRow icon='ri-briefcase-line' label='Jabatan' value={employee.position_name || '-'} />
               <InfoRow icon='ri-phone-line' label='Telepon' value={employee.phone || '-'} />
               <InfoRow icon='ri-map-pin-line' label='Alamat' value={employee.address || '-'} />
-              <InfoRow icon='ri-smartphone-line' label='Device ID' value={employee.device_id ? 'Linked' : 'Not Linked'} />
+              <InfoRow icon='ri-smartphone-line' label='Status Perangkat' value={employee.device_id ? 'Terhubung' : 'Belum Terhubung'} />
             </Stack>
 
             <Divider sx={{ my: 6 }} />

@@ -1,5 +1,6 @@
 // lib/features/admin/presentation/screens/pending_employees_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/utils/error_mapper.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/models/app_user.dart';
@@ -64,42 +65,69 @@ class _PendingEmployeesScreenState extends State<PendingEmployeesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          'Persetujuan Karyawan',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A)),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xFF0F172A),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)))
-          : _users.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.people_alt_rounded, size: 80, color: Colors.grey.shade300),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Tidak ada antrian persetujuan',
-                        style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      Text(
-                        'Semua pengajuan sudah diproses',
-                        style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                      ),
-                    ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Column(
+          children: [
+            // Premium Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 64, left: 16, right: 16, bottom: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _users.length,
-                  itemBuilder: (context, index) {
+                  const Expanded(
+                    child: Text(
+                      'Persetujuan Karyawan',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48), // Balance for back button
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)))
+                  : _users.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.people_alt_rounded, size: 80, color: Colors.grey.shade300),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Tidak ada antrian persetujuan',
+                                style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              Text(
+                                'Semua pengajuan sudah diproses',
+                                style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _users.length,
+                          itemBuilder: (context, index) {
                     final item = _users[index];
                     final name = item.name.isEmpty ? item.email : item.name;
                     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
@@ -199,6 +227,10 @@ class _PendingEmployeesScreenState extends State<PendingEmployeesScreen> {
                     );
                   },
                 ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -277,7 +277,7 @@ const EmployeeList = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.position_name || 'Unassigned'}
+                        label={row.position_name || 'Belum Ditentukan'}
                         size='small'
                         variant='outlined'
                         sx={{ bgcolor: 'background.paper', color: 'primary.main' }}
@@ -315,6 +315,7 @@ const EmployeeList = () => {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="Baris per halaman:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
         />
       </Card>
 

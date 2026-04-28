@@ -93,51 +93,7 @@ func GenerateLoginOTP(email string) (string, error) {
 }
 
 func SeedSuperAdmin() {
-	var systemCompany models.Company
-	err := database.DB.Where("id = ?", "SYSTEM").First(&systemCompany).Error
-	if err != nil {
-		systemCompany = models.Company{
-			ID:        "SYSTEM",
-			Name:      "System Administration",
-			Address:   "System",
-			Email:     "system@example.com",
-			Phone:     "000",
-			CreatedAt: time.Now(),
-		}
-		if err := database.DB.Create(&systemCompany).Error; err != nil {
-			fmt.Println("Error creating system company:", err)
-			return
-		}
-		fmt.Println("System company created.")
-	}
-
-	var user models.User
-	// Check for the new email instead of the old one
-	err = database.DB.Where("email = ?", "videntiiii@gmail.com").First(&user).Error
-
-	if err != nil {
-		// Cleanup old superadmin account if it exists
-		database.DB.Where("email = ?", "superadmin@example.com").Delete(&models.User{})
-
-		hashedPassword, _ := utils.HashPassword("Videnti@2026")
-		superAdmin := models.User{
-			ID:        "SUPER-ADMIN-ID",
-			CompanyID: "SYSTEM",
-			Name:      "Super Admin",
-			Email:     "videntiiii@gmail.com",
-			Password:  hashedPassword,
-			Role:      "SUPER_ADMIN",
-			Status:    "ACTIVE",
-			CreatedAt: time.Now(),
-		}
-		if err := database.DB.Create(&superAdmin).Error; err != nil {
-			fmt.Println("Error seeding Super Admin:", err)
-			return
-		}
-		fmt.Println("Super admin seeded: videntiiii@gmail.com / Videnti@2026")
-	} else {
-		fmt.Println("Super admin (videntiiii@gmail.com) already exists.")
-	}
+	database.SeedSuperAdmin(database.DB)
 }
 
 func GoogleAuth(email string, name string, googleID string) (models.User, error) {

@@ -7,7 +7,7 @@ import "time"
 type Salary struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
 	UserID    string    `gorm:"uniqueIndex:idx_user_month_year" json:"user_id"`
-	User      User      `gorm:"foreignKey:UserID" json:"user"`
+	User      User      `gorm:"-" json:"user"`
 	
 	Month     int       `gorm:"uniqueIndex:idx_user_month_year" json:"month"` // 1-12
 	Year      int       `gorm:"uniqueIndex:idx_user_month_year" json:"year"`

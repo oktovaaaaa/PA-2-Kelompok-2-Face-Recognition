@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -389,40 +390,75 @@ class _AdminLocationManagementScreenState extends State<AdminLocationManagementS
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('Manajemen Lokasi Kantor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-      ),
-      body: _loading 
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
-          : RefreshIndicator(
-              onRefresh: _fetchLocations,
-              child: _locations.isEmpty 
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.location_off_rounded, size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          Text('Belum ada lokasi kantor', style: TextStyle(color: Colors.grey.shade500)),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => _showLocationForm(), 
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Tambah Lokasi Pertama'),
-                          )
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: _locations.length,
-                      itemBuilder: (ctx, idx) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Column(
+          children: [
+            // Premium Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 64, left: 16, right: 16, bottom: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Manajemen Lokasi Kantor',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading 
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
+                  : RefreshIndicator(
+                      onRefresh: _fetchLocations,
+                      child: _locations.isEmpty 
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.location_off_rounded, size: 64, color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  Text('Belum ada lokasi kantor', style: TextStyle(color: Colors.grey.shade500)),
+                                  const SizedBox(height: 24),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _showLocationForm(), 
+                                    icon: const Icon(Icons.add_rounded),
+                                    label: const Text('Tambah Lokasi Pertama'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2563EB),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(20),
+                              itemCount: _locations.length,
+                              itemBuilder: (ctx, idx) {
                         final loc = _locations[idx];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
@@ -465,12 +501,16 @@ class _AdminLocationManagementScreenState extends State<AdminLocationManagementS
                         );
                       },
                     ),
+                ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showLocationForm(),
-        backgroundColor: const Color(0xFF2563EB),
-        icon: const Icon(Icons.add_location_alt_rounded, color: Colors.white),
-        label: const Text('Tambah Lokasi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showLocationForm(),
+          backgroundColor: const Color(0xFF2563EB),
+          icon: const Icon(Icons.add_location_alt_rounded, color: Colors.white),
+          label: const Text('Tambah Lokasi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
       ),
     );
   }

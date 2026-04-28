@@ -7,7 +7,7 @@ import "time"
 type Penalty struct {
 	ID          string    `gorm:"primaryKey" json:"id"`
 	UserID      string    `gorm:"index" json:"user_id"`
-	User        User      `gorm:"foreignKey:UserID" json:"user"`
+	User        User      `gorm:"-" json:"user"`
 	
 	Type        string    `json:"type"` // e.g. DAMAGE, CONDUCT, OTHER
 	Title       string    `json:"title"`

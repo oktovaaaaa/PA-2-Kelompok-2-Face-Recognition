@@ -49,10 +49,22 @@ class ErrorMapper {
       return 'Akun Anda ditolak oleh admin.';
     }
 
-    if (message.contains('PIN salah')) {
-      return 'PIN yang Anda masukkan salah.';
+    if (message.contains('network_error') || message.contains('ApiException: 7')) {
+      return 'Koneksi gagal. Pastikan perangkat terhubung ke internet dan Google Play Services aktif.';
     }
 
-    return message.isEmpty ? 'Terjadi kesalahan.' : message;
+    if (message.contains('ApiException: 10')) {
+      return 'Kesalahan konfigurasi layanan Google (SHA-1). Harap hubungi pengembang.';
+    }
+
+    if (message.contains('ApiException: 12500')) {
+      return 'Login Google dibatalkan atau terjadi kesalahan internal pada Google Play Services.';
+    }
+
+    if (message.contains('PlatformException')) {
+      return 'Terjadi kendala sistem pada perangkat. Silakan coba beberapa saat lagi.';
+    }
+
+    return message.isEmpty ? 'Terjadi kesalahan tidak terduga.' : message;
   }
 }

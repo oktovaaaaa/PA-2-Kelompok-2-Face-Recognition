@@ -948,7 +948,11 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                           AppDialog.showError(context, 'Gagal: $e');
                         }
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB), 
+                        foregroundColor: Colors.white, 
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
+                      ),
                       child: sendingOtp 
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text('Simpan PIN Baru', style: TextStyle(fontWeight: FontWeight.bold)),

@@ -37,9 +37,15 @@ func CreatePenalty(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	admin := userCtx.(models.User)
 
-	// Verifikasi: Apakah target UserID ada di perusahaan yang sama dengan Admin?
+	// [FIX MICROSERVICES] Verifikasi via Auth Service (Port 8081)
 	var checkUser models.User
-	if err := database.DB.Where("id = ? AND company_id = ?", input.UserID, admin.CompanyID).First(&checkUser).Error; err != nil {
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", input.UserID)
+	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
+		utils.Error(c, "Karyawan tidak ditemukan atau gangguan koneksi service")
+		return
+	}
+
+	if checkUser.CompanyID != admin.CompanyID {
 		utils.Error(c, "Karyawan tidak ditemukan di instansi Anda")
 		return
 	}
@@ -93,24 +99,21 @@ func CreatePenalty(c *gin.Context) {
 	t, _ := time.Parse("2006-01-02", dateStr)
 	generateSalary(userID, int(t.Month()), t.Year())
 
-	// Kirim Notifikasi ke Karyawan [NEW]
-	var employee models.User
-	if err := database.DB.Select("id, company_id, fcm_token").Where("id = ?", userID).First(&employee).Error; err == nil {
-		notif := models.Notification{
-			ID:        uuid.New().String(),
-			UserID:    userID,
-			CompanyID: employee.CompanyID,
-			Title:     "Sanksi Baru",
-			Body:      fmt.Sprintf("Anda menerima sanksi sebesar %s untuk: %s", utils.FormatRupiah(amount), title),
-			Type:      "PENALTY_RECEIVED",
-			IsRead:    false,
-			CreatedAt: time.Now(),
-		}
-		database.DB.Create(&notif)
-
-		// Push Notification via FCM
-		services.SendPushNotification(employee.ID, notif.Title, notif.Body)
+	// Kirim Notifikasi ke Karyawan
+	notif := models.Notification{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		CompanyID: checkUser.CompanyID,
+		Title:     "Sanksi Baru",
+		Body:      fmt.Sprintf("Anda menerima sanksi sebesar %s untuk: %s", utils.FormatRupiah(amount), title),
+		Type:      "PENALTY_RECEIVED",
+		IsRead:    false,
+		CreatedAt: time.Now(),
 	}
+	database.DB.Create(&notif)
+
+	// Push Notification via FCM
+	services.SendPushNotification(checkUser.ID, notif.Title, notif.Body)
 
 	utils.Success(c, "Denda berhasil dicatatkan dan notifikasi dikirim", penalty)
 }
@@ -120,26 +123,49 @@ func GetPenalties(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
-	query := database.DB.Preload("User").Preload("User.Position").Model(&models.Penalty{})
+	// [FIX MICROSERVICES] Ambil data user via Auth Service
+	var employees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", user.CompanyID)
+	utils.CallInternalAPI(authURL, &employees)
 
-	// Search filter
+	userMap := make(map[string]models.User)
+	var userIDs []string
 	search := c.Query("search")
-	if search != "" {
-		query = query.Joins("JOIN users ON users.id = penalties.user_id").
-			Where("LOWER(penalties.title) LIKE LOWER(?) OR LOWER(users.name) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
+
+	for _, e := range employees {
+		userIDs = append(userIDs, e.ID)
+		userMap[e.ID] = e
 	}
 
-	// Admin filters: Only show penalties for users in the same company
+	query := database.DB.Model(&models.Penalty{})
+
+	// Search filter
+	if search != "" {
+		// Cari penalty berdasarkan title atau user IDs yang match namanya
+		var matchingUserIDs []string
+		for _, e := range employees {
+			if utils.CaseInsensitiveContains(e.Name, search) {
+				matchingUserIDs = append(matchingUserIDs, e.ID)
+			}
+		}
+		if len(matchingUserIDs) > 0 {
+			query = query.Where("(LOWER(title) LIKE LOWER(?) OR user_id IN (?))", "%"+search+"%", matchingUserIDs)
+		} else {
+			query = query.Where("LOWER(title) LIKE LOWER(?)", "%"+search+"%")
+		}
+	}
+
+	// Role filters
 	if user.Role == "ADMIN" {
-		query = query.Where("penalties.user_id IN (SELECT id FROM users WHERE company_id = ?)", user.CompanyID)
+		query = query.Where("user_id IN (?)", userIDs)
 		
 		filterUserID := c.Query("user_id")
 		if filterUserID != "" {
-			query = query.Where("penalties.user_id = ?", filterUserID)
+			query = query.Where("user_id = ?", filterUserID)
 		}
 	} else {
 		// Employee only sees their own
-		query = query.Where("penalties.user_id = ?", user.ID)
+		query = query.Where("user_id = ?", user.ID)
 	}
 
 	// Date filters
@@ -151,55 +177,52 @@ func GetPenalties(c *gin.Context) {
 		switch filter {
 		case "today":
 			today := time.Now().Format("2006-01-02")
-			query = query.Where("penalties.date = ?", today)
+			query = query.Where("date = ?", today)
 		case "week":
 			start := getFilterStart("week")
-			query = query.Where("penalties.date >= ?", start)
+			query = query.Where("date >= ?", start)
 		case "month":
 			if month != "" && year != "" {
 				monthInt, _ := strconv.Atoi(month)
-				query = query.Where("penalties.date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
+				query = query.Where("date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
 			} else {
 				start := getFilterStart("month")
-				query = query.Where("penalties.date >= ?", start)
+				query = query.Where("date >= ?", start)
 			}
 		case "year":
 			if year != "" {
-				query = query.Where("penalties.date LIKE ?", year+"-%%")
+				query = query.Where("date LIKE ?", year+"-%%")
 			} else {
 				start := getFilterStart("year")
-				query = query.Where("penalties.date >= ?", start)
+				query = query.Where("date >= ?", start)
 			}
 		}
 	} else if month != "" && year != "" {
 		monthInt, _ := strconv.Atoi(month)
-		query = query.Where("penalties.date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
+		query = query.Where("date LIKE ?", fmt.Sprintf("%s-%02d-%%", year, monthInt))
 	} else if year != "" {
-		query = query.Where("penalties.date LIKE ?", year+"-%%")
-	} else {
-		// Default behavior
-		start := getFilterStart("month")
-		query = query.Where("penalties.date >= ?", start)
+		query = query.Where("date LIKE ?", year+"-%%")
 	}
 
 	// Pagination
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
 	offset := (page - 1) * limit
 
 	var total int64
-	query.Model(&models.Penalty{}).Count(&total)
+	query.Count(&total)
 
 	var penalties []models.Penalty
-	if err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&penalties).Error; err != nil {
+	if err := query.Order("date DESC, created_at DESC").Offset(offset).Limit(limit).Find(&penalties).Error; err != nil {
 		utils.Error(c, "Gagal mengambil data denda: "+err.Error())
 		return
+	}
+
+	// Tempelkan data User ke hasil
+	for i := range penalties {
+		if u, ok := userMap[penalties[i].UserID]; ok {
+			penalties[i].User = u
+		}
 	}
 
 	utils.Success(c, "Data denda berhasil diambil", gin.H{
@@ -218,10 +241,16 @@ func DeletePenalty(c *gin.Context) {
 	admin := userCtx.(models.User)
 
 	var penalty models.Penalty
-	if err := database.DB.Joins("JOIN users ON users.id = penalties.user_id").
-		Where("penalties.id = ? AND users.company_id = ?", id, admin.CompanyID).
-		First(&penalty).Error; err != nil {
-		utils.Error(c, "Data denda tidak ditemukan atau Anda tidak memiliki akses")
+	if err := database.DB.Where("id = ?", id).First(&penalty).Error; err != nil {
+		utils.Error(c, "Data denda tidak ditemukan")
+		return
+	}
+
+	// [FIX MICROSERVICES] Verifikasi via Auth Service
+	var checkUser models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", penalty.UserID)
+	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil || checkUser.CompanyID != admin.CompanyID {
+		utils.Error(c, "Anda tidak memiliki akses ke data ini")
 		return
 	}
 
@@ -245,17 +274,32 @@ func AdminGetPenaltyYears(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
-	var years []string
-	// Mengambil 4 karakter pertama dari kolom date (YYYY)
-	err := database.DB.Model(&models.Penalty{}).
-		Where("user_id IN (SELECT id FROM users WHERE company_id = ?)", adminUser.CompanyID).
-		Select("DISTINCT(SUBSTRING(date, 1, 4)) as year").
-		Order("year desc").
-		Pluck("year", &years).Error
+	// [FIX MICROSERVICES] Ambil user IDs
+	var employees []models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	utils.CallInternalAPI(authURL, &employees)
 
-	if err != nil {
-		utils.Error(c, "Gagal mengambil daftar tahun: "+err.Error())
-		return
+	var userIDs []string
+	for _, e := range employees {
+		userIDs = append(userIDs, e.ID)
+	}
+
+	var years []string
+	if len(userIDs) > 0 {
+		err := database.DB.Model(&models.Penalty{}).
+			Where("user_id IN (?)", userIDs).
+			Select("DISTINCT(SUBSTRING(date, 1, 4)) as year").
+			Order("year desc").
+			Pluck("year", &years).Error
+		
+		if err != nil {
+			utils.Error(c, "Gagal mengambil daftar tahun: "+err.Error())
+			return
+		}
+	}
+
+	if len(years) == 0 {
+		years = append(years, strconv.Itoa(time.Now().Year()))
 	}
 
 	utils.Success(c, "Berhasil mengambil daftar tahun", years)

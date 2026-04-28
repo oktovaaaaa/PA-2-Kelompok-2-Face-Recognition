@@ -88,11 +88,11 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'PRESENT': return const Color(0xFF2E7D32);
-      case 'LATE': return const Color(0xFFEA580C);
-      case 'ABSENT': return const Color(0xFFDC2626);
-      case 'LEAVE': return const Color(0xFFD97706);
-      case 'SICK': return const Color(0xFF2563EB);
+      case 'PRESENT': return const Color(0xFF22C55E); // Green
+      case 'LATE': return const Color(0xFFFBBF24); // Yellow
+      case 'ABSENT': return const Color(0xFFEF4444); // Red
+      case 'LEAVE': return const Color(0xFF3B82F6); // Blue
+      case 'SICK': return const Color(0xFF3B82F6); // Blue
       case 'EARLY_LEAVE': return const Color(0xFFF97316); // Orange
       case 'LATE_EARLY_LEAVE': return const Color(0xFFD946EF); // Magenta
       case 'WORKING': return const Color(0xFF818CF8); // Indigo
@@ -384,11 +384,10 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
                                       sectionsSpace: 4,
                                       centerSpaceRadius: 40,
                                       sections: [
-                                        if (present > 0) PieChartSectionData(value: present.toDouble(), color: const Color(0xFF2E7D32), title: '$present', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        if (lateCount > 0) PieChartSectionData(value: lateCount.toDouble(), color: const Color(0xFFEA580C), title: '$lateCount', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        if (absent > 0) PieChartSectionData(value: absent.toDouble(), color: const Color(0xFFDC2626), title: '$absent', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        if (leave > 0) PieChartSectionData(value: leave.toDouble(), color: const Color(0xFFD97706), title: '$leave', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        if (sick > 0) PieChartSectionData(value: sick.toDouble(), color: const Color(0xFF2563EB), title: '$sick', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        if (present > 0) PieChartSectionData(value: present.toDouble(), color: const Color(0xFF22C55E), title: '$present', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        if (lateCount > 0) PieChartSectionData(value: lateCount.toDouble(), color: const Color(0xFFFBBF24), title: '$lateCount', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        if (absent > 0) PieChartSectionData(value: absent.toDouble(), color: const Color(0xFFEF4444), title: '$absent', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        if ((leave + sick) > 0) PieChartSectionData(value: (leave + sick).toDouble(), color: const Color(0xFF3B82F6), title: '${leave + sick}', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                         if (earlyLeave > 0) PieChartSectionData(value: earlyLeave.toDouble(), color: const Color(0xFFF97316), title: '$earlyLeave', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                         if (lateEarlyLeave > 0) PieChartSectionData(value: lateEarlyLeave.toDouble(), color: const Color(0xFFD946EF), title: '$lateEarlyLeave', radius: 45, titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ],

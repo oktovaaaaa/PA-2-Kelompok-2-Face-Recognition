@@ -3,6 +3,10 @@ import type { Theme } from '@mui/material/styles'
 
 const tablePagination: Theme['components'] = {
   MuiTablePagination: {
+    defaultProps: {
+      labelRowsPerPage: 'Baris per halaman:',
+      labelDisplayedRows: ({ from, to, count }) => `${from}-${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`
+    },
     styleOverrides: {
       toolbar: ({ theme }) => ({
         paddingInlineEnd: `${theme.spacing(3)} !important`
