@@ -1,10 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useNotification } from '@/contexts/NotificationContext'
+
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
 import { googleLogout } from '@react-oauth/google'
+
+import { useNotification } from '@/contexts/NotificationContext'
 import './landing.css'
 
 // Image path as generated earlier
@@ -44,7 +47,9 @@ const LandingPage = () => {
     
     window.addEventListener('resize', handleResize)
     window.addEventListener('scroll', handleScroll)
-    return () => {
+
+    
+return () => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('scroll', handleScroll)
     }
@@ -73,8 +78,10 @@ const LandingPage = () => {
   const fetchTestimonials = async () => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials`)
+
       if (res.ok) {
         const data = await res.json()
+
         setTestimonials(data.data || [])
       }
     } catch (err) { console.error(err) }
@@ -88,6 +95,7 @@ const LandingPage = () => {
     if (!e.target.files?.[0]) return
     setIsUploading(true)
     const formData = new FormData()
+
     formData.append('file', e.target.files[0])
 
     try {
@@ -95,32 +103,41 @@ const LandingPage = () => {
         method: 'POST',
         body: formData
       })
+
       if (res.ok) {
         const data = await res.json()
+
         setTestiForm({ ...testiForm, photo_url: data.data.url })
       } else {
         showNotification('Gagal mengupload foto', 'error')
       }
     } catch (err) { showNotification('Terjadi kesalahan saat upload', 'error') }
+
     setIsUploading(false)
   }
 
   const handleTestiSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (isUploading) {
       showNotification('Tunggu hingga foto selesai diupload!', 'warning')
-      return
+      
+return
     }
+
     if (testiForm.rating === 0) {
       showNotification('Silakan pilih rating minimal 1 bintang!', 'warning')
-      return
+      
+return
     }
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(testiForm)
       })
+
       if (res.ok) {
         showNotification('Testimoni berhasil dikirim!', 'success')
         setShowTestimonialModal(false)
@@ -150,27 +167,36 @@ const LandingPage = () => {
 
   useEffect(() => {
     if (isInteracting) return
+
     const timer = setInterval(() => {
       setHasTransition(true)
       setActiveFeatureIndex(prev => prev + 1)
     }, 2500)
-    return () => clearInterval(timer)
+
+    
+return () => clearInterval(timer)
   }, [isInteracting])
 
   useEffect(() => {
     if (activeFeatureIndex >= 10) {
       const timeout = setTimeout(() => { setHasTransition(false); setActiveFeatureIndex(prev => prev - 5) }, 500)
-      return () => clearTimeout(timeout)
+
+      
+return () => clearTimeout(timeout)
     }
+
     if (activeFeatureIndex < 5) {
       const timeout = setTimeout(() => { setHasTransition(false); setActiveFeatureIndex(prev => prev + 5) }, 500)
-      return () => clearTimeout(timeout)
+
+      
+return () => clearTimeout(timeout)
     }
   }, [activeFeatureIndex])
 
   const handleManualInteraction = () => {
     setIsInteracting(true)
     const timeoutId = (window as any).interactionTimeout
+
     if (timeoutId) clearTimeout(timeoutId)
     ;(window as any).interactionTimeout = setTimeout(() => setIsInteracting(false), 10000)
   }
@@ -181,6 +207,7 @@ const LandingPage = () => {
 
   const handleWhatsAppSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
     const message = `Halo Admin VIDENTI,
 Saya ingin menghubungi Anda dengan detail berikut:
 *Nama:* ${formData.nama}
@@ -195,6 +222,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
 *Pesan:* ${formData.pesan}`
 
     const waUrl = `https://wa.me/62881080811110?text=${encodeURIComponent(message)}`
+
     window.open(waUrl, '_blank')
   }
 
@@ -204,6 +232,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
   useEffect(() => {
     const token = localStorage.getItem('token')
+
     if (token) { setIsLoggedIn(true) }
   }, [])
 
@@ -538,8 +567,11 @@ Saya ingin menghubungi Anda dengan detail berikut:
               {(() => {
                 const displayData = testimonials;
                 const tripled = [...displayData, ...displayData, ...displayData];
-                return tripled.map((testi, idx) => {
+
+                
+return tripled.map((testi, idx) => {
                   const originalIndex = idx % displayData.length;
+
                   const avatarSrc = testi.photo_url 
                     ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${testi.photo_url}`
                     : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
@@ -579,6 +611,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
                 return reversed.map((testi, idx) => {
                   const L = displayData.length;
                   const originalIndex = (L * 3 - 1 - idx) % L;
+
                   const avatarSrc = testi.photo_url 
                     ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${testi.photo_url}`
                     : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
@@ -698,7 +731,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               
               <div className='footer-bottom-links'>
                 <a href='https://oktovaaaaa.cloud' target='_blank' rel='noopener noreferrer' style={{ fontWeight: '700', color: '#fff' }}>
-                  © {new Date().getFullYear()} Oktovaaaaa
+                  © {new Date().getFullYear()} PA 2 Kelompok 2
                 </a>
                 <span>•</span>
                 <a href='#'>Pemberitahuan Privasi</a>

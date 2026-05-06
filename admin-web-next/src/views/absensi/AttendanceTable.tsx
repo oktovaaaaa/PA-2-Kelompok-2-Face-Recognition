@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -25,6 +26,7 @@ import Stack from '@mui/material/Stack'
 import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
 import * as XLSX from 'xlsx'
+
 import { attendanceService } from '@/libs/attendanceService'
 import { formatFullDate } from '@/utils/dateFormatter'
 import { useNotification } from '@/contexts/NotificationContext'
@@ -51,6 +53,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
   const fetchData = async () => {
     setLoading(true)
+
     try {
       const params: any = { filter: parentPeriod, status: statusFilter !== 'ALL' ? statusFilter : undefined }
       
@@ -62,6 +65,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
       }
       
       const history = await attendanceService.getAttendanceHistory(params)
+
       setData(history || [])
     } catch (error) {
       console.error('Error fetching attendance history:', error)
@@ -125,6 +129,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
         { header: 'Masuk', key: 'in', width: 12 },
         { header: 'Keluar', key: 'out', width: 12 },
         { header: 'Status', key: 'status', width: 25 },
+
         // Extra columns for bar chart (20 columns)
         ...Array(20).fill(0).map((_, i) => ({ header: '', key: `bar_${i}`, width: 3 }))
     ]
@@ -133,6 +138,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
     // 1. Title
     const titleRow = worksheet.getRow(currentRow)
+
     titleRow.getCell(1).value = 'LAPORAN KEHADIRAN KARYAWAN'
     titleRow.getCell(1).font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1E3A8A' } }
     worksheet.mergeCells(`A${currentRow}:F${currentRow}`)
@@ -141,6 +147,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     // 2. Subtitle (Period)
     const periodLabel = parentPeriod === 'today' ? 'Hari Ini' : parentPeriod === 'week' ? 'Minggu Ini' : parentPeriod === 'month' ? `${months.find(m => m.value === parentMonth)?.label} ${parentYear}` : `Tahun ${parentYear}`
     const subtitleRow = worksheet.getRow(currentRow)
+
     subtitleRow.getCell(1).value = `Periode: ${periodLabel}`
     subtitleRow.getCell(1).font = { name: 'Arial', size: 11, italic: true, color: { argb: 'FF64748B' } }
     worksheet.mergeCells(`A${currentRow}:F${currentRow}`)
@@ -148,6 +155,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
     // 3. Visualization Dashboard
     const dashHeader = worksheet.getRow(currentRow)
+
     dashHeader.getCell(1).value = 'DASHBOARD VISUALISASI KEHADIRAN (GRAFIK)'
     dashHeader.getCell(1).font = { bold: true, size: 14 }
     dashHeader.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } }
@@ -155,6 +163,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     currentRow += 2
 
     const totalForChart = filteredData.length || 1
+
     const summaryKeys = [
         { key: 'PRESENT', label: 'Hadir' },
         { key: 'LATE', label: 'Terlambat' },
@@ -178,14 +187,17 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
         // Bar Chart (20 cols)
         const barCols = Math.round((count / totalForChart) * 20)
+
         for (let b = 0; b < 20; b++) {
             const cell = row.getCell(3 + b)
+
             if (b < barCols) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${_getStatusColor(s.key)}` } }
             } else {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
             }
         }
+
         currentRow++
     })
     currentRow += 3
@@ -193,8 +205,10 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     // 4. Detail Table
     const headerRow = worksheet.getRow(currentRow)
     const headers = ['No', 'Nama Karyawan', 'Tanggal', 'Masuk', 'Keluar', 'Status']
+
     headers.forEach((h, i) => {
         const cell = headerRow.getCell(i + 1)
+
         cell.value = h
         cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }
@@ -225,6 +239,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
         values.forEach((v, i) => {
             const cell = row.getCell(i + 1)
+
             cell.value = v
             cell.border = {
                 top: { style: 'thin' },
@@ -238,6 +253,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
 
     // Generate Dynamic Filename
     let fileName = 'Laporan_Absensi'
+
     if (parentPeriod === 'today') fileName += '_Hari_Ini'
     else if (parentPeriod === 'week') fileName += '_Minggu_Ini'
     else if (parentPeriod === 'month') fileName += `_${months.find(m => m.value === parentMonth)?.label}_${parentYear}`
@@ -248,6 +264,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
         showNotification('Sedang menyiapkan file Excel...', 'info')
         const buffer = await workbook.xlsx.writeBuffer()
         const data = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
         saveAs(data, `${fileName}.xlsx`)
         showNotification('Laporan berhasil diunduh!', 'success')
     } catch (error) {
@@ -272,7 +289,9 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
   const formatTime = (timeStr: string | null) => {
     if (!timeStr) return '-'
     const date = new Date(timeStr)
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    
+return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   return (

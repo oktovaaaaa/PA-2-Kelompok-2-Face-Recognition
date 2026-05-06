@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return {
+
+    
+return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -18,7 +20,9 @@ export const formatImageUrl = (url?: string) => {
 
     // Ensure no double slashes
     const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
-    return `${BASE_URL}/${cleanUrl}`;
+
+    
+return `${BASE_URL}/${cleanUrl}`;
 };
 
 export interface Profile {
@@ -83,8 +87,11 @@ export interface ManualPenalty {
     date: string;
     user?: {
         name: string;
+        email: string;
+        photo_url?: string;
     };
 }
+
 
 export interface Notification {
     id: string;
@@ -105,9 +112,12 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat profil.');
-        return data.data as Profile;
+        
+return data.data as Profile;
     },
 
     async updateProfile(data: Partial<Profile>) {
@@ -116,9 +126,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui profil.');
-        return resData.data;
+        
+return resData.data;
     },
 
     // 2. Security Methods
@@ -127,9 +140,12 @@ export const settingService = {
             method: 'POST',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengirim OTP.');
-        return data;
+        
+return data;
     },
 
     async changePassword(data: { old_password?: string; otp_code?: string; new_password: string }) {
@@ -138,9 +154,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal mengubah password.');
-        return resData;
+        
+return resData;
     },
 
     async changePIN(data: { old_pin?: string; otp_code?: string; new_pin: string }) {
@@ -149,9 +168,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal mengubah PIN.');
-        return resData;
+        
+return resData;
     },
 
     async verifyPassword(password: string) {
@@ -160,9 +182,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify({ password }),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Password yang Anda masukkan salah.');
-        return data;
+        
+return data;
     },
 
     // 3. Company Methods
@@ -171,9 +196,12 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat data perusahaan.');
-        return data.data as Company;
+        
+return data.data as Company;
     },
 
     async updateCompany(data: Partial<Company>) {
@@ -182,14 +210,18 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui instansi.');
-        return resData.data;
+        
+return resData.data;
     },
 
     // 4. Manual Penalty Management
     async getManualPenalties(page: number = 1, limit: number = 10, month?: string, year?: string, search?: string) {
         let url = `${API_URL}/admin/penalties?page=${page}&limit=${limit}`;
+
         if (month) url += `&month=${month}`;
         if (year) url += `&year=${year}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -198,7 +230,9 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat data denda.');
 
         return {
@@ -212,9 +246,12 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar tahun.');
-        return data.data as string[];
+        
+return data.data as string[];
     },
 
     async createManualPenalty(data: { user_id: string; amount: number; title: string; date: string }) {
@@ -223,9 +260,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal menambahkan denda.');
-        return resData.data;
+        
+return resData.data;
     },
 
     async deletePenalty(id: string) {
@@ -233,9 +273,12 @@ export const settingService = {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus denda.');
-        return data;
+        
+return data;
     },
 
     // 5. Attendance Settings
@@ -244,9 +287,12 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat pengaturan absensi.');
-        return data.data as AttendanceSettings;
+        
+return data.data as AttendanceSettings;
     },
 
     async updateAttendanceSettings(data: Partial<AttendanceSettings>) {
@@ -255,15 +301,19 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui pengaturan.');
-        return resData.data;
+        
+return resData.data;
     },
 
     // 6. Common Upload Method
     async uploadFile(file: File) {
         const token = localStorage.getItem('token');
         const formData = new FormData();
+
         formData.append('file', file);
 
         const response = await fetch(`${API_URL}/upload`, {
@@ -275,8 +325,10 @@ export const settingService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengunggah file.');
-        return data.data; // Expecting { url: string }
+        
+return data.data; // Expecting { url: string }
     },
 
     // 7. Notification Methods
@@ -285,9 +337,12 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat notifikasi.');
-        return data.data as { notifications: Notification[], unread_count: number };
+        
+return data.data as { notifications: Notification[], unread_count: number };
     },
 
     async markNotificationRead(id: string) {
@@ -295,9 +350,12 @@ export const settingService = {
             method: 'PUT',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menandai notifikasi.');
-        return data;
+        
+return data;
     },
 
     async markAllNotificationsRead() {
@@ -305,9 +363,12 @@ export const settingService = {
             method: 'PUT',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menandai semua notifikasi.');
-        return data;
+        
+return data;
     },
 
     async deleteNotification(id: string) {
@@ -315,9 +376,12 @@ export const settingService = {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus notifikasi.');
-        return data;
+        
+return data;
     },
 
     async deleteAllNotifications() {
@@ -325,9 +389,12 @@ export const settingService = {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus semua notifikasi.');
-        return data;
+        
+return data;
     },
 
     // 8. Delete Account
@@ -337,9 +404,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify({ password, confirmation_phrase: confirmationPhrase }),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus akun.');
-        return data;
+        
+return data;
     },
 
     // 9. Location Methods
@@ -348,9 +418,12 @@ export const settingService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar lokasi.');
-        return data.data as CompanyLocation[];
+        
+return data.data as CompanyLocation[];
     },
 
     async createLocation(data: Omit<CompanyLocation, 'id' | 'company_id'>) {
@@ -359,9 +432,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal menambah lokasi.');
-        return resData.data as CompanyLocation;
+        
+return resData.data as CompanyLocation;
     },
 
     async updateLocation(id: string, data: Partial<CompanyLocation>) {
@@ -370,9 +446,12 @@ export const settingService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui lokasi.');
-        return resData.data as CompanyLocation;
+        
+return resData.data as CompanyLocation;
     },
 
     async deleteLocation(id: string) {
@@ -380,8 +459,11 @@ export const settingService = {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus lokasi.');
-        return data;
+        
+return data;
     }
 };

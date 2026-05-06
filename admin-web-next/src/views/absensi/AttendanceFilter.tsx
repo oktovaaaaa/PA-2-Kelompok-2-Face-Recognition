@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Grid from '@mui/material/Grid'
@@ -12,6 +13,7 @@ import InputLabel from '@mui/material/InputLabel'
 import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
 import Box from '@mui/material/Box'
+
 import { attendanceService } from '@/libs/attendanceService'
 
 interface AttendanceFilterProps {
@@ -44,7 +46,10 @@ const AttendanceFilter = ({
     const fetchYears = async () => {
       try {
         const years = await attendanceService.getAttendanceYears()
+
         setAvailableYears(years)
+
+
         // If current year is not in available years, pick the latest one if exists
         if (years.length > 0 && !years.map(String).includes(String(selectedYear))) {
           setSelectedYear(Number(years[0]))
@@ -53,6 +58,7 @@ const AttendanceFilter = ({
         console.error('Error fetching available years:', error)
       }
     }
+
     fetchYears()
   }, [])
 

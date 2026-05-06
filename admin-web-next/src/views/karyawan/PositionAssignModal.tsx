@@ -1,6 +1,8 @@
 "use client"
+
 // src/views/karyawan/PositionAssignModal.tsx
 import React, { useEffect, useState } from 'react'
+
 import {
   Dialog,
   DialogTitle,
@@ -17,7 +19,9 @@ import {
   Box,
   Radio
 } from '@mui/material'
-import { employeeService, Position } from '../../libs/employeeService'
+
+import type { Position } from '../../libs/employeeService';
+import { employeeService } from '../../libs/employeeService'
 import { useNotification } from '../../contexts/NotificationContext'
 
 interface Props {
@@ -43,8 +47,10 @@ const PositionAssignModal = ({ open, onClose, onAssign, currentPositionId, emplo
 
   const loadPositions = async () => {
     setLoading(true)
+
     try {
       const data = await employeeService.getPositions()
+
       setPositions(data)
     } catch (error) {
       console.error(error)

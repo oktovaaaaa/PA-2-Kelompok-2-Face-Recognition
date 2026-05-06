@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
@@ -45,7 +47,9 @@ const GlobalOfficeMap = ({ companies }: Props) => {
             { lat: -7.7, lng: 110.3 }, // Jogja (Indonesia)
             { lat: 1.2, lng: 103.8 }    // Singapore
         ]
+
         const coord = mockCoord[idx % mockCoord.length]
+
         lat = coord.lat
         lng = coord.lng
       }
@@ -67,6 +71,7 @@ const GlobalOfficeMap = ({ companies }: Props) => {
     if (isMounted && globeEl.current) {
         // Auto-rotate
         const controls = globeEl.current.controls()
+
         if (controls) {
             controls.autoRotate = true
             controls.autoRotateSpeed = 1.2 // Slower for premium feel
@@ -90,7 +95,8 @@ const GlobalOfficeMap = ({ companies }: Props) => {
     `
     el.style.pointerEvents = 'auto'
     el.style.cursor = 'pointer'
-    return el
+    
+return el
   }
 
   return (

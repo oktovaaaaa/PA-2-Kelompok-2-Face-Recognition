@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return {
+
+    
+return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -36,6 +38,7 @@ export const employeeService = {
     // 1. Get Employees List
     async getEmployees(status?: string) {
         let url = `${API_URL}/admin/employees`;
+
         if (status) url += `?status=${status}`;
 
         const response = await fetch(url, {
@@ -44,8 +47,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil data karyawan.');
-        return data.data as Employee[];
+        
+return data.data as Employee[];
     },
 
     // 2. Get Positions
@@ -56,8 +61,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar jabatan.');
-        return data.data as Position[];
+        
+return data.data as Position[];
     },
 
     // 3. Assign Position
@@ -69,8 +76,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menetapkan jabatan.');
-        return data;
+        
+return data;
     },
 
     // 3.1 Create Position
@@ -82,8 +91,10 @@ export const employeeService = {
         });
 
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal membuat jabatan.');
-        return resData.data as Position;
+        
+return resData.data as Position;
     },
 
     // 3.2 Update Position
@@ -95,8 +106,10 @@ export const employeeService = {
         });
 
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui jabatan.');
-        return resData.data as Position;
+        
+return resData.data as Position;
     },
 
     // 3.3 Delete Position
@@ -107,8 +120,10 @@ export const employeeService = {
         });
 
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal menghapus jabatan.');
-        return resData;
+        
+return resData;
     },
 
     // 4. Fire/Resign Employee
@@ -120,8 +135,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memecat karyawan.');
-        return data;
+        
+return data;
     },
 
     // 5. Reactivate Employee
@@ -133,8 +150,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengaktifkan kembali karyawan.');
-        return data;
+        
+return data;
     },
 
     // 6. Reset Device
@@ -146,13 +165,16 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mereset perangkat.');
-        return data;
+        
+return data;
     },
 
     // 7. Get Attendance History for Stats (User Specific)
     async getEmployeeAttendance(userId: string, filter: string = 'month', month?: string, year?: string) {
         let url = `${API_URL}/admin/attendance?user_id=${userId}&filter=${filter}`;
+
         if (month && month !== 'all') url += `&month=${month}`;
         if (year) url += `&year=${year}`;
 
@@ -162,8 +184,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil data statistik.');
-        return data.data;
+        
+return data.data;
     },
 
     // 8. Get Available Attendance Years
@@ -174,8 +198,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar tahun.');
-        return data.data as string[];
+        
+return data.data as string[];
     },
 
     // 9. Get Pending Employees (Approval)
@@ -186,8 +212,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar pendaftaran.');
-        return data.data as Employee[];
+        
+return data.data as Employee[];
     },
 
     // 10. Approve Employee
@@ -199,8 +227,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menyetujui karyawan.');
-        return data;
+        
+return data;
     },
 
     // 11. Reject Employee
@@ -212,13 +242,16 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menolak karyawan.');
-        return data;
+        
+return data;
     },
 
     // SUPER ADMIN SERVICES
     async getAllSystemUsers(status?: string) {
         let url = `${API_URL}/super-admin/users`;
+
         if (status) url += `?status=${status}`;
 
         const response = await fetch(url, {
@@ -227,8 +260,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil data seluruh user.');
-        return data.data as Employee[];
+        
+return data.data as Employee[];
     },
 
     async getAllCompanies() {
@@ -238,8 +273,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar perusahaan.');
-        return data.data as any[];
+        
+return data.data as any[];
     },
 
     async updateCompanyStatus(id: string, status: string) {
@@ -250,8 +287,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memperbarui status perusahaan.');
-        return data.data;
+        
+return data.data;
     },
 
     // TESTIMONIAL SERVICES
@@ -262,8 +301,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil daftar testimoni.');
-        return data.data;
+        
+return data.data;
     },
 
     async deleteTestimonial(id: number) {
@@ -273,8 +314,10 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus testimoni.');
-        return data;
+        
+return data;
     },
 
     async approveTestimonial(id: number) {
@@ -284,7 +327,9 @@ export const employeeService = {
         });
 
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menyetujui testimoni.');
-        return data;
+        
+return data;
     }
 };

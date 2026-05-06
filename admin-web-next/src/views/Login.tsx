@@ -13,13 +13,14 @@ import Alert from '@mui/material/Alert'
 import CircularProgress from '@mui/material/CircularProgress'
 
 // Type Imports
+import { useGoogleLogin } from '@react-oauth/google'
+
 import type { Mode } from '@core/types'
 
 // Component Imports
 import Link from '@components/Link'
 
 // React-OAuth Import
-import { useGoogleLogin } from '@react-oauth/google'
 
 // Service Imports
 import { authService } from '@/libs/auth'
@@ -47,12 +48,15 @@ const Login = ({ mode }: { mode: Mode }) => {
   // Timer Effect
   useEffect(() => {
     let interval: NodeJS.Timeout
+
     if (resendTimer > 0 && step === 'otp') {
       interval = setInterval(() => {
         setResendTimer((prev) => prev - 1)
       }, 1000)
     }
-    return () => clearInterval(interval)
+
+    
+return () => clearInterval(interval)
   }, [resendTimer, step])
 
   useEffect(() => {
@@ -64,6 +68,7 @@ const Login = ({ mode }: { mode: Mode }) => {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setLoading(true)
+
       try {
         // Fetch user profile to get email
         const userRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`)
@@ -78,8 +83,9 @@ const Login = ({ mode }: { mode: Mode }) => {
           setStep('otp')
         }
       } catch (error: any) {
-        handleShowNotification('Gagal login dengan Google', 'error')
+        handleShowNotification(error.message || 'Gagal login dengan Google', 'error')
       } finally {
+
         setLoading(false)
       }
     },
@@ -148,6 +154,7 @@ const Login = ({ mode }: { mode: Mode }) => {
     if (resendTimer > 0 || isResending) return
 
     setIsResending(true)
+
     try {
       await authService.sendOTP(email)
       handleShowNotification('Kode OTP baru telah dikirim ke email Anda', 'success')

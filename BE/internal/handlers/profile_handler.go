@@ -91,13 +91,22 @@ func UpdateMyProfile(c *gin.Context) {
 		utils.Error(c, "Data tidak valid")
 		return
 	}
-	if body.Name == "" || body.Phone == "" || body.Address == "" {
-		utils.Error(c, "Nama, nomor telepon, dan alamat wajib diisi")
+	if body.Name == "" {
+		utils.Error(c, "Nama lengkap wajib diisi")
 		return
 	}
+	if body.Phone == "" {
+		utils.Error(c, "Nomor telepon wajib diisi")
+		return
+	}
+	// Opsional: Alamat bisa dikosongkan untuk Super Admin atau jika memang belum ada
+
 
 	var dbUser models.User
-	database.DB.Where("id = ?", user.ID).First(&dbUser)
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan di database")
+		return
+	}
 
 	dbUser.Name = body.Name
 	dbUser.Phone = body.Phone

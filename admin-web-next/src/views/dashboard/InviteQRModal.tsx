@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -11,6 +12,7 @@ import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import { QRCodeSVG } from 'qrcode.react'
+
 import { dashboardService } from '@/libs/dashboardService'
 import { useNotification } from '@/contexts/NotificationContext'
 
@@ -29,8 +31,10 @@ const InviteQRModal = ({ open, onClose }: InviteQRModalProps) => {
   const fetchToken = async () => {
     if (countdown > 0) return
     setLoading(true)
+
     try {
       const data = await dashboardService.generateInviteToken()
+
       setToken(data.token)
       setCountdown(30)
     } catch (error) {
@@ -48,7 +52,9 @@ const InviteQRModal = ({ open, onClose }: InviteQRModalProps) => {
       setCountdown(0)
       if (timerRef.current) clearInterval(timerRef.current)
     }
-    return () => {
+
+    
+return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [open])
@@ -59,13 +65,18 @@ const InviteQRModal = ({ open, onClose }: InviteQRModalProps) => {
         setCountdown(prev => {
           if (prev <= 1) {
             if (timerRef.current) clearInterval(timerRef.current)
-            return 0
+            
+return 0
           }
-          return prev - 1
+
+          
+return prev - 1
         })
       }, 1000)
     }
-    return () => {
+
+    
+return () => {
         if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [open, countdown])
@@ -77,6 +88,7 @@ const InviteQRModal = ({ open, onClose }: InviteQRModalProps) => {
 
   const handleDownload = () => {
     const svg = document.getElementById('invite-qr-svg')
+
     if (!svg) return
 
     const svgData = new XMLSerializer().serializeToString(svg)
@@ -87,17 +99,20 @@ const InviteQRModal = ({ open, onClose }: InviteQRModalProps) => {
     img.onload = () => {
       canvas.width = img.width + 40
       canvas.height = img.height + 40
+
       if (ctx) {
           ctx.fillStyle = 'white'
           ctx.fillRect(0, 0, canvas.width, canvas.height)
           ctx.drawImage(img, 20, 20)
           const pngFile = canvas.toDataURL('image/png')
           const downloadLink = document.createElement('a')
+
           downloadLink.download = `invite_qr_${Date.now()}.png`
           downloadLink.href = pngFile
           downloadLink.click()
       }
     }
+
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
   }
 

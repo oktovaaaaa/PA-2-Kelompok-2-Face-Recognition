@@ -12,6 +12,7 @@ export const authService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.message || 'Email atau password salah.');
     }
@@ -28,6 +29,7 @@ export const authService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.message || 'Gagal mengirim OTP.');
     }
@@ -54,6 +56,7 @@ export const authService = {
     }
 
     const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'OWNER'];
+
     if (!data.data || !data.data.role || !allowedRoles.includes(data.data.role.toUpperCase())) {
       throw new Error('Akun ini tidak memiliki akses Administrator.')
     }
@@ -78,6 +81,7 @@ export const authService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.message || 'Gagal login dengan Google.');
     }
@@ -94,6 +98,7 @@ export const authService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.message || 'Gagal mendaftarkan akun.');
     }
@@ -110,6 +115,7 @@ export const authService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.message || 'Email tidak ditemukan.');
     }
@@ -126,6 +132,7 @@ export const authService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) {
       throw new Error(data.message || 'Reset password gagal.');
     }

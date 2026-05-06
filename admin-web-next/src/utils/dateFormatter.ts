@@ -8,8 +8,10 @@ import { id } from 'date-fns/locale'
  */
 export const formatFullDate = (dateStr: string | Date): string => {
   if (!dateStr) return '-'
+
   try {
     const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+
     if (isNaN(date.getTime())) return String(dateStr)
     
     // format 'EEEE d MMMM yyyy' produces 'Kamis 1 Juni 2026'
@@ -24,8 +26,10 @@ export const formatFullDate = (dateStr: string | Date): string => {
  */
 export const formatDate = (dateStr: string | Date): string => {
   if (!dateStr) return '-'
+
   try {
     const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+
     if (isNaN(date.getTime())) return String(dateStr)
     
     return format(date, 'd MMMM yyyy', { locale: id })
@@ -47,8 +51,10 @@ export const formatDateInString = (text: string): string => {
   return text.replace(dateRegex, (match) => {
     try {
       const date = new Date(match)
+
       if (isNaN(date.getTime())) return match
-      return format(date, 'EEEE d MMMM yyyy', { locale: id })
+      
+return format(date, 'EEEE d MMMM yyyy', { locale: id })
     } catch {
       return match
     }

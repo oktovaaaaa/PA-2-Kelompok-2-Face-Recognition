@@ -5,8 +5,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"employee-system/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
+
 
 func proxy(target string) gin.HandlerFunc {
 	url, _ := url.Parse(target)
@@ -20,6 +22,8 @@ func proxy(target string) gin.HandlerFunc {
 
 func main() {
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware())
+
 
 	// --- AUTH SERVICE (Port 8081) ---
 	authProxy := proxy("http://localhost:8081")
@@ -40,10 +44,10 @@ func main() {
 	r.Any("/api/admin/positions/*any", authProxy)
 	r.Any("/api/admin/company", authProxy)
 	r.Any("/api/admin/company/*any", authProxy)
-	r.Any("/api/admin/generate-invite", authProxy)    // BARCODE FIX
-	r.Any("/api/admin/pending-employees", authProxy)  // PERSETUJUAN FIX
-	r.Any("/api/admin/approve-employee", authProxy)   // APPROVE FIX
-	r.Any("/api/admin/reject-employee", authProxy)    // REJECT FIX
+	r.Any("/api/admin/generate-invite", authProxy)
+	r.Any("/api/admin/pending-employees", authProxy)  
+	r.Any("/api/admin/approve-employee", authProxy)  
+	r.Any("/api/admin/reject-employee", authProxy)    
 	r.Any("/api/admin/reset-device", authProxy)
 
 	// Super Admin Features (Auth Service)

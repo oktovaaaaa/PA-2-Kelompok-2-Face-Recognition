@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import Card from '@mui/material/Card'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -19,9 +20,14 @@ import TablePagination from '@mui/material/TablePagination'
 import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import Divider from '@mui/material/Divider'
-import { LeaveRequest } from '@/libs/leaveService'
+
+import { format, parseISO } from 'date-fns'
+
+import { id } from 'date-fns/locale'
+
+import type { LeaveRequest } from '@/libs/leaveService'
 import { formatFullDate, formatDate } from '@/utils/dateFormatter'
-import { parseISO } from 'date-fns'
+
 
 interface Props {
   leaves: LeaveRequest[]
@@ -63,8 +69,10 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
 
   const formatLeaveDates = (datesJson?: string, createdAt?: string) => {
     if (!datesJson) return createdAt ? formatFullDate(createdAt) : '-'
+
     try {
       const dates: string[] = JSON.parse(datesJson)
+
       if (dates.length === 0) return createdAt ? formatFullDate(createdAt) : '-'
       if (dates.length === 1) return formatDate(dates[0])
       
@@ -74,10 +82,12 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
       
       // Check if contiguous
       let isContiguous = true
+
       for (let i = 0; i < sorted.length - 1; i++) {
         const d1 = parseISO(sorted[i])
         const d2 = parseISO(sorted[i+1])
         const diff = (d2.getTime() - d1.getTime()) / (1000 * 3600 * 24)
+
         if (diff !== 1) {
           isContiguous = false
           break

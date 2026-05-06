@@ -27,12 +27,14 @@ const AccountSettings = ({ tabContentList }: { tabContentList: { [key: string]: 
 
   useEffect(() => {
     const savedRole = localStorage.getItem('role')
+
     setRole(savedRole)
   }, [])
 
   // Sync state with URL when searchParams change
   useEffect(() => {
     const currentTab = searchParams.get('tab')
+
     if (currentTab && currentTab !== activeTab) {
       setActiveTab(currentTab)
     }

@@ -2,6 +2,7 @@
 'use client'
 
 import React from 'react'
+
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -9,6 +10,8 @@ import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
+
 
 interface ConfirmDialogProps {
   open: boolean
@@ -19,7 +22,9 @@ interface ConfirmDialogProps {
   type?: 'warning' | 'error' | 'info'
   confirmText?: string
   cancelText?: string
+  loading?: boolean
 }
+
 
 const ConfirmDialog = ({
   open,
@@ -29,8 +34,10 @@ const ConfirmDialog = ({
   message,
   type = 'warning',
   confirmText = 'Ya, Lanjutkan',
-  cancelText = 'Batal'
+  cancelText = 'Batal',
+  loading = false
 }: ConfirmDialogProps) => {
+
   const getIcon = () => {
     switch (type) {
       case 'error': return <i className="ri-delete-bin-7-line text-5xl text-red-500 mb-2" />
@@ -62,9 +69,12 @@ const ConfirmDialog = ({
           color={getButtonColor()} 
           sx={{ minWidth: 100 }}
           autoFocus
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
         >
-          {confirmText}
+          {loading ? 'Memproses...' : confirmText}
         </Button>
+
       </DialogActions>
     </Dialog>
   )

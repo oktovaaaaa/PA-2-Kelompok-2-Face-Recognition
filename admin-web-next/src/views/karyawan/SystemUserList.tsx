@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+
 import {
   Card,
   Table,
@@ -32,6 +33,7 @@ import {
   Button,
   Grid
 } from '@mui/material'
+
 import { employeeService, Employee } from '../../libs/employeeService'
 import { formatFullDate } from '@/utils/dateFormatter'
 
@@ -55,11 +57,13 @@ const SystemUserList = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const [userData, companyData] = await Promise.all([
         employeeService.getAllSystemUsers(statusFilter),
         employeeService.getAllCompanies()
       ])
+
       setUsers(userData || [])
       setCompanies(companyData || [])
       setPage(0)
@@ -76,10 +80,13 @@ const SystemUserList = () => {
 
   const handleToggleCompanyStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+
     setIsUpdatingStatus(true)
+
     try {
       await employeeService.updateCompanyStatus(id, newStatus)
       await loadData()
+
       if (selectedCompany && selectedCompany.id === id) {
         setSelectedCompany({ ...selectedCompany, status: newStatus })
       }
@@ -112,6 +119,7 @@ const SystemUserList = () => {
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     const compA = a.company?.name || 'Sistem'
     const compB = b.company?.name || 'Sistem'
+
     if (compA !== compB) return compA.localeCompare(compB)
 
     if (a.role === 'ADMIN' && b.role !== 'ADMIN') return -1
@@ -232,6 +240,7 @@ const SystemUserList = () => {
                 ) : paginatedUsers.map((row: any) => {
                   const currentCompany = row.company?.name || 'Lainnya / Sistem'
                   const showHeader = currentCompany !== lastCompany
+
                   lastCompany = currentCompany
 
                   return (

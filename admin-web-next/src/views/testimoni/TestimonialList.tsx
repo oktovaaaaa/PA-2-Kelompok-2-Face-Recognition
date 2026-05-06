@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+
 import {
   Card,
   Table,
@@ -26,6 +27,7 @@ import {
   Button,
   Rating
 } from '@mui/material'
+
 import { employeeService } from '../../libs/employeeService'
 import { formatFullDate } from '@/utils/dateFormatter'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -48,8 +50,10 @@ const TestimonialList = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const data = await employeeService.getAllTestimonials()
+
       setTestimonials(data || [])
       setPage(0)
     } catch (error) {
@@ -67,6 +71,7 @@ const TestimonialList = () => {
   const handleDelete = async () => {
     if (deleteConfirmId === null) return
     setIsDeleting(true)
+
     try {
       await employeeService.deleteTestimonial(deleteConfirmId)
       showNotification('Testimoni berhasil dihapus', 'success')
@@ -93,7 +98,9 @@ const TestimonialList = () => {
   const filteredTestimonials = testimonials.filter((t: any) => {
     const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
+
+    
+return matchesSearch
   })
 
   const paginatedTestimonials = filteredTestimonials.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)

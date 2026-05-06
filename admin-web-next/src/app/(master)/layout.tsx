@@ -1,7 +1,7 @@
-'use client'
-
 import React from 'react'
+
 import Box from '@mui/material/Box'
+
 import SuperAdminSideNav from '@/components/super-admin/SideNav'
 import Providers from '@components/Providers'
 

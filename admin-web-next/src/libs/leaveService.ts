@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return {
+
+    
+return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -18,7 +20,9 @@ export const formatImageUrl = (url?: string) => {
     
     // Ensure no double slashes
     const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
-    return `${BASE_URL}/${cleanUrl}`;
+
+    
+return `${BASE_URL}/${cleanUrl}`;
 };
 
 export interface LeaveRequest {
@@ -42,6 +46,7 @@ export const leaveService = {
   // Admin methods
   async getLeaves(params: { status?: string; month?: number; year?: number; search?: string }) {
     let url = `${API_URL}/admin/leaves?`;
+
     if (params.status) url += `status=${params.status}&`;
     if (params.month) url += `month=${params.month}&`;
     if (params.year) url += `year=${params.year}&`;
@@ -53,8 +58,10 @@ export const leaveService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) throw new Error(data.message || 'Gagal mengambil data izin.');
-    return data.data as LeaveRequest[];
+    
+return data.data as LeaveRequest[];
   },
 
   async approveLeave(id: string, note?: string) {
@@ -65,8 +72,10 @@ export const leaveService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) throw new Error(data.message || 'Gagal menyetujui izin.');
-    return data;
+    
+return data;
   },
 
   async rejectLeave(id: string, note: string) {
@@ -77,8 +86,10 @@ export const leaveService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) throw new Error(data.message || 'Gagal menolak izin.');
-    return data;
+    
+return data;
   },
 
   async deleteLeave(id: string) {
@@ -88,8 +99,10 @@ export const leaveService = {
     });
 
     const data = await response.json();
+
     if (!response.ok) throw new Error(data.message || 'Gagal menghapus izin.');
-    return data;
+    
+return data;
   },
 
   // Admin creating leave for employee
@@ -108,7 +121,9 @@ export const leaveService = {
     });
 
     const resData = await response.json();
+
     if (!response.ok) throw new Error(resData.message || 'Gagal menambahkan izin.');
-    return resData.data as LeaveRequest;
+    
+return resData.data as LeaveRequest;
   }
 }

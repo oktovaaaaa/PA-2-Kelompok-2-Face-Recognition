@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
+
 import {
   Card,
   Table,
@@ -23,7 +24,9 @@ import {
   TextField,
   InputAdornment
 } from '@mui/material'
-import { employeeService, Employee } from '../../libs/employeeService'
+
+import type { Employee } from '../../libs/employeeService';
+import { employeeService } from '../../libs/employeeService'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useNotification } from '@/contexts/NotificationContext'
 
@@ -39,6 +42,7 @@ const EmployeeApproval = () => {
   // Modal States
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
   const [confirmConfig, setConfirmConfig] = useState<{
     title: string, 
     message: string, 
@@ -52,8 +56,10 @@ const EmployeeApproval = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const data = await employeeService.getPendingEmployees()
+
       setEmployees(data || [])
       setPage(0)
     } catch (error) {
@@ -85,6 +91,7 @@ const EmployeeApproval = () => {
       message: `Apakah Anda yakin ingin menyetujui pendaftaran ${emp.name}? Karyawan akan dapat mulai melakukan absensi.`,
       action: async () => {
         setActionLoading(true)
+
         try {
           await employeeService.approveEmployee(emp.id)
           showNotification('Karyawan berhasil disetujui!', 'success')
@@ -107,6 +114,7 @@ const EmployeeApproval = () => {
       message: `Tolak pendaftaran ${emp.name}? Data karyawan akan dihapus secara permanen sehingga email mereka bisa digunakan kembali.`,
       action: async () => {
         setActionLoading(true)
+
         try {
           await employeeService.rejectEmployee(emp.id)
           showNotification('Pendaftaran ditolak dan data dihapus.', 'info')

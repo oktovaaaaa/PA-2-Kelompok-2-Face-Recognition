@@ -2,17 +2,20 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+
 import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
+
 import LeaveHeader from './LeaveHeader'
 import LeaveCalendar from './LeaveCalendar'
 import LeaveTable from './LeaveTable'
 import LeaveDetailModal from './LeaveDetailModal'
 import LeaveRequestModal from './LeaveRequestModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { leaveService, LeaveRequest } from '@/libs/leaveService'
+import type { LeaveRequest } from '@/libs/leaveService';
+import { leaveService } from '@/libs/leaveService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const LeavePage = () => {
@@ -31,8 +34,10 @@ const LeavePage = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const data = await leaveService.getLeaves({ year: new Date().getFullYear() })
+
       setLeaves(data)
       
       const s = {
@@ -41,6 +46,7 @@ const LeavePage = () => {
         approved: data.filter(l => l.status === 'APPROVED').length,
         rejected: data.filter(l => l.status === 'REJECTED').length
       }
+
       setStats(s)
     } catch (error) {
       console.error(error)

@@ -1,7 +1,10 @@
 // src/views/dashboard/AttendanceSummaryPie.tsx
 'use client'
 
+import { useState, useEffect } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
@@ -9,8 +12,8 @@ import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import type { ApexOptions } from 'apexcharts'
-import { DashboardSummary } from '@/libs/dashboardService'
-import { useState, useEffect } from 'react'
+
+import type { DashboardSummary } from '@/libs/dashboardService'
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
@@ -25,6 +28,7 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
   const isDataEmpty = !summary || (
     (summary.present || 0) === 0 &&
     (summary.late || 0) === 0 &&

@@ -1,6 +1,8 @@
 "use client"
+
 // src/views/jabatan/PositionList.tsx
 import React, { useEffect, useState, useCallback } from 'react'
+
 import {
   Card,
   Typography,
@@ -21,7 +23,9 @@ import {
   CardContent,
   Divider
 } from '@mui/material'
-import { employeeService, Position } from '../../libs/employeeService'
+
+import type { Position } from '../../libs/employeeService';
+import { employeeService } from '../../libs/employeeService'
 import { useNotification } from '../../contexts/NotificationContext'
 import PositionFormModal from './PositionFormModal'
 
@@ -38,8 +42,10 @@ const PositionList = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const data = await employeeService.getPositions()
+
       setPositions(data || [])
     } catch (error) {
       console.error(error)
@@ -64,6 +70,7 @@ const PositionList = () => {
 
   const confirmDelete = async () => {
     if (!selectedPosition) return
+
     try {
       await employeeService.deletePosition(selectedPosition.id)
       showNotification('Jabatan berhasil dihapus', 'success')

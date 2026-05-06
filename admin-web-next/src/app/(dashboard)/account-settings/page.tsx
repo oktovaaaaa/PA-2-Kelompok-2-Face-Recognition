@@ -2,7 +2,9 @@
 'use client'
 
 import { useState, useEffect, type ReactElement } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import AccountSettings from '@views/account-settings'
 
 const AccountTab = dynamic(() => import('@views/account-settings/account'))
@@ -14,6 +16,7 @@ const AccountSettingsPage = () => {
 
   useEffect(() => {
     const savedRole = localStorage.getItem('role')
+
     setRole(savedRole)
   }, [])
 

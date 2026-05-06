@@ -1,9 +1,12 @@
 // src/contexts/NotificationContext.tsx
 'use client'
 
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useState } from 'react'
+
 import Snackbar from '@mui/material/Snackbar'
-import Alert, { AlertColor } from '@mui/material/Alert'
+import type { AlertColor } from '@mui/material/Alert';
+import Alert from '@mui/material/Alert'
 
 interface NotificationContextType {
   showNotification: (message: string, severity?: AlertColor) => void
@@ -13,10 +16,13 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const useNotification = () => {
   const context = useContext(NotificationContext)
+
   if (!context) {
     throw new Error('useNotification must be used within a NotificationProvider')
   }
-  return context
+
+  
+return context
 }
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
@@ -34,6 +40,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     if (reason === 'clickaway') {
       return
     }
+
     setOpen(false)
   }
 

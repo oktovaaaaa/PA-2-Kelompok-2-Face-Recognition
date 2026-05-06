@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
@@ -12,6 +13,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
+
 import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 
@@ -38,7 +40,9 @@ const SecurityTab = () => {
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
+
+      
+return () => clearTimeout(timer)
     }
   }, [countdown])
 
@@ -46,6 +50,7 @@ const SecurityTab = () => {
     if (countdown > 0) return
 
     setLoading(true)
+
     try {
       await settingService.requestOTP()
       showNotification('Kode verifikasi OTP telah dikirim ke email Anda. Silakan cek kotak masuk.', 'info')
@@ -64,6 +69,7 @@ const SecurityTab = () => {
     if (!passwordData.otp) return showNotification('Harap masukkan kode OTP verifikasi.', 'warning')
 
     setLoading(true)
+
     try {
       await settingService.changePassword({
         old_password: passwordData.old,
@@ -86,6 +92,7 @@ const SecurityTab = () => {
     if (!pinData.otp) return showNotification('Harap masukkan kode OTP verifikasi.', 'warning')
 
     setLoading(true)
+
     try {
       await settingService.changePIN({
         old_pin: pinData.old,

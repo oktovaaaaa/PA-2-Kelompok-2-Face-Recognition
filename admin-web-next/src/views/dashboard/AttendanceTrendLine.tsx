@@ -1,15 +1,19 @@
 // src/views/dashboard/AttendanceTrendLine.tsx
 'use client'
 
+import { useState, useEffect } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import type { ApexOptions } from 'apexcharts'
-import { AttendanceTrend } from '@/libs/dashboardService'
-import { useState, useEffect } from 'react'
+
 import { useTheme } from '@mui/material/styles'
+
+import type { AttendanceTrend } from '@/libs/dashboardService'
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
@@ -72,7 +76,8 @@ const AttendanceTrendLine = ({ trend }: Props) => {
     },
     tooltip: {
       theme: theme.palette.mode as 'light' | 'dark',
-      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+      custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
+
         const labels = w.globals.labels;
         const date = labels[dataPointIndex];
         const isDark = theme.palette.mode === 'dark';
@@ -80,7 +85,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         // All categories are null, 'null', undefined, or 0 means it's a holiday
         const isHoliday = series.every((s: any) => {
           const v = s[dataPointIndex];
-          return v === null || v === 'null' || v === 0 || v === undefined || isNaN(Number(v));
+
+          
+return v === null || v === 'null' || v === 0 || v === undefined || isNaN(Number(v));
         });
         
         if (isHoliday) {
@@ -115,6 +122,7 @@ const AttendanceTrendLine = ({ trend }: Props) => {
           const val = (v === null || v === 'null' || v === undefined || isNaN(Number(v))) ? 0 : Number(v);
           const name = w.globals.seriesNames[idx];
           const color = w.globals.colors[idx];
+
           html += `<div class="flex items-center justify-between gap-8 py-1.5">
             <div class="flex items-center gap-3">
               <span class="h-2.5 w-2.5 rounded-full shadow-sm" style="background-color: ${color}"></span>
@@ -125,7 +133,8 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         });
         
         html += `</div>`;
-        return html;
+        
+return html;
       }
     }
   }
@@ -141,7 +150,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         (trend?.early_leave?.[i] ?? 0) === 0 && 
         (trend?.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     late: trend?.late.map((v, i) => {
       const isHoliday = (
@@ -152,7 +163,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         (trend?.early_leave?.[i] ?? 0) === 0 && 
         (trend?.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     absent: trend?.absent.map((v, i) => {
       const isHoliday = (
@@ -163,7 +176,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         (trend?.early_leave?.[i] ?? 0) === 0 && 
         (trend?.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     leave_sick: trend?.leave_sick.map((v, i) => {
       const isHoliday = (
@@ -174,7 +189,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         (trend?.early_leave?.[i] ?? 0) === 0 && 
         (trend?.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     early_leave: trend?.early_leave.map((v, i) => {
       const isHoliday = (
@@ -185,7 +202,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         (trend?.early_leave?.[i] ?? 0) === 0 && 
         (trend?.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     late_early_leave: trend?.late_early_leave.map((v, i) => {
       const isHoliday = (
@@ -196,7 +215,9 @@ const AttendanceTrendLine = ({ trend }: Props) => {
         (trend?.early_leave?.[i] ?? 0) === 0 && 
         (trend?.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || []
   };
 

@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return {
+
+    
+return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -52,9 +54,12 @@ export const dashboardService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat ringkasan dashboard.');
-        return data.data as DashboardSummary;
+        
+return data.data as DashboardSummary;
     },
 
     async getTrend(filter: 'today' | '7days' | 'month' | 'year' = '7days'): Promise<AttendanceTrend> {
@@ -62,9 +67,12 @@ export const dashboardService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat tren kehadiran.');
-        return data.data as AttendanceTrend;
+        
+return data.data as AttendanceTrend;
     },
 
     async generateInviteToken(): Promise<{ token: string }> {
@@ -72,21 +80,28 @@ export const dashboardService = {
             method: 'POST',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal membuat token undangan.');
-        return data.data as { token: string };
+        
+return data.data as { token: string };
     },
 
     async getAttendanceLogs(date?: string): Promise<AttendanceLog[]> {
         // Use start_date and end_date for consistency with the backend AdminGetAttendanceHistory
         const params = date ? `?start_date=${date}&end_date=${date}&filter=today` : '';
+
         const response = await fetch(`${API_URL}/admin/attendance${params}`, {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat log absensi.');
-        return data.data as AttendanceLog[];
+        
+return data.data as AttendanceLog[];
     },
 
     // SUPER ADMIN SERVICES
@@ -95,9 +110,12 @@ export const dashboardService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat statistik Super Admin.');
-        return data.data;
+        
+return data.data;
     },
 
     async getRegistrationTrend(year: number): Promise<number[]> {
@@ -105,9 +123,12 @@ export const dashboardService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat tren pendaftaran.');
-        return data.data as number[];
+        
+return data.data as number[];
     },
 
     async getRegistrationYears(): Promise<number[]> {
@@ -115,8 +136,11 @@ export const dashboardService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar tahun.');
-        return data.data as number[];
+        
+return data.data as number[];
     }
 };

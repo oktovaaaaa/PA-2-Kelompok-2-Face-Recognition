@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -56,7 +57,9 @@ const AttendanceCalendar = () => {
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1
             const status = attendanceData[day] || ''
-            return (
+
+            
+return (
               <Grid item xs={1.7} key={day}>
                 <Card 
                   variant='outlined' 

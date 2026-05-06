@@ -3,7 +3,9 @@
 'use client'
 
 import { useState } from 'react'
+
 import { Box, Typography, Tabs, Tab, Card, CardContent, Divider } from '@mui/material'
+
 import BonusManager from './BonusManager'
 import PenaltyManager from '../operasional/PenaltyManager'
 

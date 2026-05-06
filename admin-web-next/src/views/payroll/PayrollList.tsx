@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
+
 import {
   Card,
   Table,
@@ -25,8 +26,11 @@ import {
   CircularProgress,
   TablePagination
 } from '@mui/material'
-import { payrollService, Salary } from '@/libs/payrollService'
-import { employeeService, Position } from '@/libs/employeeService'
+
+import type { Salary } from '@/libs/payrollService';
+import { payrollService } from '@/libs/payrollService'
+import type { Position } from '@/libs/employeeService';
+import { employeeService } from '@/libs/employeeService'
 import SalaryDetailModal from './SalaryDetailModal'
 import { useNotification } from '@/contexts/NotificationContext'
 
@@ -59,6 +63,7 @@ const PayrollList = () => {
         employeeService.getPositions(),
         payrollService.getPayrollYears()
       ])
+
       setPositions(posData || [])
       if (yearData && yearData.length > 0) setYears(yearData)
     } catch (error) {
@@ -68,6 +73,7 @@ const PayrollList = () => {
 
   const loadSalaries = useCallback(async () => {
     setLoading(true)
+
     try {
       const data = await payrollService.getAdminSalaries({
         month,
@@ -75,6 +81,7 @@ const PayrollList = () => {
         position_id: positionId === 'all' ? undefined : positionId,
         search: search || undefined
       })
+
       setSalaries(data || [])
       setPage(0)
     } catch (error) {
@@ -187,7 +194,9 @@ const PayrollList = () => {
                   <TableRow><TableCell colSpan={7} align="center" sx={{ py: 10 }}>Tidak ada data payroll untuk periode ini.</TableCell></TableRow>
                 ) : paginatedData.map((row) => {
                   const balance = row.total_salary - row.paid_amount
-                  return (
+
+                  
+return (
                     <TableRow key={row.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>

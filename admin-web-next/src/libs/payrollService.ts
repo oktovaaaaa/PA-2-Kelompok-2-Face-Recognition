@@ -4,13 +4,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
 
 const getAuthHeaders = (isMultipart = false) => {
   const token = localStorage.getItem('token')
+
   const headers: any = {
     'Authorization': `Bearer ${token}`
   }
+
   if (!isMultipart) {
     headers['Content-Type'] = 'application/json'
   }
-  return headers
+
+  
+return headers
 }
 
 export interface SalaryPayment {
@@ -54,6 +58,7 @@ export const payrollService = {
   // 1. Get Payroll List for Admin
   async getAdminSalaries(filters: { month?: number; year?: number; position_id?: string; search?: string }) {
     const params = new URLSearchParams()
+
     if (filters.month) params.append('month', filters.month.toString())
     if (filters.year) params.append('year', filters.year.toString())
     if (filters.position_id) params.append('position_id', filters.position_id)
@@ -65,14 +70,18 @@ export const payrollService = {
     })
 
     const data = await response.json()
+
     if (!response.ok) throw new Error(data.message || 'Gagal mengambil data payroll.')
-    return data.data as Salary[]
+    
+return data.data as Salary[]
   },
 
   // 2. Process Payment (Full or Partial)
   async paySalary(salaryId: string, amount: string, proofFile?: File) {
     const formData = new FormData()
+
     formData.append('amount', amount)
+
     if (proofFile) {
       formData.append('proof', proofFile)
     }
@@ -84,8 +93,10 @@ export const payrollService = {
     })
 
     const data = await response.json()
+
     if (!response.ok) throw new Error(data.message || 'Gagal memproses pembayaran.')
-    return data.data as Salary
+    
+return data.data as Salary
   },
 
   // 3. Simple Years Fetcher (Reuse from attendance if needed, but let's have it here)
@@ -94,7 +105,10 @@ export const payrollService = {
       method: 'GET',
       headers: getAuthHeaders()
     })
+
     const data = await response.json()
-    return data.data as string[]
+
+    
+return data.data as string[]
   }
 }

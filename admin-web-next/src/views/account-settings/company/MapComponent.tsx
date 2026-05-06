@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect } from 'react'
+
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
@@ -18,12 +19,14 @@ L.Marker.prototype.options.icon = DefaultIcon
 
 const MapUpdater = ({ center }: { center: [number, number] }) => {
   const map = useMap()
+
   useEffect(() => {
     if (!isNaN(center[0]) && !isNaN(center[1])) {
       map.setView(center)
     }
   }, [center, map])
-  return null
+  
+return null
 }
 
 interface MapComponentProps {
@@ -53,6 +56,7 @@ const MapComponent = ({ latitude, longitude, radius, onLocationChange }: MapComp
           dragend: (e: any) => {
             const marker = e.target
             const position = marker.getLatLng()
+
             onLocationChange(position.lat, position.lng)
           },
         }}

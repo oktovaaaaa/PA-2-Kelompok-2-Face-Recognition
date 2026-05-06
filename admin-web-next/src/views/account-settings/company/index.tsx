@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -10,7 +11,9 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
 import Box from '@mui/material/Box'
-import { settingService, Company } from '@/libs/settingService'
+
+import type { Company } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 import LocationSettings from './LocationSettings'
 
@@ -23,6 +26,7 @@ const CompanyTab = () => {
   const loadCompany = async () => {
     try {
       const data = await settingService.getCompany()
+
       setFormData(data)
     } catch (error) {
       console.error(error)
@@ -45,6 +49,7 @@ const CompanyTab = () => {
     e.preventDefault()
     if (!formData) return
     setSaveLoading(true)
+
     try {
       await settingService.updateCompany({
         Name: formData.name,

@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -11,8 +12,10 @@ import TextField from '@mui/material/TextField'
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
-import { Holiday } from '@/libs/holidayService'
+
 import { format } from 'date-fns'
+
+import type { Holiday } from '@/libs/holidayService'
 
 interface Props {
   open: boolean
@@ -49,6 +52,7 @@ const HolidayModal = ({ open, onClose, holiday, onSubmit }: Props) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 

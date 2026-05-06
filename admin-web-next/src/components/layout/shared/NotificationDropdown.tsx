@@ -28,7 +28,8 @@ import { formatDistanceToNow } from 'date-fns'
 import { id } from 'date-fns/locale'
 
 // Lib Imports
-import { settingService, Notification } from '@/libs/settingService'
+import type { Notification } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -55,6 +56,7 @@ const NotificationDropdown = () => {
   const fetchNotifications = async () => {
     try {
       const data = await settingService.getNotifications()
+
       setNotifications(data.notifications || [])
       setUnreadCount(data.unread_count || 0)
     } catch (error) {
@@ -64,9 +66,12 @@ const NotificationDropdown = () => {
 
   useEffect(() => {
     fetchNotifications()
+
     // Polling every 30 seconds
     const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
+
+    
+return () => clearInterval(interval)
   }, [])
 
   const handleDropdownOpen = () => {
@@ -78,6 +83,7 @@ const NotificationDropdown = () => {
     if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
       return
     }
+
     setOpen(false)
   }
 
@@ -174,7 +180,9 @@ const NotificationDropdown = () => {
                     ) : (
                       notifications.map((notif) => {
                         const { icon, color, bg } = getNotifIcon(notif.type)
-                        return (
+
+                        
+return (
                           <MenuItem 
                             key={notif.id} 
                             onClick={() => handleMarkAsRead(notif.id, notif.ref_id, notif.type)}

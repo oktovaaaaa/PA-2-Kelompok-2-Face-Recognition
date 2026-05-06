@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+
 import type { ChildrenType } from '@core/types'
 import Providers from '@components/Providers'
 

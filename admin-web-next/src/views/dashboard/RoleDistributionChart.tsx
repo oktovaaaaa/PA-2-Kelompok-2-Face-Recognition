@@ -1,14 +1,16 @@
 // src/views/dashboard/RoleDistributionChart.tsx
 'use client'
 
+import { useState, useEffect } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import { useTheme } from '@mui/material/styles'
 import type { ApexOptions } from 'apexcharts'
-import { useState, useEffect } from 'react'
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
@@ -29,9 +31,11 @@ const RoleDistributionChart = ({ distribution }: Props) => {
     .filter(([role]) => !role.toUpperCase().includes('SUPER_ADMIN') && !role.toUpperCase().includes('SUPER ADMIN'))
     .reduce((acc, [role, count]) => {
       let label = role.replace('ROLE_', '').replace('_', ' ')
+
       if (label === 'ADMIN') label = 'Bos'
       if (label === 'EMPLOYEE') label = 'Karyawan'
-      return { ...acc, [label]: count }
+      
+return { ...acc, [label]: count }
     }, {} as { [key: string]: number })
 
   const labels = Object.keys(filteredData)

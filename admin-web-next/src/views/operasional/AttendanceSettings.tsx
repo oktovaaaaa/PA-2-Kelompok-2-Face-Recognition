@@ -2,12 +2,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import { 
   Card, CardHeader, CardContent, Grid, TextField, 
   Button, Typography, Box, CircularProgress, IconButton,
   Divider, InputAdornment, Tooltip
 } from '@mui/material'
-import { settingService, AttendanceSettings, PenaltyTier } from '@/libs/settingService'
+
+import type { AttendanceSettings, PenaltyTier } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const AttendanceSettingsTab = () => {
@@ -21,24 +24,30 @@ const AttendanceSettingsTab = () => {
   const formatNumber = (val: number | string) => {
     if (val === undefined || val === null || val === '') return ''
     const str = val.toString().replace(/\D/g, '')
-    return str.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+    
+return str.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   }
 
   // Helper untuk parse string ber-titik kembali ke number
   const parseNumber = (val: string) => {
     const clean = val.replace(/\./g, '')
-    return parseInt(clean, 10) || 0
+
+    
+return parseInt(clean, 10) || 0
   }
 
   const loadSettings = async () => {
     try {
       const data = await settingService.getAttendanceSettings()
+
       setSettings(data)
       
       // Parse late_penalty_tiers JSON string from backend: [{"hours": 1, "penalty": 10000}]
       if (data.late_penalty_tiers) {
         try {
           const parsed = JSON.parse(data.late_penalty_tiers)
+
           setLocalTiers(parsed)
         } catch (e) {
           console.error("Error parsing tiers:", e)
@@ -60,11 +69,13 @@ const AttendanceSettingsTab = () => {
   const handleSave = async () => {
     if (!settings) return
     setSaveLoading(true)
+
     try {
       const payload = {
         ...settings,
         late_penalty_tiers: JSON.stringify(localTiers)
       }
+
       await settingService.updateAttendanceSettings(payload)
       showNotification('Pengaturan operasional berhasil diperbarui!', 'success')
       loadSettings()
@@ -81,12 +92,14 @@ const AttendanceSettingsTab = () => {
 
   const removeTier = (index: number) => {
     const newTiers = [...localTiers]
+
     newTiers.splice(index, 1)
     setLocalTiers(newTiers)
   }
 
   const updateTier = (index: number, field: keyof PenaltyTier, value: number) => {
     const newTiers = [...localTiers]
+
     newTiers[index] = { ...newTiers[index], [field]: value }
     setLocalTiers(newTiers)
   }

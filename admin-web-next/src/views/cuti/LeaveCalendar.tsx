@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Box from '@mui/material/Box'
@@ -10,8 +11,10 @@ import IconButton from '@mui/material/IconButton'
 import Grid from '@mui/material/Grid'
 import Tooltip from '@mui/material/Tooltip'
 import Badge from '@mui/material/Badge'
-import { LeaveRequest } from '@/libs/leaveService'
+
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns'
+
+import type { LeaveRequest } from '@/libs/leaveService'
 
 interface Props {
   leaves: LeaveRequest[]
@@ -41,7 +44,9 @@ const LeaveCalendar = ({ leaves, onDateClick }: Props) => {
 
   const renderDays = () => {
     const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
-    return (
+
+    
+return (
       <Grid container spacing={1} sx={{ mb: 2 }}>
         {days.map((day, i) => (
           <Grid item xs={12/7} key={i} sx={{ textAlign: 'center' }}>
@@ -74,7 +79,9 @@ const LeaveCalendar = ({ leaves, onDateClick }: Props) => {
         const dayLeaves = leaves.filter(l => {
            // We'll normalize date strings from backend
            const lDate = new Date(l.created_at)
-           return isSameDay(lDate, cloneDay)
+
+           
+return isSameDay(lDate, cloneDay)
         })
 
         days.push(
@@ -125,6 +132,7 @@ const LeaveCalendar = ({ leaves, onDateClick }: Props) => {
         )
         day = addDays(day, 1)
       }
+
       rows.push(
         <Grid container spacing={0} key={day.toString()}>
           {days}
@@ -132,7 +140,9 @@ const LeaveCalendar = ({ leaves, onDateClick }: Props) => {
       )
       days = []
     }
-    return <Box sx={{ borderRadius: 1, overflow: 'hidden', border: theme => `1px solid ${theme.palette.divider}` }}>{rows}</Box>
+
+    
+return <Box sx={{ borderRadius: 1, overflow: 'hidden', border: theme => `1px solid ${theme.palette.divider}` }}>{rows}</Box>
   }
 
   return (

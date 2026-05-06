@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return {
+
+    
+return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -24,6 +26,7 @@ export interface AttendanceSettings {
     company_id: string;
     work_days: string; // format: "Monday,Tuesday,..."
     late_penalty_tiers: any;
+
     // ... fields lainnya
 }
 
@@ -34,9 +37,12 @@ export const holidayService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil data libur.');
-        return data.data as Holiday[];
+        
+return data.data as Holiday[];
     },
 
     // 2. Create Holiday
@@ -46,9 +52,12 @@ export const holidayService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal membuat hari libur.');
-        return resData.data as Holiday;
+        
+return resData.data as Holiday;
     },
 
     // 3. Update Holiday
@@ -58,9 +67,12 @@ export const holidayService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui hari libur.');
-        return resData.data as Holiday;
+        
+return resData.data as Holiday;
     },
 
     // 4. Delete Holiday
@@ -69,9 +81,12 @@ export const holidayService = {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus hari libur.');
-        return data;
+        
+return data;
     },
 
     // 5. Delete Past Holidays
@@ -80,9 +95,12 @@ export const holidayService = {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus riwayat libur.');
-        return data;
+        
+return data;
     },
 
     // 6. Get Attendance Settings (untuk work_days)
@@ -91,9 +109,12 @@ export const holidayService = {
             method: 'GET',
             headers: getAuthHeaders(),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal mengambil pengaturan.');
-        return data.data as AttendanceSettings;
+        
+return data.data as AttendanceSettings;
     },
 
     // 7. Update Attendance Settings (untuk work_days)
@@ -103,8 +124,11 @@ export const holidayService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(settings),
         });
+
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Gagal menyimpan pengaturan.');
-        return data;
+        
+return data;
     }
 };

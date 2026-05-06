@@ -2,7 +2,9 @@
 'use client'
 
 import { useState } from 'react'
+
 import { useRouter } from 'next/navigation'
+
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -22,7 +24,8 @@ import IconButton from '@mui/material/IconButton'
 import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
 
-import { settingService, Profile } from '@/libs/settingService'
+import type { Profile } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const AccountDelete = () => {
@@ -49,6 +52,7 @@ const AccountDelete = () => {
   const fetchProfile = async () => {
     try {
       const data = await settingService.getProfile()
+
       setProfile(data)
     } catch (err: any) {
       console.error('Gagal mengambil profil:', err.message)
@@ -67,7 +71,8 @@ const AccountDelete = () => {
   const handleStep2Confirm = async () => {
     if (!password.trim()) {
       setError('Password tidak boleh kosong')
-      return
+      
+return
     }
     
     setError('')
@@ -87,8 +92,10 @@ const AccountDelete = () => {
   const handleStep3Confirm = () => {
     if (phrase !== confirmationPhrase) {
       setError(`Frasa konfirmasi harus persis: ${confirmationPhrase}`)
-      return
+      
+return
     }
+
     setError('')
     setStep3Open(false)
     setTimeout(() => setStep4Open(true), 300)

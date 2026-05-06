@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+
 import { useRouter, usePathname } from 'next/navigation'
+
 import CircularProgress from '@mui/material/CircularProgress'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'

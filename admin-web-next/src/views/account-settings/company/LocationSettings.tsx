@@ -2,14 +2,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import { 
   Card, CardHeader, CardContent, Grid, TextField, 
   Button, Typography, Box, CircularProgress, IconButton,
   Divider, Tooltip, Switch, FormControlLabel, List, ListItem,
   ListItemText, Chip, Paper, InputBase, ClickAwayListener, MenuList, MenuItem
 } from '@mui/material'
-import { settingService, CompanyLocation } from '@/libs/settingService'
+
+import type { CompanyLocation } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 import ConfirmDialog from '@/components/ConfirmDialog'
 
@@ -31,6 +35,7 @@ const LocationSettings = () => {
   // Editor State
   const [isEditing, setIsEditing] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+
   const [form, setForm] = useState({
     name: '',
     latitude: -6.2088,
@@ -63,12 +68,14 @@ const LocationSettings = () => {
   const loadLocations = async () => {
     try {
       const data = await settingService.getLocations()
+
       setLocations(data)
       
       // Jika form masih kosong (awal load) dan ada data lokasi tersimpan,
       // otomatis gunakan lokasi pertama sebagai default agar tidak lari ke Jakarta
       if (data.length > 0 && !form.name && !isEditing) {
         const first = data[0]
+
         setForm({
           name: first.name,
           latitude: first.latitude,
@@ -94,7 +101,8 @@ const LocationSettings = () => {
     if (searchQuery.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
-      return;
+      
+return;
     }
 
     const timer = setTimeout(async () => {
@@ -104,7 +112,9 @@ const LocationSettings = () => {
             'User-Agent': 'Videnti-Attendance-System/1.0'
           }
         });
+
         const data = await res.json();
+
         setSuggestions(data || []);
         setShowSuggestions(true);
       } catch (e) {
@@ -120,6 +130,7 @@ const LocationSettings = () => {
       ...f, 
       latitude: parseFloat(s.lat), 
       longitude: parseFloat(s.lon),
+
       // Auto fill name if empty
       name: f.name || s.display_name.split(',')[0]
     }));
@@ -133,15 +144,19 @@ const LocationSettings = () => {
     
     setIsSearching(true)
     setShowSuggestions(false)
+
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
         headers: {
           'User-Agent': 'Videnti-Attendance-System/1.0'
         }
       })
+
       const data = await res.json()
+
       if (data && data.length > 0) {
         const { lat, lon } = data[0]
+
         setForm(f => ({ 
           ...f, 
           latitude: parseFloat(lat), 
@@ -160,6 +175,7 @@ const LocationSettings = () => {
 
   const executeSave = async () => {
     setActionLoading(true)
+
     try {
       if (isEditing && editingId) {
         await settingService.updateLocation(editingId, form)
@@ -168,6 +184,7 @@ const LocationSettings = () => {
         await settingService.createLocation(form)
         showNotification('Lokasi baru berhasil ditambahkan!', 'success')
       }
+
       setIsEditing(false)
       setEditingId(null)
       loadLocations()
@@ -182,7 +199,8 @@ const LocationSettings = () => {
   const handleSave = async () => {
     if (!form.name) {
       showNotification('Nama lokasi wajib diisi.', 'error')
-      return
+      
+return
     }
 
     setConfirmState({
@@ -204,8 +222,10 @@ const LocationSettings = () => {
     })
     setEditingId(loc.id)
     setIsEditing(true)
+
     // Find the element scroll to it
     const editor = document.getElementById('location-editor')
+
     if (editor) editor.scrollIntoView({ behavior: 'smooth' })
   }
 

@@ -1,7 +1,10 @@
 // src/views/dashboard/RegistrationTrendChart.tsx
 'use client'
 
+import { useState, useEffect } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
@@ -11,7 +14,6 @@ import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import type { ApexOptions } from 'apexcharts'
-import { useState, useEffect } from 'react'
 import { useTheme } from '@mui/material/styles'
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
@@ -38,9 +40,11 @@ const RegistrationTrendChart = ({ data, year, years, onYearChange }: Props) => {
   const barColors = data.map((val, index) => {
     if (index === 0) return '#10B981' // January default green
     const prevVal = data[index - 1]
+
     if (val > prevVal) return '#10B981' // Success/Growth Green
     if (val < prevVal) return '#EF4444' // Decline Red
-    return '#3B82F6' // Neutral/Same Blue
+    
+return '#3B82F6' // Neutral/Same Blue
   })
 
   const options: ApexOptions = {

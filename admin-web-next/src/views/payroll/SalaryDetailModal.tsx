@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import {
   Dialog,
   DialogTitle,
@@ -18,7 +19,9 @@ import {
   Avatar,
   Chip
 } from '@mui/material'
-import { payrollService, Salary } from '@/libs/payrollService'
+
+import type { Salary } from '@/libs/payrollService';
+import { payrollService } from '@/libs/payrollService'
 import { useNotification } from '@/contexts/NotificationContext'
 import { formatFullDate, formatDateInString } from '@/utils/dateFormatter'
 
@@ -40,6 +43,7 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
   useEffect(() => {
     if (open && salary) {
         const remaining = salary.total_salary - salary.paid_amount
+
         setPayAmount(remaining.toLocaleString('id-ID'))
         setProofFile(null)
     }
@@ -51,19 +55,24 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
 
   const parseDeductions = (detail: string) => {
     if (!detail) return []
+
     // Also use the date formatting utility to clean up any nested dates
     const formattedDetail = formatDateInString(detail)
-    return formattedDetail.split(';').filter(d => d.trim() !== '')
+
+    
+return formattedDetail.split(';').filter(d => d.trim() !== '')
   }
 
   const handlePay = async () => {
     if (!salary || !payAmount) return
     const rawAmount = payAmount.replace(/\./g, '')
     const amountNum = parseFloat(rawAmount)
+
     if (isNaN(amountNum) || amountNum <= 0) return showNotification('Nominal bayar tidak valid.', 'error')
     if (amountNum > balance) return showNotification('Nominal melebihi sisa gaji.', 'error')
 
     setLoading(true)
+
     try {
       await payrollService.paySalary(salary.id, rawAmount, proofFile || undefined)
       showNotification('Pembayaran berhasil dicatatkan!', 'success')
@@ -191,11 +200,15 @@ const SalaryDetailModal = ({ open, onClose, salary, onSuccess }: Props) => {
                     value={payAmount === '0' ? '' : payAmount}
                     onChange={(e) => {
                         const raw = e.target.value.replace(/[^0-9]/g, '')
+
                         if (!raw) {
                             setPayAmount('')
-                            return
+                            
+return
                         }
+
                         const num = parseInt(raw, 10)
+
                         setPayAmount(num.toLocaleString('id-ID'))
                     }}
                     InputProps={{ startAdornment: <Typography sx={{ mr: 2, fontSize: '0.875rem' }}>Rp</Typography> }}

@@ -1,7 +1,9 @@
 // src/views/account-settings/account/AccountDetails.tsx
 'use client'
 
-import { useState, useEffect, ChangeEvent } from 'react'
+import type { ChangeEvent } from 'react';
+import { useState, useEffect } from 'react'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -10,7 +12,9 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
 import Box from '@mui/material/Box'
-import { settingService, Profile } from '@/libs/settingService'
+
+import type { Profile } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const AccountDetails = () => {
@@ -25,7 +29,9 @@ const AccountDetails = () => {
   const loadProfile = async () => {
     try {
       const data = await settingService.getProfile()
+
       setFormData(data)
+
       if (data.photo_url) {
         setImgSrc(`${baseUrl}${data.photo_url}`)
       }
@@ -49,17 +55,20 @@ const AccountDetails = () => {
 
   const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+
     if (file && formData) {
       setSaveLoading(true)
+
       try {
         const res = await settingService.uploadFile(file)
         const photoUrl = res.url
+
         await settingService.updateProfile({ ...formData, photo_url: photoUrl })
         setImgSrc(`${baseUrl}${photoUrl}`)
         setFormData({ ...formData, photo_url: photoUrl })
         showNotification('Foto profil berhasil diperbarui!', 'success')
-      } catch (error) {
-        showNotification('Gagal mengunggah foto profil.', 'error')
+      } catch (error: any) {
+        showNotification(error.message || 'Gagal mengunggah foto profil.', 'error')
       } finally {
         setSaveLoading(false)
       }
@@ -70,11 +79,12 @@ const AccountDetails = () => {
     e.preventDefault()
     if (!formData) return
     setSaveLoading(true)
+
     try {
       await settingService.updateProfile(formData)
       showNotification('Perubahan profil berhasil disimpan!', 'success')
-    } catch (error) {
-      showNotification('Gagal menyimpan perubahan profil.', 'error')
+    } catch (error: any) {
+      showNotification(error.message || 'Gagal menyimpan perubahan profil.', 'error')
     } finally {
       setSaveLoading(false)
     }

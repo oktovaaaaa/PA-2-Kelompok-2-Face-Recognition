@@ -2,6 +2,7 @@
 'use client'
 
 import React from 'react'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
@@ -10,8 +11,10 @@ import IconButton from '@mui/material/IconButton'
 import Chip from '@mui/material/Chip'
 import Grid from '@mui/material/Grid'
 import Tooltip from '@mui/material/Tooltip'
-import { Holiday } from '@/libs/holidayService'
+
 import { format, isPast } from 'date-fns'
+
+import type { Holiday } from '@/libs/holidayService'
 import { formatFullDate } from '@/utils/dateFormatter'
 
 interface Props {

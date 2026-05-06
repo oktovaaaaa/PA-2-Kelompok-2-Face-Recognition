@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 import Avatar from '@mui/material/Avatar'
+
 import { attendanceService } from '@/libs/attendanceService'
 
 interface AttendanceStatsProps {
@@ -22,12 +24,14 @@ const AttendanceStats = ({ period, month, year }: AttendanceStatsProps) => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
+
       try {
         const data = await attendanceService.getDetailedSummary({
             filter: period,
             month: month,
             year: year
         })
+
         setStats(data)
       } catch (error) {
         console.error('Error fetching detailed stats:', error)
@@ -35,6 +39,7 @@ const AttendanceStats = ({ period, month, year }: AttendanceStatsProps) => {
         setLoading(false)
       }
     }
+
     fetchData()
   }, [period, month, year])
 

@@ -22,7 +22,8 @@ import Link from '@components/Link'
 // Service Imports
 import { authService } from '@/libs/auth'
 
-const ForgotPassword = () => {
+const ForgotPassword = ({ mode }: { mode: Mode }) => {
+
   // States
   const [step, setStep] = useState<'request' | 'reset'>('request')
   const [loading, setLoading] = useState(false)

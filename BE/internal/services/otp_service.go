@@ -14,11 +14,12 @@ import (
 
 func GenerateOTP(email string) (string, error) {
 
-	var lastOtp models.OTP
-	database.DB.Where("email = ? AND created_at > ?", email, time.Now().Add(-30*time.Second)).Order("created_at desc").First(&lastOtp)
-	if lastOtp.ID != "" {
+	var lastOtps []models.OTP
+	database.DB.Where("email = ? AND created_at > ?", email, time.Now().Add(-30*time.Second)).Order("created_at desc").Limit(1).Find(&lastOtps)
+	if len(lastOtps) > 0 {
 		return "", fmt.Errorf("Harap tunggu 30 detik sebelum meminta OTP baru")
 	}
+
 
 	code := fmt.Sprintf("%06d", rand.Intn(999999))
 

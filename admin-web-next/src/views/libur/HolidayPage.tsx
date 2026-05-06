@@ -2,15 +2,18 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid'
+
 import WorkDaySettings from './WorkDaySettings'
 import HolidayList from './HolidayList'
 import HolidayModal from './HolidayModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { holidayService, Holiday, AttendanceSettings } from '@/libs/holidayService'
+import type { Holiday, AttendanceSettings } from '@/libs/holidayService';
+import { holidayService } from '@/libs/holidayService'
 import { useNotification } from '@/contexts/NotificationContext'
 
 const HolidayPage = () => {
@@ -29,11 +32,14 @@ const HolidayPage = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const hData = await holidayService.getHolidays()
+
       setHolidays(hData)
       
       const sData = await holidayService.getSettings()
+
       setSettings(sData)
       setWorkDays(sData.work_days.split(',').filter(d => d !== ''))
     } catch (error) {
@@ -56,6 +62,7 @@ const HolidayPage = () => {
   const handleSaveWorkDays = async () => {
     if (!settings) return
     setSaveLoading(true)
+
     try {
       // Pastikan late_penalty_tiers dikirim sebagai objek/array, bukan string JSON mentah
       const payload = {
@@ -89,6 +96,7 @@ const HolidayPage = () => {
         await holidayService.createHoliday(formData)
         showNotification('Hari libur baru telah ditambahkan.', 'success')
       }
+
       setIsModalOpen(false)
       loadData()
     } catch (error) {
@@ -103,6 +111,7 @@ const HolidayPage = () => {
 
   const confirmDelete = async () => {
     if (!deleteId) return
+
     try {
       await holidayService.deleteHoliday(deleteId)
       showNotification('Hari libur telah dihapus.', 'success')

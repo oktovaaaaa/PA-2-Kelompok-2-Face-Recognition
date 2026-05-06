@@ -2,16 +2,20 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+
 import { 
   Card, CardHeader, CardContent, Grid, TextField, 
   Button, Typography, Box, CircularProgress, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
   Paper, Avatar, MenuItem, InputAdornment, Divider, Chip, Tabs, Tab, Autocomplete
 } from '@mui/material'
-import { settingService, ManualPenalty } from '@/libs/settingService'
-import { employeeService, Employee } from '@/libs/employeeService'
-import { attendanceService } from '@/libs/attendanceService'
+
 import { format } from 'date-fns'
+
+import { settingService, ManualPenalty } from '@/libs/settingService'
+import type { Employee } from '@/libs/employeeService';
+import { employeeService } from '@/libs/employeeService'
+import { attendanceService } from '@/libs/attendanceService'
 import { useNotification } from '@/contexts/NotificationContext'
 import { formatFullDate } from '@/utils/dateFormatter'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -72,6 +76,8 @@ const PenaltyManager = () => {
           user_id: p.user_id,
           user_name: p.user?.name || 'Karyawan',
           user_email: p.user?.email || '',
+          photo_url: p.user?.photo_url,
+
           title: p.title,
           amount: p.amount,
           date: p.date,
@@ -119,6 +125,7 @@ const PenaltyManager = () => {
       
       // 6. Simple offset-based pagination on filtered & merged data
       const startIndex = currPage * limit
+
       setUnifiedViolations(combined.slice(startIndex, startIndex + limit))
       setEmployees(eData || [])
       
@@ -149,16 +156,21 @@ const PenaltyManager = () => {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!formData.user_id || !formData.amount || !formData.title) {
         showNotification('Mohon lengkapi semua data.', 'error')
-        return
+        
+return
     }
+
     setSaveLoading(true)
+
     try {
       await settingService.createManualPenalty(formData)
       showNotification('Denda manual berhasil dicatat!', 'success')
       setFormData({ user_id: '', title: '', amount: 0, date: format(new Date(), 'yyyy-MM-dd') })
-      loadData(page, rowsPerPage, month, year, searchKeyword)
+      loadData(page, rowsPerPage, month, year, searchKeyword, tabValue)
+
     } catch (error: any) {
       showNotification(error.message || 'Gagal menambahkan denda.', 'error')
     } finally {
@@ -173,6 +185,7 @@ const PenaltyManager = () => {
 
   const confirmDelete = async () => {
     if (!selectedViolation) return
+
     try {
       if (selectedViolation.type === 'MANUAL') {
         await settingService.deletePenalty(selectedViolation.id)
@@ -180,8 +193,10 @@ const PenaltyManager = () => {
         // Attendance pardon
         await attendanceService.pardonAttendance(selectedViolation.user_id, selectedViolation.date)
       }
+
       showNotification('Sanksi berhasil dihapus/diputihkan.', 'success')
-      loadData(page, rowsPerPage, month, year, searchKeyword)
+      loadData(page, rowsPerPage, month, year, searchKeyword, tabValue)
+
     } catch (error) {
       showNotification('Gagal menghapus data sanksi.', 'error')
     }
@@ -244,6 +259,7 @@ const PenaltyManager = () => {
                     onChange={e => {
                         const rawValue = e.target.value.replace(/[^0-9]/g, '')
                         const intValue = parseInt(rawValue, 10)
+
                         setFormData({...formData, amount: isNaN(intValue) ? 0 : intValue})
                     }}
                     InputProps={{ startAdornment: <InputAdornment position="start">Rp</InputAdornment> }}

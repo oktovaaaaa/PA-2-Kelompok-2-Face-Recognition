@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
+
 import {
   Card,
   Table,
@@ -24,13 +25,14 @@ import {
   Tabs,
   CircularProgress,
   TablePagination
-} from '@mui/material'
-import { employeeService, Employee } from '../../libs/employeeService'
+, Dialog, DialogTitle, DialogContent, DialogActions, Alert, Divider } from '@mui/material'
+
+import type { Employee } from '../../libs/employeeService';
+import { employeeService } from '../../libs/employeeService'
 import EmployeeDetailModal from './EmployeeDetailModal'
 import PositionAssignModal from './PositionAssignModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useNotification } from '@/contexts/NotificationContext'
-import { Dialog, DialogTitle, DialogContent, DialogActions, Alert, Divider } from '@mui/material'
 
 const EmployeeList = () => {
   const { showNotification } = useNotification()
@@ -46,6 +48,7 @@ const EmployeeList = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isPositionOpen, setIsPositionOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
   const [confirmConfig, setConfirmConfig] = useState<{
     title: string,
     message: string,
@@ -65,8 +68,10 @@ const EmployeeList = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+
     try {
       const data = await employeeService.getEmployees(statusFilter)
+
       setEmployees(data || [])
       setPage(0)
     } catch (error) {
@@ -117,6 +122,7 @@ const EmployeeList = () => {
       setIsPositionOpen(true)
     } else if (type === 'status') {
       const isFiring = selectedEmployee.status === 'ACTIVE'
+
       setConfirmConfig({
         title: isFiring ? 'Pecat Karyawan' : 'Aktifkan Kembali',
         type: isFiring ? 'error' : 'info',
@@ -151,10 +157,12 @@ const EmployeeList = () => {
 
     if (firePhrase.trim().toUpperCase() !== requiredPhrase) {
       setFireError(`Harap ketik frasa konfirmasi dengan benar.`)
-      return
+      
+return
     }
 
     setFireLoading(true)
+
     try {
       await employeeService.fireEmployee(selectedEmployee.id)
       showNotification('Karyawan telah dinonaktifkan.', 'success')
@@ -169,12 +177,14 @@ const EmployeeList = () => {
 
   const handleAssignPosition = async (posId: string) => {
     if (!selectedEmployee) return
+
     try {
       await employeeService.assignPosition(selectedEmployee.id, posId)
       setIsPositionOpen(false)
       showNotification('Jabatan berhasil diperbarui!', 'success')
       loadData()
       const updated = employees.find(e => e.id === selectedEmployee.id)
+
       if (updated) setSelectedEmployee({ ...updated, position_id: posId })
     } catch (error) {
       showNotification('Gagal memperbarui jabatan.', 'error')

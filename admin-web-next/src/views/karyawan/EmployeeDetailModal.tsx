@@ -1,6 +1,10 @@
 "use client"
+
 // src/views/karyawan/EmployeeDetailModal.tsx
 import React, { useEffect, useState } from 'react'
+
+import dynamic from 'next/dynamic'
+
 import {
   Dialog,
   DialogTitle,
@@ -27,9 +31,12 @@ import {
   Select,
   MenuItem
 } from '@mui/material'
-import dynamic from 'next/dynamic'
-import { Employee, employeeService } from '../../libs/employeeService'
-import { ApexOptions } from 'apexcharts'
+
+import type { ApexOptions } from 'apexcharts'
+
+import type { Employee} from '../../libs/employeeService';
+import { employeeService } from '../../libs/employeeService'
+
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
@@ -96,7 +103,9 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
   const loadInitialData = async () => {
     try {
       const yearsData = await employeeService.getAttendanceYears()
+
       setAvailableYears(yearsData)
+
       if (yearsData.length > 0 && !yearsData.includes(new Date().getFullYear().toString())) {
         setSelectedYear(yearsData[0])
       }
@@ -108,9 +117,11 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
   const loadStats = async () => {
     if (!employee) return
     setLoading(true)
+
     try {
       const data = await employeeService.getEmployeeAttendance(employee.id, filterType, selectedMonth, selectedYear)
       const records = data || []
+
       setAttendanceRecords(records)
 
       const newStats = {
@@ -120,13 +131,16 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
         leave: 0,
         sick: 0,
         early_leave: 0,
+        late_early_leave: 0,
         working: 0,
         not_yet: 0,
         total: records.length
       }
 
+
       records.forEach((r: any) => {
         const s = r.status.toUpperCase()
+
         if (s === 'PRESENT') newStats.present++
         else if (s === 'LATE') newStats.late++
         else if (s === 'ABSENT') newStats.absent++
@@ -156,6 +170,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
   // EXCLUDE Working & Not Yet if not today
   const donutLabels = ['Hadir', 'Terlambat', 'Izin/Sakit', 'Alpha', 'Pulang di jam kerja', 'Terlambat & Pulang di jam kerja']
   const donutColors = [statusColors.PRESENT, statusColors.LATE, statusColors.LEAVE_SICK, statusColors.ABSENT, statusColors.EARLY_LEAVE, statusColors.LATE_EARLY_LEAVE]
+
   const donutSeries = stats ? [
     stats.present || 0,
     stats.late || 0,
@@ -201,6 +216,7 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
 
   const getStatusColor = (status: string) => {
     const s = status.toUpperCase();
+
     if (s === 'PRESENT') return statusColors.PRESENT;
     if (s === 'LATE') return statusColors.LATE;
     if (s === 'LEAVE' || s === 'SICK') return statusColors.LEAVE_SICK;
@@ -208,7 +224,8 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
     if (s === 'LATE_EARLY_LEAVE') return statusColors.LATE_EARLY_LEAVE;
     if (s === 'WORKING') return statusColors.WORKING;
     if (s === 'NOT_YET') return statusColors.NOT_YET;
-    return statusColors.ABSENT;
+    
+return statusColors.ABSENT;
   }
 
   const discreteMarkers: any[] = lineData.map((r, index) => ({
@@ -224,12 +241,14 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
       name: 'Kehadiran',
       data: lineData.map(r => {
         const s = r.status.toUpperCase();
+
         if (s === 'PRESENT') return 100;
         if (s === 'LATE') return 80;
         if (s === 'LEAVE' || s === 'SICK') return 60;
         if (s === 'EARLY_LEAVE') return 40;
         if (s === 'LATE_EARLY_LEAVE') return 20;
-        return 0; // ABSENT / WORKING / NOT_YET
+        
+return 0; // ABSENT / WORKING / NOT_YET
       })
     }
   ]
@@ -257,7 +276,8 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
           if (val >= 60) return 'Izin';
           if (val >= 40) return 'Plg Kerja';
           if (val >= 20) return 'Telat&Plg';
-          return 'Alpha';
+          
+return 'Alpha';
         }
       }
     },
@@ -269,7 +289,8 @@ const EmployeeDetailModal = ({ open, onClose, employee, onAction }: Props) => {
           if (val >= 60) return 'Izin/Sakit';
           if (val >= 40) return 'Pulang Awal';
           if (val >= 20) return 'Telat & Pulang Awal';
-          return 'Alpha';
+          
+return 'Alpha';
         }
       }
     }

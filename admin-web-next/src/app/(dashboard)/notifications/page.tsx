@@ -1,8 +1,10 @@
 'use client'
 
 import React from 'react'
+
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
+
 import NotificationList from '@views/notifications/NotificationList'
 
 export default function NotificationsPage() {

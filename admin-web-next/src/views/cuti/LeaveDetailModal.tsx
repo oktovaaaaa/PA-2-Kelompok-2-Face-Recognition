@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState } from 'react'
+
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -14,9 +15,15 @@ import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
 import Divider from '@mui/material/Divider'
 import Grid from '@mui/material/Grid'
-import { LeaveRequest, formatImageUrl } from '@/libs/leaveService'
+
 import { format, parseISO } from 'date-fns'
+
 import { id } from 'date-fns/locale'
+
+import type { LeaveRequest} from '@/libs/leaveService';
+import { formatImageUrl } from '@/libs/leaveService'
+
+
 import { formatDate } from '@/utils/dateFormatter'
 
 interface Props {
@@ -35,8 +42,10 @@ const LeaveDetailModal = ({ open, onClose, leave, onProcess }: Props) => {
 
   const formatLeaveDates = (datesJson?: string, createdAt?: string) => {
     if (!datesJson) return createdAt ? format(new Date(createdAt), 'EEEE, dd MMMM yyyy', { locale: id }) : '-'
+
     try {
       const dates: string[] = JSON.parse(datesJson)
+
       if (dates.length === 0) return createdAt ? format(new Date(createdAt), 'EEEE, dd MMMM yyyy', { locale: id }) : '-'
       if (dates.length === 1) return format(parseISO(dates[0]), 'EEEE, dd MMMM yyyy', { locale: id })
       
@@ -45,10 +54,12 @@ const LeaveDetailModal = ({ open, onClose, leave, onProcess }: Props) => {
       const last = parseISO(sorted[sorted.length - 1])
       
       let isContiguous = true
+
       for (let i = 0; i < sorted.length - 1; i++) {
         const d1 = parseISO(sorted[i])
         const d2 = parseISO(sorted[i+1])
         const diff = (d2.getTime() - d1.getTime()) / (1000 * 3600 * 24)
+
         if (diff !== 1) {
           isContiguous = false
           break
@@ -141,6 +152,7 @@ const LeaveDetailModal = ({ open, onClose, leave, onProcess }: Props) => {
                     }}
                     onClick={() => {
                         const url = formatImageUrl(leave.photo_url);
+
                         console.log('Opening leave photo:', url);
                         if (url) window.open(url, '_blank');
                     }}

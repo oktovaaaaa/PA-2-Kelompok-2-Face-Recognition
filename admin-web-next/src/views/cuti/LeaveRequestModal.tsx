@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -13,8 +14,13 @@ import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Autocomplete from '@mui/material/Autocomplete'
-import { employeeService, Employee } from '@/libs/employeeService'
+
 import { format } from 'date-fns'
+
+import type { Employee } from '@/libs/employeeService';
+import { employeeService } from '@/libs/employeeService'
+
+
 import { useNotification } from '@/contexts/NotificationContext'
 
 interface Props {
@@ -27,6 +33,7 @@ interface Props {
 const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => {
   const { showNotification } = useNotification()
   const [employees, setEmployees] = useState<Employee[]>([])
+
   const [formData, setFormData] = useState({
     user_id: '',
     type: 'IZIN',
@@ -44,6 +51,7 @@ const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => 
           console.error("Gagal mengambil karyawan:", err)
           showNotification('Gagal memuat daftar karyawan.', 'error')
         })
+
       if (selectedDate) {
         setFormData(prev => ({ ...prev, date: format(selectedDate, 'yyyy-MM-dd') }))
       }
@@ -52,6 +60,7 @@ const LeaveRequestModal = ({ open, onClose, selectedDate, onSubmit }: Props) => 
 
   const handleChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target
+
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 

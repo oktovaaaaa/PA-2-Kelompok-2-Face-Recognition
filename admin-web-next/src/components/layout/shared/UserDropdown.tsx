@@ -22,7 +22,8 @@ import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 
 // Lib Imports
-import { settingService, Profile, formatImageUrl } from '@/libs/settingService'
+import type { Profile} from '@/libs/settingService';
+import { settingService, formatImageUrl } from '@/libs/settingService'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
@@ -49,11 +50,13 @@ const UserDropdown = () => {
     const fetchProfile = async () => {
       try {
         const data = await settingService.getProfile()
+
         setProfile(data)
       } catch (error) {
         console.error('Error fetching profile:', error)
       }
     }
+
     fetchProfile()
   }, [])
 

@@ -23,7 +23,7 @@ const FooterContent = () => {
       <p>
         <span>{`© ${new Date().getFullYear()}, Dibuat oleh `}</span>
         <Link href='https://www.oktovaaaaa.cloud/' target='_blank' className='text-primary'>
-          Oktovaaaaa
+          PA 2 Kelompok 2
         </Link>
       </p>
 

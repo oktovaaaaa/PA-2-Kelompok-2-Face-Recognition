@@ -1,13 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
 import dynamic from 'next/dynamic'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import { useTheme } from '@mui/material/styles'
+
 import { attendanceService } from '@/libs/attendanceService'
 
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
@@ -17,7 +20,9 @@ const getMonthName = (month: number) => {
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ]
-  return months[month - 1] || `Bulan ${month}`
+
+  
+return months[month - 1] || `Bulan ${month}`
 }
 
 const statusColors = {
@@ -55,12 +60,14 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
           attendanceService.getDetailedSummary({ filter: period, month, year }),
           attendanceService.getAttendanceTrend({ filter: period, month, year })
         ])
+
         setStats(summary)
         setTrendData(trend)
       } catch (error) {
         console.error('Error fetching charts data:', error)
       }
     }
+
     fetchData()
   }, [period, month, year])
 
@@ -160,7 +167,9 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         (trendData.early_leave?.[i] ?? 0) === 0 && 
         (trendData.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     late: trendData.late?.map((v: number, i: number) => {
       const isHoliday = (
@@ -171,7 +180,9 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         (trendData.early_leave?.[i] ?? 0) === 0 && 
         (trendData.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     absent: trendData.absent?.map((v: number, i: number) => {
       const isHoliday = (
@@ -182,7 +193,9 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         (trendData.early_leave?.[i] ?? 0) === 0 && 
         (trendData.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     leave_sick: trendData.leave_sick?.map((v: number, i: number) => {
       const isHoliday = (
@@ -193,7 +206,9 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         (trendData.early_leave?.[i] ?? 0) === 0 && 
         (trendData.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     early_leave: trendData.early_leave?.map((v: number, i: number) => {
       const isHoliday = (
@@ -204,7 +219,9 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         (trendData.early_leave?.[i] ?? 0) === 0 && 
         (trendData.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || [],
     late_early_leave: trendData.late_early_leave?.map((v: number, i: number) => {
       const isHoliday = (
@@ -215,7 +232,9 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         (trendData.early_leave?.[i] ?? 0) === 0 && 
         (trendData.late_early_leave?.[i] ?? 0) === 0
       );
-      return isHoliday ? null : v;
+
+      
+return isHoliday ? null : v;
     }) || []
   };
 
@@ -261,14 +280,17 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
     },
     tooltip: { 
       theme: isDark ? 'dark' : 'light',
-      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+      custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
+
         const labels = w.globals.labels;
         const date = labels[dataPointIndex];
         
         // All categories are null, 'null', undefined, 0 or NaN means it's a holiday
         const isHoliday = series.every((s: any) => {
           const v = s[dataPointIndex];
-          return v === null || v === 'null' || v === 0 || v === undefined || isNaN(Number(v));
+
+          
+return v === null || v === 'null' || v === 0 || v === undefined || isNaN(Number(v));
         });
         
         if (isHoliday) {
@@ -303,6 +325,7 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
           const val = (v === null || v === 'null' || v === undefined || isNaN(Number(v))) ? 0 : Number(v);
           const name = w.globals.seriesNames[idx];
           const color = w.globals.colors[idx];
+
           html += `<div class="flex items-center justify-between gap-8 py-1.5">
             <div class="flex items-center gap-2.5">
               <span class="h-2.5 w-2.5 rounded-full shadow-sm" style="background-color: ${color}"></span>
@@ -313,7 +336,8 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
         });
         
         html += `</div>`;
-        return html;
+        
+return html;
       }
     },
     legend: { 
@@ -327,7 +351,8 @@ const AttendanceCharts = ({ period, month, year }: AttendanceChartsProps) => {
     if (period === 'today') return 'Tren Kedatangan Hari Ini (Per Jam)'
     if (period === 'week') return 'Tren Kehadiran (7 Hari Terakhir)'
     if (period === 'month') return `Tren Kehadiran Bulanan (${getMonthName(month)})`
-    return `Tren Kehadiran Tahunan (${year})`
+    
+return `Tren Kehadiran Tahunan (${year})`
   }
 
   return (

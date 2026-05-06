@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+
+import { useRouter } from 'next/navigation'
+
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -19,11 +22,11 @@ import Box from '@mui/material/Box'
 
 import { formatDistanceToNow } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
-import { useRouter } from 'next/navigation'
 import classnames from 'classnames'
 
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { settingService, Notification } from '@/libs/settingService'
+import type { Notification } from '@/libs/settingService';
+import { settingService } from '@/libs/settingService'
 
 const NotificationList = () => {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -40,6 +43,7 @@ const NotificationList = () => {
   const fetchNotifs = async () => {
     try {
       const data = await settingService.getNotifications()
+
       setNotifications(data.notifications || [])
       setUnreadCount(data.unread_count || 0)
     } catch (err) {
@@ -94,6 +98,7 @@ const NotificationList = () => {
 
   const handleDeleteNotification = async () => {
     if (!selectedIdToDelete) return
+
     try {
       await settingService.deleteNotification(selectedIdToDelete)
       fetchNotifs()
@@ -171,7 +176,9 @@ const NotificationList = () => {
           <List className="p-0">
             {notifications.map((notif, index) => {
               const { icon, color, bg } = getIcon(notif.type)
-              return (
+
+              
+return (
                 <React.Fragment key={notif.id}>
                   <ListItem 
                     className={classnames('hover:bg-actionHover p-6 cursor-pointer border-b transition-all', {

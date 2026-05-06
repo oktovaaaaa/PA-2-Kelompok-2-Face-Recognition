@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import Table from '@mui/material/Table'
@@ -16,7 +17,9 @@ import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
-import { dashboardService, AttendanceLog } from '@/libs/dashboardService'
+
+import type { AttendanceLog } from '@/libs/dashboardService';
+import { dashboardService } from '@/libs/dashboardService'
 import { formatImageUrl } from '@/libs/settingService'
 
 const RecentAttendanceTable = () => {
@@ -36,7 +39,8 @@ const RecentAttendanceTable = () => {
                 .sort((a, b) => {
                     if (a.check_in_time! < b.check_in_time!) return -1
                     if (a.check_in_time! > b.check_in_time!) return 1
-                    return 0
+                    
+return 0
                 })
 
             setLogs(filteredAndSorted)
@@ -49,9 +53,12 @@ const RecentAttendanceTable = () => {
 
     useEffect(() => {
         fetchLogs()
+
         // Auto refresh setiap 1 menit (sesuai permintaan user)
         const interval = setInterval(fetchLogs, 60000)
-        return () => clearInterval(interval)
+
+        
+return () => clearInterval(interval)
     }, [])
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -65,9 +72,12 @@ const RecentAttendanceTable = () => {
 
     const formatTime = (timeStr: string | null) => {
         if (!timeStr) return '--:--'
+
         try {
             const date = new Date(timeStr)
-            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+
+            
+return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
         } catch (e) {
             // Fallback for simple HH:mm strings
             return timeStr.substring(0, 5)

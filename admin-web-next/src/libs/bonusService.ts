@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
-    return {
+
+    
+return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
@@ -32,9 +34,12 @@ export const bonusService = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data)
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal mencatat bonus');
-        return resData.data;
+        
+return resData.data;
     },
 
     // 2. Get Bonuses
@@ -46,12 +51,16 @@ export const bonusService = {
             year,
             search
         });
+
         const response = await fetch(`${API_URL}/admin/bonuses?${queryParams}`, {
             headers: getAuthHeaders()
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal mengambil data bonus');
-        return resData;
+        
+return resData;
     },
 
     // 3. Delete Bonus
@@ -60,9 +69,12 @@ export const bonusService = {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal menghapus bonus');
-        return resData.data;
+        
+return resData.data;
     },
 
     // 4. Get Bonus Years
@@ -70,8 +82,11 @@ export const bonusService = {
         const response = await fetch(`${API_URL}/admin/bonuses/years`, {
             headers: getAuthHeaders()
         });
+
         const resData = await response.json();
+
         if (!response.ok) throw new Error(resData.message || 'Gagal mengambil daftar tahun');
-        return resData.data;
+        
+return resData.data;
     }
 };

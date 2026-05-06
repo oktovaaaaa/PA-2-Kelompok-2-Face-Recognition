@@ -1,6 +1,8 @@
 "use client"
+
 // src/views/jabatan/PositionFormModal.tsx
 import React, { useEffect, useState } from 'react'
+
 import {
   Dialog,
   DialogTitle,
@@ -13,7 +15,9 @@ import {
   InputAdornment,
   CircularProgress
 } from '@mui/material'
-import { Position, employeeService } from '../../libs/employeeService'
+
+import type { Position} from '../../libs/employeeService';
+import { employeeService } from '../../libs/employeeService'
 import { useNotification } from '../../contexts/NotificationContext'
 
 interface Props {
@@ -48,12 +52,15 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!name || !salary) {
       showNotification('Nama dan Gaji wajib diisi', 'warning')
-      return
+      
+return
     }
 
     setLoading(true)
+
     try {
       if (isEdit) {
         await employeeService.updatePosition(position.id, { 
@@ -70,6 +77,7 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
         })
         showNotification('Jabatan baru berhasil ditambahkan', 'success')
       }
+
       onSuccess()
       onClose()
     } catch (error: any) {
@@ -114,11 +122,15 @@ const PositionFormModal = ({ open, onClose, position, onSuccess }: Props) => {
                     value={salary === '0' ? '' : salary}
                     onChange={(e) => {
                         const raw = e.target.value.replace(/[^0-9]/g, '')
+
                         if (!raw) {
                             setSalary('')
-                            return
+                            
+return
                         }
+
                         const num = parseInt(raw, 10)
+
                         setSalary(num.toLocaleString('id-ID'))
                     }}
                     InputProps={{

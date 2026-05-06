@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -9,13 +10,16 @@ import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import Avatar from '@mui/material/Avatar'
 import CircularProgress from '@mui/material/CircularProgress'
+
+import Chip from '@mui/material/Chip'
+
 import { dashboardService } from '@/libs/dashboardService'
-import { settingService, Profile, formatImageUrl } from '@/libs/settingService'
+import type { Profile} from '@/libs/settingService';
+import { settingService, formatImageUrl } from '@/libs/settingService'
 import { formatFullDate } from '@/utils/dateFormatter'
 import RegistrationTrendChart from './RegistrationTrendChart'
 import RoleDistributionChart from './RoleDistributionChart'
 import GlobalOfficeMap from './GlobalOfficeMap'
-import Chip from '@mui/material/Chip'
 
 const MainSuperAdminDashboard = () => {
     const [stats, setStats] = useState<any>(null)
@@ -29,6 +33,7 @@ const MainSuperAdminDashboard = () => {
 
     const fetchData = async () => {
         setLoading(true)
+
         try {
             const [statsData, trendData, profData, yearsData] = await Promise.all([
                 dashboardService.getSuperAdminStats(),
@@ -36,6 +41,7 @@ const MainSuperAdminDashboard = () => {
                 settingService.getProfile(),
                 dashboardService.getRegistrationYears()
             ])
+
             setStats(statsData.stats)
             setRecentCompanies(statsData.recent_companies || [])
             setRecentUsers(statsData.recent_users || [])
@@ -56,6 +62,7 @@ const MainSuperAdminDashboard = () => {
     const fetchTrend = async (selectedYear: number) => {
         try {
             const trendData = await dashboardService.getRegistrationTrend(selectedYear)
+
             setTrend(trendData)
             setYear(selectedYear)
         } catch (error) {

@@ -3,15 +3,22 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+
 import { 
   Card, CardHeader, CardContent, Grid, TextField, 
   Button, Typography, Box, CircularProgress, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
   Paper, Avatar, MenuItem, InputAdornment, Divider, Autocomplete
 } from '@mui/material'
-import { bonusService, Bonus } from '@/libs/bonusService'
-import { employeeService, Employee } from '@/libs/employeeService'
+
 import { format } from 'date-fns'
+
+import type { Bonus } from '@/libs/bonusService';
+import { bonusService } from '@/libs/bonusService'
+import type { Employee } from '@/libs/employeeService';
+import { employeeService } from '@/libs/employeeService'
+
+
 import { useNotification } from '@/contexts/NotificationContext'
 import { formatFullDate } from '@/utils/dateFormatter'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -45,6 +52,7 @@ const BonusManager = () => {
     try {
       // 1. Fetch Employees separately to ensure dropdown is populated even if others fail
       const eData = await employeeService.getEmployees().catch(() => [])
+
       setEmployees(eData || [])
 
       // 2. Fetch Bonuses and Years
@@ -69,11 +77,15 @@ const BonusManager = () => {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!formData.user_id || !formData.amount || !formData.title) {
         showNotification('Mohon lengkapi semua data.', 'error')
-        return
+        
+return
     }
+
     setSaveLoading(true)
+
     try {
       await bonusService.createBonus(formData)
       showNotification('Bonus berhasil dicatatkan!', 'success')
@@ -93,6 +105,7 @@ const BonusManager = () => {
 
   const confirmDelete = async () => {
     if (!selectedId) return
+
     try {
       await bonusService.deleteBonus(selectedId)
       showNotification('Catatan bonus berhasil dihapus.', 'success')
@@ -155,6 +168,7 @@ const BonusManager = () => {
                     onChange={e => {
                         const rawValue = e.target.value.replace(/[^0-9]/g, '')
                         const intValue = parseInt(rawValue, 10)
+
                         setFormData({...formData, amount: isNaN(intValue) ? 0 : intValue})
                     }}
                     InputProps={{ startAdornment: <InputAdornment position="start">Rp</InputAdornment> }}

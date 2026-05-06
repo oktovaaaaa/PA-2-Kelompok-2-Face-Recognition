@@ -2,6 +2,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
+import { useRouter } from 'next/navigation'
+
+import Link from 'next/link'
+
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -9,11 +14,12 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { dashboardService, DashboardSummary, AttendanceTrend } from '@/libs/dashboardService'
+
+import type { DashboardSummary, AttendanceTrend } from '@/libs/dashboardService';
+import { dashboardService } from '@/libs/dashboardService'
 import InviteQRModal from './InviteQRModal'
-import { formatImageUrl, settingService, Profile } from '@/libs/settingService'
+import type { Profile } from '@/libs/settingService';
+import { formatImageUrl, settingService } from '@/libs/settingService'
 import { formatFullDate } from '@/utils/dateFormatter'
 
 // Component Imports
@@ -31,12 +37,14 @@ const MainAdminDashboard = () => {
 
     const fetchData = async () => {
         setLoading(true)
+
         try {
             const [sumData, trendData, profData] = await Promise.all([
                 dashboardService.getSummary(),
                 dashboardService.getTrend('7days'),
                 settingService.getProfile()
             ])
+
             setSummary(sumData)
             setTrend(trendData)
             setProfile(profData)
