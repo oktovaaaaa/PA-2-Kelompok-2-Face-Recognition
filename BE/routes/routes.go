@@ -24,9 +24,6 @@ func setupCommon(r *gin.Engine) *gin.RouterGroup {
 	})
 	r.SetHTMLTemplate(templ)
 
-	// Enable CORS
-	r.Use(middleware.CORSMiddleware())
-
 	// Serve file upload statis
 	r.Static("/uploads", "./uploads")
 

@@ -272,7 +272,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       revealElements.forEach(el => observer.unobserve(el));
       observer.disconnect();
     };
-  }, []); // Re-run if content changes or layout updates
+  }, [showContactForm]); // Re-run when switching between footer views
 
   return (
     <div className='landing-container'>
@@ -287,7 +287,6 @@ Saya ingin menghubungi Anda dengan detail berikut:
         <ul className='navbar-links'>
           <li><a href='#home'>Beranda</a></li>
           <li><a href='#features'>Fitur</a></li>
-          <li><a href='#how-it-works'>Cara Kerja</a></li>
           <li><a href='#testimonials'>Testimoni</a></li>
           <li><a href='#about'>Tentang Kami</a></li>
           <li><a href='#contact'>Kontak</a></li>
@@ -305,7 +304,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </button>
             </div>
           ) : (
-            <Link href='/login' className='login-btn'>Login Admin</Link>
+            <Link href='/login' className='login-btn'>Login</Link>
           )}
         </div>
 
@@ -325,7 +324,6 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <ul className='sidebar-links'>
             <li><a href='#home' onClick={toggleMenu}>Beranda</a></li>
             <li><a href='#features' onClick={toggleMenu}>Fitur</a></li>
-            <li><a href='#how-it-works' onClick={toggleMenu}>Cara Kerja</a></li>
             <li><a href='#about' onClick={toggleMenu}>Tentang Kami</a></li>
             <li><a href='#contact' onClick={toggleMenu}>Kontak</a></li>
           </ul>
@@ -339,7 +337,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </div>
             ) : (
               <div className='sidebar-auth-buttons' style={{ marginTop: '0' }}>
-                <Link href='/login' className='login-btn' onClick={toggleMenu}>Login Admin</Link>
+                <Link href='/login' className='login-btn' onClick={toggleMenu}>Login</Link>
               </div>
             )}
           </div>
@@ -355,7 +353,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
           <p className='hero-subtitle'>Sistem Absensi Cerdas</p>
           <h1 className='hero-title'>Sistem Absensi Terbaik untuk Anda.</h1>
           <p className='hero-description'>
-            VIDENTI adalah sistem absensi modern berbasis Face Recognition yang cepat, akurat, dan aman. 
+            VIDENTI adalah sistem absensi modern berbasis Face Recognition dan Geolocation yang cepat, akurat, dan aman. 
             Kelola data kehadiran karyawan Anda dengan efisiensi tinggi tanpa ribet.
           </p>
           <div className='hero-cta'>
@@ -388,7 +386,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             <div className='about-label'>
               <span className='dot-purple'></span> Tentang Perusahaan
             </div>
-            <h2 className='about-title'>Kami Adalah Agen Absensi Wajah Online Terbaik</h2>
+            <h2 className='about-title'>Kami Adalah Agen Absensi Wajah & Geolokasi Online Terbaik</h2>
             <p className='about-desc'>
               Kami berdedikasi untuk mentransformasi cara perusahaan mengelola kehadiran karyawan. 
               Dengan teknologi mutakhir dan tim ahli yang berpengalaman, kami memberikan solusi 
@@ -501,7 +499,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             <path d='M90,10 Q50,10 20,50' fill='none' stroke='var(--secondary-blue)' strokeWidth='2' />
             <path d='M25,35 L20,50 L35,55' fill='none' stroke='var(--secondary-blue)' strokeWidth='2' />
           </svg>
-          <p>Keamanan berlapis dengan teknologi <br /><strong>Face Recognition terkini.</strong></p>
+          <p>Keamanan berlapis dengan teknologi <br /><strong>Face Recognition & Geolokasi.</strong></p>
         </div>
 
         <div className='scrolling-divider'>
@@ -709,16 +707,16 @@ return tripled.map((testi, idx) => {
               </p>
               
               <div className='footer-social-row reveal reveal-up delay-2'>
-                <a href='#' className='social-icon'>
+                <a href='https://www.instagram.com/oktovaaaaa' target='_blank' rel='noopener noreferrer' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/instagram-new.png' alt='Instagram' />
                 </a>
-                <a href='https://wa.me/62881080811110' className='social-icon'>
+                <a href='https://wa.me/62881080811110' target='_blank' rel='noopener noreferrer' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/whatsapp.png' alt='WhatsApp' />
                 </a>
-                <a href='mailto:support@videnti.com' className='social-icon'>
+                <a href='mailto:videntiiii@gmail.com' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/gmail-new.png' alt='Email' />
                 </a>
-                <a href='#' className='social-icon'>
+                <a href='https://www.oktovaaaaa.id/' target='_blank' rel='noopener noreferrer' className='social-icon'>
                   <img src='https://img.icons8.com/color/48/web.png' alt='Portfolio' />
                 </a>
                 <a href='#' className='social-icon'>

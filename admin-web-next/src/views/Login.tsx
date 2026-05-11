@@ -72,24 +72,40 @@ return () => clearInterval(interval)
       try {
         // Fetch user profile to get email
         const userRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`)
+        
+        if (!userRes.ok) {
+          throw new Error('Gagal mengambil profil dari Google. Silakan coba lagi.')
+        }
+
         const userData = await userRes.json()
         
-        if (userData.email) {
+        if (userData && userData.email) {
           // Trigger backend OTP send for this email
           await authService.sendOTP(userData.email)
           
           setEmail(userData.email)
-          handleShowNotification('Akun Google diverifikasi. Silakan masukkan kode OTP yang dikirim ke email Anda.', 'success')
+          handleShowNotification('Akun Google diverifikasi. Kode OTP telah dikirim ke email Anda.', 'success')
           setStep('otp')
+        } else {
+          throw new Error('Email tidak ditemukan di profil Google Anda.')
         }
       } catch (error: any) {
-        handleShowNotification(error.message || 'Gagal login dengan Google', 'error')
+        console.error('Google Login Error:', error)
+        
+        let errorMessage = 'Gagal login dengan Google'
+        
+        if (error.message === 'Failed to fetch') {
+          errorMessage = 'Tidak dapat terhubung ke server. Pastikan koneksi internet stabil dan server backend berjalan.'
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        handleShowNotification(errorMessage, 'error')
       } finally {
-
         setLoading(false)
       }
     },
-    onError: () => handleShowNotification('Login Google dibatalkan', 'error')
+    onError: () => handleShowNotification('Login Google dibatalkan atau terjadi kesalahan', 'error')
   })
 
   const handleShowNotification = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {

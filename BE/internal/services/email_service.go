@@ -15,9 +15,11 @@ func SendOTPEmail(email string, otp string) error {
 
 	m.SetHeader("From", os.Getenv("SMTP_EMAIL"))
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", fmt.Sprintf("🔐 [%s] Kode OTP Videnti", otp))
-
+	m.SetHeader("Subject", "🔐 Verifikasi Keamanan Videnti")
 	m.Embed("assets/videnti.png")
+
+	// Preheader padding to hide the rest of the email content from notification preview
+	preheaderPadding := "&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;"
 
 	htmlBody := fmt.Sprintf(`
 	<!DOCTYPE html>
@@ -28,10 +30,10 @@ func SendOTPEmail(email string, otp string) error {
 		<style>
 			body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; margin: 0; padding: 0; }
 			.container { max-width: 480px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; }
-			.header { background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%); padding: 20px; text-align: center; color: #ffffff; }
-			.logo { width: 50px; height: 50px; margin-bottom: 10px; }
-
-			.header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+			.header { background-color: #F1F5F9; padding: 40px 20px; text-align: center; color: #0F172A; border-bottom: 1px solid #E2E8F0; }
+			.header-content { display: inline-block; }
+			.logo-img { width: 64px; height: 64px; vertical-align: middle; margin-right: -20px; }
+			.brand-name { display: inline-block; vertical-align: middle; margin: 0; font-size: 48px; font-weight: 900; letter-spacing: -2px; text-transform: uppercase; color: #0F172A; }
 			.content { padding: 30px 25px; text-align: center; color: #1E293B; }
 			.content h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #64748B; margin-bottom: 20px; }
 			.otp-box { background-color: #F8FAFC; border-radius: 12px; padding: 18px 24px; display: inline-block; margin: 0 auto 20px; border: 2px solid #E2E8F0; }
@@ -44,13 +46,17 @@ func SendOTPEmail(email string, otp string) error {
 
 			.footer { background-color: #F8FAFC; padding: 20px; text-align: center; color: #94A3B8; font-size: 11px; border-top: 1px solid #F1F5F9; }
 			.footer p { margin: 2px 0; }
+			.preheader { display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #fff; opacity: 0; }
 		</style>
 	</head>
 	<body>
+		<div class="preheader">Kode OTP Anda: %s. %s</div>
 		<div class="container">
 			<div class="header">
-				<img src="cid:videnti.png" alt="Videnti Logo" class="logo">
-				<h1>VIDENTI</h1>
+				<div class="header-content">
+					<img src="cid:videnti.png" alt="" class="logo-img">
+					<h1 class="brand-name">DENTI</h1>
+				</div>
 			</div>
 			<div class="content">
 				<h2 style="margin-top: 0;">Verifikasi Keamanan</h2>
@@ -80,7 +86,7 @@ func SendOTPEmail(email string, otp string) error {
 		</div>
 	</body>
 	</html>
-	`, otp)
+	`, otp, preheaderPadding, otp)
 
 
 	m.SetBody("text/html", htmlBody)

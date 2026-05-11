@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography'
 
 import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
+import OTPInput from '@/components/OTPInput'
 
 const SecurityTab = () => {
   const { showNotification } = useNotification()
@@ -158,13 +159,15 @@ return () => clearTimeout(timer)
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth label='Kode OTP Verifikasi'
-                    placeholder='Masukkan kode dari email'
-                    helperText='Wajib diisi sebagai verifikasi lapisan kedua (2FA).'
-                    value={passwordData.otp}
-                    onChange={e => setPasswordData({ ...passwordData, otp: e.target.value })}
-                  />
+                  <Box className='flex flex-col gap-2'>
+                    <Typography variant='caption' className='font-bold uppercase tracking-widest text-slate-500'>Kode OTP Verifikasi</Typography>
+                    <OTPInput
+                      value={passwordData.otp}
+                      onChange={val => setPasswordData({ ...passwordData, otp: val })}
+                      disabled={loading}
+                    />
+                    <Typography variant='caption' className='text-slate-400'>Wajib diisi sebagai verifikasi lapisan kedua (2FA).</Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} className='flex gap-4 items-center flex-wrap'>
                   <Button variant='contained' type='submit' disabled={loading} startIcon={<i className='ri-save-3-line' />}>
@@ -211,13 +214,15 @@ return () => clearTimeout(timer)
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth label='Kode OTP Verifikasi'
-                      placeholder='Masukkan kode dari email'
-                      helperText='Wajib diisi sebagai verifikasi lapisan kedua (2FA).'
-                      value={pinData.otp}
-                      onChange={e => setPinData({ ...pinData, otp: e.target.value })}
-                    />
+                    <Box className='flex flex-col gap-2'>
+                      <Typography variant='caption' className='font-bold uppercase tracking-widest text-slate-500'>Kode OTP Verifikasi</Typography>
+                      <OTPInput
+                        value={pinData.otp}
+                        onChange={val => setPinData({ ...pinData, otp: val })}
+                        disabled={loading}
+                      />
+                      <Typography variant='caption' className='text-slate-400'>Wajib diisi sebagai verifikasi lapisan kedua (2FA).</Typography>
+                    </Box>
                   </Grid>
                   <Grid item xs={12} className='flex gap-4 items-center flex-wrap'>
                     <Button variant='contained' color='info' type='submit' disabled={loading} startIcon={<i className='ri-key-2-line' />}>

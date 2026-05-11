@@ -2035,9 +2035,59 @@
     margin-bottom: 0.8rem;
   }
   .epic-content p {
-    font-size: 1.1rem;
-    padding: 0 1rem;
+    padding: 1.1rem 1rem;
     line-height: 1.5;
+  }
+
+  /* Contact Form Mobile Fixes */
+  .astra-footer {
+    border-radius: 40px 40px 0 0;
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .form-logo-box {
+    margin-left: 0;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+  }
+
+  .form-brand-name {
+    font-size: 1.1rem;
+  }
+
+  .form-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .form-title {
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  .form-highlight-text {
+    font-size: 3rem;
+    text-align: center;
+  }
+
+  .input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-close-form {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .btn-submit, .btn-reset {
+    width: 100%;
+    padding: 1rem;
   }
 }
 

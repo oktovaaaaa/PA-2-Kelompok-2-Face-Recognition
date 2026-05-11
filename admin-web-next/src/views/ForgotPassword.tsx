@@ -18,6 +18,7 @@ import type { Mode } from '@core/types'
 // Component Imports
 import DirectionalIcon from '@components/DirectionalIcon'
 import Link from '@components/Link'
+import OTPInput from '@components/OTPInput'
 
 // Service Imports
 import { authService } from '@/libs/auth'
@@ -156,16 +157,12 @@ const ForgotPassword = ({ mode }: { mode: Mode }) => {
               
               <form onSubmit={handleResetPassword} className='flex flex-col gap-4'>
                 {/* OTP Input */}
-                <div className='auth-input-wrapper flex items-center bg-[#F1F5F9] rounded-full px-5 border-2 border-transparent transition-all focus-within:bg-white focus-within:border-[#2563EB]'>
-                  <i className='bx bx-key text-[20px] text-[#64748B] mr-3' />
-                  <input 
-                    type='text' 
-                    maxLength={6}
-                    className='w-full border-none bg-transparent py-4 text-[14px] font-semibold outline-none text-[#1E293B]'
-                    placeholder='6 digit kode OTP'
+                <div className='flex flex-col gap-2 mb-2'>
+                  <label className='text-[12px] font-bold text-[#64748B] ml-1 uppercase tracking-wider'>Masukkan 6 Digit OTP</label>
+                  <OTPInput 
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    required
+                    onChange={setOtpCode}
+                    disabled={loading}
                   />
                 </div>
 

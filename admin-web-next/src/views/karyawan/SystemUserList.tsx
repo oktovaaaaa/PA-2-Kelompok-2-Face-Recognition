@@ -138,15 +138,31 @@ const SystemUserList = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 4 }}>
         <Box>
           <Typography variant='h4' fontWeight='900' color='primary' className='tracking-tight' gutterBottom>
-            Daftar Seluruh User Sistem
+            Daftar Seluruh Pengguna Sistem
           </Typography>
           <Typography variant='body2' className='text-[var(--mui-palette-text-secondary)] font-medium'>
             Pusat manajemen lintas organisasi. Kelola akses, pantau biodata, dan kontrol status operasional unit bisnis.
           </Typography>
         </Box>
-        <Box className='flex gap-3 bg-[var(--mui-palette-background-paper)] p-2 rounded-2xl border border-[var(--mui-palette-divider)]'>
-          <Chip icon={<i className='ri-team-line' />} label={`${users.length} Total User`} variant="outlined" className='font-bold' />
-          <Chip icon={<i className='ri-building-line' />} label={`${companies.length} Unit Perusahaan`} className='bg-primary/10 text-primary font-bold border-none' />
+        <Box className='flex gap-8 px-4 py-2'>
+          <Box className='flex items-center gap-3'>
+            <Box className='w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center'>
+              <i className='ri-team-line text-xl' />
+            </Box>
+            <Box className='flex flex-col'>
+              <Typography variant='body1' fontWeight='900' color='text.primary' sx={{ lineHeight: 1.2 }}>{users.length}</Typography>
+              <Typography variant='caption' fontWeight='bold' className='text-slate-400 uppercase tracking-wider' sx={{ fontSize: '0.65rem' }}>Total Pengguna</Typography>
+            </Box>
+          </Box>
+          <Box className='flex items-center gap-3'>
+            <Box className='w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center'>
+              <i className='ri-building-line text-xl' />
+            </Box>
+            <Box className='flex flex-col'>
+              <Typography variant='body1' fontWeight='900' color='text.primary' sx={{ lineHeight: 1.2 }}>{companies.length}</Typography>
+              <Typography variant='caption' fontWeight='bold' className='text-slate-400 uppercase tracking-wider' sx={{ fontSize: '0.65rem' }}>Unit Perusahaan</Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
@@ -233,7 +249,7 @@ const SystemUserList = () => {
                     <TableCell colSpan={4} align='center' sx={{ py: 15 }}>
                       <Box className='flex flex-col items-center gap-2 opacity-30'>
                         <i className='ri-user-search-line text-6xl' />
-                        <Typography className='font-bold'>Tidak ada data user yang sesuai dengan kriteria.</Typography>
+                        <Typography className='font-bold'>Tidak ada data pengguna yang sesuai dengan kriteria.</Typography>
                       </Box>
                     </TableCell>
                   </TableRow>
