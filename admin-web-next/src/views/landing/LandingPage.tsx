@@ -304,7 +304,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </button>
             </div>
           ) : (
-            <Link href='/login' className='login-btn'>Login</Link>
+            <Link href='#' className='login-btn btn-disabled' onClick={e => e.preventDefault()}>Segera Hadir</Link>
           )}
         </div>
 
@@ -337,7 +337,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </div>
             ) : (
               <div className='sidebar-auth-buttons' style={{ marginTop: '0' }}>
-                <Link href='/login' className='login-btn' onClick={toggleMenu}>Login</Link>
+                <Link href='#' className='login-btn btn-disabled' onClick={e => { e.preventDefault(); toggleMenu(); }}>Segera Hadir</Link>
               </div>
             )}
           </div>
@@ -357,7 +357,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             Kelola data kehadiran karyawan Anda dengan efisiensi tinggi tanpa ribet.
           </p>
           <div className='hero-cta'>
-            <a href='#features' className='btn-primary'>Mulai Sekarang →</a>
+            <a href='#' className='btn-primary btn-disabled' onClick={e => e.preventDefault()}>Segera Hadir</a>
           </div>
         </div>
         
@@ -427,7 +427,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
 
         <div className='stats-bar'>
           <div className='stat-item reveal reveal-scale delay-1'>
-            <h3>50 +</h3>
+            <h3>0</h3>
             <p>Pengguna Aktif</p>
           </div>
           <div className='stat-item reveal reveal-scale delay-2'>
@@ -546,7 +546,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               VIDENTI dirancang untuk memberikan pengalaman terbaik bagi admin maupun karyawan. 
               Dengan integrasi cloud, data Anda selalu aman dan dapat diakses dari mana saja tanpa kendala.
             </p>
-            <a href='#contact' className='btn-showcase'>Mulai sekarang →</a>
+            <a href='#' className='btn-showcase btn-disabled' onClick={e => e.preventDefault()}>Segera Hadir</a>
           </div>
         </div>
       </section>
@@ -555,7 +555,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <section className='testimonials-section' id='testimonials'>
         <div className='section-header reveal reveal-up'>
           <h2>Apa Kata <span>Mereka?</span></h2>
-          <button className='btn-add-testi' onClick={() => setShowTestimonialModal(true)}>+ Beri Testimoni</button>
+          <button className='btn-add-testi btn-disabled' disabled>Segera Hadir</button>
         </div>
 
         <div className='testimonials-marquee-wrapper'>
