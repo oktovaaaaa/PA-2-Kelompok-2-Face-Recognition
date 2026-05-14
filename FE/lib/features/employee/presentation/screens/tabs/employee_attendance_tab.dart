@@ -306,6 +306,8 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     final position = (_profileData?['position_name'] ?? 'Karyawan').toString();
     final isDoneForDay = hasCheckedIn && hasCheckedOut;
     final isHoliday = displayStatus == 'HOLIDAY';
+    final isLate = displayStatus == 'LATE' || displayStatus == 'LATE_EARLY_LEAVE' || (att != null && att['status'] == 'LATE');
+    final isEarlyLeave = displayStatus == 'EARLY_LEAVE' || displayStatus == 'LATE_EARLY_LEAVE' || (att != null && att['status'] == 'EARLY_LEAVE');
 
     bool isCheckInOpen() => !isHoliday && displayStatus != 'NOT_STARTED' && displayStatus != 'EARLY_LEAVE';
 
@@ -518,11 +520,11 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                                   Text(
                                     () {
                                       if (isHoliday) return 'HARI LIBUR';
+                                      if (isLate) return 'TERLAMBAT';
+                                      if (isEarlyLeave) return 'PULANG AWAL';
                                       if (isDoneForDay) return 'HADIR TEPAT WAKTU';
-                                      if (displayStatus == 'LATE') return 'TERLAMBAT';
                                       if (displayStatus == 'ABSENT') return 'ALPHA';
                                       if (displayStatus == 'NOT_STARTED') return 'BELUM MULAI';
-                                      if (displayStatus == 'EARLY_LEAVE') return 'PULANG DI JAM KERJA';
                                       if (hasCheckedIn && !hasCheckedOut) return 'SEDANG BEKERJA';
                                       return 'BELUM HADIR';
                                     }().toUpperCase(),

@@ -27,6 +27,7 @@ func RegisterEmployee(c *gin.Context) {
 
 		GoogleIDToken string
 		OTPCode       string
+		FcmToken      string `json:"fcm_token"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -47,6 +48,7 @@ func RegisterEmployee(c *gin.Context) {
 		PhotoURL:          body.PhotoURL,
 		BankName:          body.BankName,
 		BankAccountNumber: body.BankAccountNumber,
+		FcmToken:          body.FcmToken,
 	}
 
 	if body.GoogleIDToken != "" {

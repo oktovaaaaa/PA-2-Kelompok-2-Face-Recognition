@@ -29,20 +29,22 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       _loading = true;
     });
 
-    try {
-      final res = await _repo.validateInvite(token.trim());
-      final companyId = (res['company_id'] ?? '').toString();
+      try {
+        final res = await _repo.validateInvite(token.trim());
+        final companyId = (res['company_id'] ?? '').toString();
+        final companyName = (res['company_name'] ?? 'Perusahaan').toString();
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RegisterEmployeeScreen(
-            inviteToken: token.trim(),
-            companyId: companyId,
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RegisterEmployeeScreen(
+              inviteToken: token.trim(),
+              companyId: companyId,
+              companyName: companyName,
+            ),
           ),
-        ),
-      );
+        );
     } catch (e) {
       final msg = ErrorMapper.map(e);
       if (!mounted) return;

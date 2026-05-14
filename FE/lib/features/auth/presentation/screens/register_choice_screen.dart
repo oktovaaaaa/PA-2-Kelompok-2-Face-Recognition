@@ -21,33 +21,30 @@ class RegisterChoiceScreen extends StatelessWidget {
               onTap: () => Navigator.pop(context),
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                decoration: BoxDecoration(color: const Color(0xFF1E3A8A).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF1E3A8A), size: 20),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             const Text(
               'Mari Bergabung',
               style: TextStyle(
-                fontSize: 36,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF1E3A8A),
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               'Pilih jenis peran Anda untuk\nmemulai registrasi',
               style: TextStyle(
-                fontSize: 15,
-                color: Colors.white.withOpacity(0.8),
+                fontSize: 14,
+                color: Colors.black54,
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
 
             // Main card
             Container(

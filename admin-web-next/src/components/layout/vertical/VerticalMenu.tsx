@@ -14,6 +14,9 @@ import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Me
 // Component Imports
 import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu'
 
+// Service Imports
+import { employeeService } from '@/libs/employeeService'
+
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
 
@@ -43,9 +46,26 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
 
   const [role, setRole] = useState<string | null>(null)
+  const [pendingCount, setPendingCount] = useState<number>(0)
 
   useEffect(() => {
     setRole(localStorage.getItem('role'))
+
+    const fetchPendingCount = async () => {
+      try {
+        const data = await employeeService.getPendingEmployees()
+        setPendingCount(data.length)
+      } catch (error) {
+        console.error('Error fetching pending count:', error)
+      }
+    }
+
+    fetchPendingCount()
+    
+    // Refresh count every 30 seconds for real-time feel
+    const interval = setInterval(fetchPendingCount, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const isSuperAdmin = role === 'SUPER_ADMIN'
@@ -81,7 +101,27 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
         {!isSuperAdmin ? (
           <>
             <MenuSection label='Manajemen SDM'>
-              <MenuItem href='/persetujuan' icon={<i className='ri-user-received-line' />}>
+              <MenuItem 
+                href='/persetujuan' 
+                icon={<i className='ri-user-received-line' />}
+                suffix={pendingCount > 0 ? (
+                  <Chip 
+                    label={pendingCount} 
+                    size='small' 
+                    color='error' 
+                    sx={{ 
+                      height: 22, 
+                      width: 22, 
+                      minWidth: 22, 
+                      p: 0, 
+                      '& .MuiChip-label': { px: 0 }, 
+                      fontSize: '0.75rem', 
+                      fontWeight: 'bold',
+                      borderRadius: '50%' 
+                    }} 
+                  />
+                ) : null}
+              >
                 Persetujuan Karyawan
               </MenuItem>
               <MenuItem href='/karyawan' icon={<i className='ri-user-line' />}>

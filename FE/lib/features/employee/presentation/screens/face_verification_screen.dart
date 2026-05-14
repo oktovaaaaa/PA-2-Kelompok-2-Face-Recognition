@@ -134,7 +134,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
         _currentStepIndex++;
         _progress = _currentStepIndex / (_actions.length - 1);
         if (_actions[_currentStepIndex] == FaceAction.done) {
-          _hint = "Liveness Berhasil!";
+          _hint = "Memindai Wajah Berhasil!";
           _ctrl.stopImageStream();
           _finalizeVerification();
         } else {

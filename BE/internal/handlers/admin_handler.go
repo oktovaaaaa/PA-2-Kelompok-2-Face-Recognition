@@ -45,7 +45,7 @@ func ValidateInvite(c *gin.Context) {
 
 	var invite models.InviteToken
 
-	err := database.DB.Where("token = ?", body.Token).First(&invite).Error
+	err := database.DB.Preload("Company").Where("token = ?", body.Token).First(&invite).Error
 
 	if err != nil {
 
@@ -68,8 +68,9 @@ func ValidateInvite(c *gin.Context) {
 	}
 
 	utils.Success(c, "Token valid", gin.H{
-		"company_id": invite.CompanyID,
-	})
+		"company_id":   invite.CompanyID,
+		"company_name": invite.Company.Name,
+	});
 }
 
 // utk admin melihat pending employee

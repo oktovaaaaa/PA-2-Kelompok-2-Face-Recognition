@@ -1,5 +1,6 @@
 // lib/features/auth/data/auth_repository.dart
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/api_client.dart';
@@ -228,6 +229,14 @@ class AuthRepository {
     String? googleIdToken,
     String? otpCode,
   }) async {
+    // Get FCM Token for notifications even before login
+    String? fcmToken;
+    try {
+      fcmToken = await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      print("Error getting FCM token: $e");
+    }
+
     final res = await ApiClient.post('/auth/register-employee', {
       'name': name,
       'email': email,
@@ -242,6 +251,7 @@ class AuthRepository {
       'bankAccountNumber': bankAccountNumber,
       'photoURL': photoUrl,
       'otpCode': otpCode,
+      'fcm_token': fcmToken,
       if (googleIdToken != null) 'googleIDToken': googleIdToken,
     });
 

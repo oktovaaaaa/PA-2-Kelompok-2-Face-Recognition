@@ -25,6 +25,7 @@ class _ValidateInviteScreenState extends State<ValidateInviteScreen> {
     try {
       final data = await _repo.validateInvite(_token.text.trim());
       final companyId = (data['company_id'] ?? '').toString();
+      final companyName = (data['company_name'] ?? 'Perusahaan').toString();
 
       if (!mounted) return;
       Navigator.push(
@@ -33,6 +34,7 @@ class _ValidateInviteScreenState extends State<ValidateInviteScreen> {
           builder: (_) => RegisterEmployeeScreen(
             inviteToken: _token.text.trim(),
             companyId: companyId,
+            companyName: companyName,
           ),
         ),
       );

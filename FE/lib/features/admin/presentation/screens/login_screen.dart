@@ -16,6 +16,7 @@ import 'otp_login_screen.dart';
 import 'splash_gate.dart';
 import '../../../auth/presentation/screens/forgot_password_screen.dart';
 import '../../../auth/presentation/screens/landing_screen.dart';
+import '../../../auth/presentation/screens/register_choice_screen.dart';
 import '../../../common/widgets/app_dialog.dart';
 import 'reset_password_screen.dart';
 
@@ -203,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Jika root (misal setelah registrasi), panggil LandingScreen
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (_) => const LandingScreen()),
+                          MaterialPageRoute(builder: (_) => LandingScreen()),
                           (_) => false,
                         );
                       }
@@ -214,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF1E3A8A), size: 20),
                     ),
                   ),
                 ),
@@ -225,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: const Color(0xFF1E3A8A),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -235,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.black54,
                 ),
               ),
               const SizedBox(height: 48),
@@ -352,7 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onTap: () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                                      MaterialPageRoute(builder: (_) => ForgotPasswordScreen()),
                                     );
                                   },
                                   child: const Text(
@@ -394,6 +395,32 @@ class _LoginScreenState extends State<LoginScreen> {
                             Center(
                               child: _buildSocialBtn(Icons.g_mobiledata, Colors.red, _loading ? null : _loginGoogle),
                             ),
+                            const SizedBox(height: 32),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Belum punya akun? ',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const RegisterChoiceScreen()),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Daftar',
+                                    style: TextStyle(
+                                      color: Color(0xFF2563EB),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -409,16 +436,28 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildSocialBtn(IconData icon, Color color, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 56,
-        height: 56,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.black.withOpacity(0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        child: Icon(icon, color: color, size: 32),
+        padding: const EdgeInsets.all(12),
+        child: Image.network(
+          'https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png',
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Icon(icon, color: color, size: 24),
+        ),
       ),
     );
   }

@@ -197,30 +197,48 @@ class _RegisterAdminScreenState extends State<RegisterAdminScreen> {
               onTap: () => Navigator.pop(context),
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                decoration: BoxDecoration(color: const Color(0xFF1E3A8A).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF1E3A8A), size: 20),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text('Daftar Admin', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
-            const SizedBox(height: 8),
-            Text('Lengkapi data diri dan perusahaan Anda', style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8))),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            const Text('Daftar Admin', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A), letterSpacing: 0.5)),
+            const SizedBox(height: 4),
+            Text('Lengkapi data diri dan perusahaan Anda', style: TextStyle(fontSize: 14, color: Colors.black54)),
+            const SizedBox(height: 16),
             Form(
               key: _formKey,
               child: Column(
                 children: [
                   if (_currentStep == 0) ...[
                     if (_googleIdToken == null) ...[
-                      OutlinedButton.icon(
-                        onPressed: _loading ? null : _fetchGoogleData,
-                        icon: const Icon(Icons.g_mobiledata, size: 28, color: Color(0xFF0F172A)),
-                        label: const Text('Isi otomatis dari Google', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold)),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(56),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                      GestureDetector(
+                        onTap: _loading ? null : _fetchGoogleData,
+                        child: Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(26),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4)),
+                            ],
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Tautkan dengan akun Google',
+                                style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              const SizedBox(width: 12),
+                              Image.network(
+                                'https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png',
+                                width: 24, height: 24,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -448,7 +466,7 @@ class _RegisterAdminScreenState extends State<RegisterAdminScreen> {
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => setState(() => _currentStep = 0),
-                      child: const Text('Kembali ke Data Pribadi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text('Kembali ke Data Pribadi', style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold)),
                     ),
                   ],
                   const SizedBox(height: 40),
