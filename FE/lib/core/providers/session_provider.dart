@@ -65,8 +65,8 @@ class SessionProvider extends ChangeNotifier {
         if (_lastActiveTime != null) {
           final diff = DateTime.now().difference(_lastActiveTime!);
           print("DEBUG: Time spent in background: ${diff.inSeconds} seconds");
-          if (diff.inMinutes >= 1) {
-            print("DEBUG: Lock threshold (1m) reached. Locking session...");
+          if (diff.inMinutes >= 15) {
+            print("DEBUG: Lock threshold (15m) reached. Locking session...");
             authProvider.lockSession();
           } else {
             print("DEBUG: Lock threshold not reached. Resuming session.");

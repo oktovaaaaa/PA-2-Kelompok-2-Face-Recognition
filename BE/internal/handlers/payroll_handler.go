@@ -249,7 +249,7 @@ func AdminPaySalary(c *gin.Context) {
 
 		// 2. Recalculate total paid amount from all payments for this salary
 		var totalPaid float64
-		if err := tx.Model(&models.SalaryPayment{}).Where("salary_id = ?", salaryID).Select("sum(amount)").Scan(&totalPaid).Error; err != nil {
+		if err := tx.Model(&models.SalaryPayment{}).Where("salary_id = ?", salaryID).Select("COALESCE(sum(amount), 0)").Scan(&totalPaid).Error; err != nil {
 			return err
 		}
 
@@ -422,7 +422,7 @@ func generateSalary(userID string, month int, year int) {
 
 	// Recalculate PaidAmount from actual payments to fix corruption
 	var actualPaid float64
-	database.DB.Model(&models.SalaryPayment{}).Where("salary_id = ?", salary.ID).Select("sum(amount)").Scan(&actualPaid)
+	database.DB.Model(&models.SalaryPayment{}).Where("salary_id = ?", salary.ID).Select("COALESCE(sum(amount), 0)").Scan(&actualPaid)
 	salary.PaidAmount = actualPaid
 
 	if salary.ID == "" {

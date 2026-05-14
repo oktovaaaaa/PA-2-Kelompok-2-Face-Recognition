@@ -84,167 +84,169 @@ class _AdminPayrollScreenState extends State<AdminPayrollScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 24),
-              const Text('Konfirmasi Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
-              Text('Gaji untuk ${user['name']}', style: TextStyle(color: Colors.grey.shade600)),
-              const Divider(height: 32),
-              
-              // Payment Summary
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
-                child: Column(
-                  children: [
-                    _summaryRow('Total Gaji', _formatCurrency(total)),
-                    const SizedBox(height: 8),
-                    _summaryRow('Sudah Dibayar', _formatCurrency(alreadyPaid), color: Colors.green),
-                    const Divider(height: 24),
-                    _summaryRow('Sisa Gaji', _formatCurrency(balance), isBold: true, color: const Color(0xFF1E3A8A)),
-                  ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 24),
+                const Text('Konfirmasi Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 8),
+                Text('Gaji untuk ${user['name']}', style: TextStyle(color: Colors.grey.shade600)),
+                const Divider(height: 32),
+                
+                // Payment Summary
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+                  child: Column(
+                    children: [
+                      _summaryRow('Total Gaji', _formatCurrency(total)),
+                      const SizedBox(height: 8),
+                      _summaryRow('Sudah Dibayar', _formatCurrency(alreadyPaid), color: Colors.green),
+                      const Divider(height: 24),
+                      _summaryRow('Sisa Gaji', _formatCurrency(balance), isBold: true, color: const Color(0xFF1E3A8A)),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Bank Info
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
-                child: Row(
-                  children: [
-                    const Icon(Icons.account_balance_rounded, color: Color(0xFF2563EB), size: 20),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(user['bank_name'] ?? 'Bank Belum Diatur', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text(user['bank_account_number'] ?? '-', style: const TextStyle(color: Color(0xFF1E3A8A), fontSize: 14, letterSpacing: 1.2)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Amount Input
-              const Text('Nominal yang Dibayar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: amountCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        CurrencyInputFormatter(),
-                      ],
-                      onChanged: (v) {
-                        final unformatted = CurrencyInputFormatter.unformat(v);
-                        setModalState(() => isFullPayment = unformatted >= balance);
-                      },
-                      decoration: InputDecoration(
-                        prefixText: 'Rp ',
-                        hintText: 'Masukkan nominal',
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                // Bank Info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.account_balance_rounded, color: Color(0xFF2563EB), size: 20),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user['bank_name'] ?? 'Bank Belum Diatur', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(user['bank_account_number'] ?? '-', style: const TextStyle(color: Color(0xFF1E3A8A), fontSize: 14, letterSpacing: 1.2)),
+                        ],
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () {
-                      setModalState(() {
-                        amountCtrl.text = CurrencyInputFormatter.formatNumber(balance.toInt());
-                        isFullPayment = true;
-                      });
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Bayar Penuh', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              const Text('Bukti Transfer (Opsional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () async {
-                  final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-                  if (picked != null) {
-                    setModalState(() => proofImage = File(picked.path));
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
-                  ),
-                  child: proofImage != null
-                      ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(proofImage!, fit: BoxFit.cover))
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_rounded, color: Colors.grey.shade400, size: 24),
-                            const SizedBox(height: 4),
-                            Text('Unggah Bukti', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                          ],
+                ),
+                const SizedBox(height: 24),
+
+                // Amount Input
+                const Text('Nominal yang Dibayar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: amountCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          CurrencyInputFormatter(),
+                        ],
+                        onChanged: (v) {
+                          final unformatted = CurrencyInputFormatter.unformat(v);
+                          setModalState(() => isFullPayment = unformatted >= balance);
+                        },
+                        decoration: InputDecoration(
+                          prefixText: 'Rp ',
+                          hintText: 'Masukkan nominal',
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
                         ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      child: const Text('Batal'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final unformatted = CurrencyInputFormatter.unformat(amountCtrl.text);
-                        final val = unformatted.toDouble();
-                        if (val <= 0) {
-                          AppDialog.showError(context, 'Nominal harus lebih dari 0');
-                          return;
-                        }
-                        if (val > balance) {
-                           AppDialog.showError(context, 'Nominal melebihi sisa saldo');
-                           return;
-                        }
-                        Navigator.pop(context, unformatted.toString());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
-                      child: Text(isFullPayment ? 'Konfirmasi Pelunasan' : 'Konfirmasi Cicilan', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
+                    const SizedBox(width: 12),
+                    TextButton(
+                      onPressed: () {
+                        setModalState(() {
+                          amountCtrl.text = CurrencyInputFormatter.formatNumber(balance.toInt());
+                          isFullPayment = true;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Bayar Penuh', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                const Text('Bukti Transfer (Opsional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+                    if (picked != null) {
+                      setModalState(() => proofImage = File(picked.path));
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
+                    ),
+                    child: proofImage != null
+                        ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(proofImage!, fit: BoxFit.cover))
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo_rounded, color: Colors.grey.shade400, size: 24),
+                              const SizedBox(height: 4),
+                              Text('Unggah Bukti', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                            ],
+                          ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
+                ),
+                const SizedBox(height: 32),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        child: const Text('Batal'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final unformatted = CurrencyInputFormatter.unformat(amountCtrl.text);
+                          final val = unformatted.toDouble();
+                          if (val <= 0) {
+                            AppDialog.showError(context, 'Nominal harus lebih dari 0');
+                            return;
+                          }
+                          if (val > balance) {
+                             AppDialog.showError(context, 'Nominal melebihi sisa saldo');
+                             return;
+                          }
+                          Navigator.pop(context, unformatted.toString());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text(isFullPayment ? 'Konfirmasi Pelunasan' : 'Konfirmasi Cicilan', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

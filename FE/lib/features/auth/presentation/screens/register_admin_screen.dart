@@ -189,7 +189,12 @@ class _RegisterAdminScreenState extends State<RegisterAdminScreen> {
     return WavyBackground(
       isAuth: true,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        padding: EdgeInsets.only(
+          left: 24, 
+          right: 24, 
+          top: 48, 
+          bottom: MediaQuery.of(context).viewInsets.bottom + 48,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
