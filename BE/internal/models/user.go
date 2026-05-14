@@ -38,6 +38,10 @@ type User struct {
 	BankName          string `json:"bank_name"`
 	BankAccountNumber string `json:"bank_account_number"`
 
+	// Face Recognition
+	FaceEmbedding string     `gorm:"type:text" json:"face_embedding"`
+	FaceUpdatedAt *time.Time `json:"face_updated_at"`
+
 	// For PIN lockout system
 	InvalidPinAttempts int        `json:"invalid_pin_attempts"`
 	PinLockedUntil     *time.Time `json:"pin_locked_until"`

@@ -68,6 +68,7 @@ func SetupAuthRouter() *gin.Engine {
 		protected.POST("/profile/verify-password", handlers.VerifyPassword)
 		protected.POST("/profile/change-password", handlers.ChangePassword)
 		protected.POST("/profile/change-pin", handlers.ChangePin)
+		protected.POST("/profile/face-registration", handlers.RegisterFace)
 		protected.DELETE("/profile", handlers.DeleteAccount)
 
 		protected.GET("/notifications", handlers.GetNotifications)

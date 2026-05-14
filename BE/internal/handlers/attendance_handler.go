@@ -110,8 +110,22 @@ func isHoliday(companyID string, t time.Time) (bool, string) {
 
 // CheckIn — karyawan melakukan absensi masuk
 func CheckIn(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	emp := userCtx.(models.User)
+	userID, _ := c.Get("user_id")
+	
+	// Ambil data User dari Auth Service (Microservices way)
+	var emp models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
+	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
+		fmt.Printf("--> [ATTENDANCE ERROR] Gagal mengambil data dari Auth Service: %v\n", err)
+		utils.Error(c, "Gagal memverifikasi identitas ke Auth Service")
+		return
+	}
+
+	if emp.ID == "" {
+		fmt.Printf("--> [ATTENDANCE ERROR] User ID %v tidak ditemukan di Auth Service\n", userID)
+		utils.Error(c, "Data pengguna tidak ditemukan di sistem pusat")
+		return
+	}
 
 	if emp.Role == "ADMIN" {
 		utils.Error(c, "Akun Admin tidak diperbolehkan melakukan absensi.")
@@ -121,9 +135,56 @@ func CheckIn(c *gin.Context) {
 	var req struct {
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
+		FaceImage string  `json:"face_image"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.Error(c, "Koordinat lokasi diperlukan")
+	if err := c.BindJSON(&req); err != nil {
+		utils.Error(c, "Koordinat lokasi dan foto wajah diperlukan")
+		return
+	}
+
+	// [NEW] Verifikasi Wajah (Face Recognition)
+	if emp.FaceEmbedding == "" {
+		utils.Error(c, "Anda belum mendaftarkan Face ID. Silakan daftar di menu Profil.")
+		return
+	}
+
+	if req.FaceImage == "" {
+		utils.Error(c, "Foto wajah diperlukan untuk verifikasi absensi")
+		return
+	}
+
+	// Ambil embedding dari foto absen
+	liveEmb, err := getEmbedding(req.FaceImage)
+	if err != nil {
+		utils.Error(c, "Gagal memproses wajah: "+err.Error())
+		return
+	}
+
+	// Ambil embedding yang terdaftar
+	var registeredEmb []float32
+	if err := json.Unmarshal([]byte(emp.FaceEmbedding), &registeredEmb); err != nil {
+		utils.Error(c, "Data wajah terdaftar tidak valid")
+		return
+	}
+
+	// Hitung Cosine Similarity
+	if len(liveEmb) != len(registeredEmb) {
+		utils.Error(c, "Format data wajah tidak cocok")
+		return
+	}
+
+	var dotProduct, mag1, mag2 float32
+	for i := range liveEmb {
+		dotProduct += liveEmb[i] * registeredEmb[i]
+		mag1 += liveEmb[i] * liveEmb[i]
+		mag2 += registeredEmb[i] * registeredEmb[i]
+	}
+	similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
+
+	fmt.Printf("--> Verifikasi wajah untuk %s: Similarity = %.4f\n", emp.Name, similarity)
+
+	if similarity < 0.75 { // Threshold 0.75 untuk MobileFaceNet
+		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
 		return
 	}
 
@@ -213,10 +274,23 @@ func CheckIn(c *gin.Context) {
 	})
 }
 
-// CheckOut — karyawan melakukan absensi pulang
 func CheckOut(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	emp := userCtx.(models.User)
+	userID, _ := c.Get("user_id")
+	
+	// Ambil data User dari Auth Service (Microservices way)
+	var emp models.User
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
+	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
+		fmt.Printf("--> [ATTENDANCE ERROR] Gagal mengambil data dari Auth Service: %v\n", err)
+		utils.Error(c, "Gagal memverifikasi identitas ke Auth Service")
+		return
+	}
+
+	if emp.ID == "" {
+		fmt.Printf("--> [ATTENDANCE ERROR] User ID %v tidak ditemukan di Auth Service\n", userID)
+		utils.Error(c, "Data pengguna tidak ditemukan di sistem pusat")
+		return
+	}
 
 	if emp.Role == "ADMIN" {
 		utils.Error(c, "Akun Admin tidak diperbolehkan melakukan absensi.")
@@ -226,9 +300,56 @@ func CheckOut(c *gin.Context) {
 	var req struct {
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
+		FaceImage string  `json:"face_image"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.Error(c, "Koordinat lokasi diperlukan")
+	if err := c.BindJSON(&req); err != nil {
+		utils.Error(c, "Koordinat lokasi dan foto wajah diperlukan")
+		return
+	}
+
+	// [NEW] Verifikasi Wajah (Face Recognition)
+	if emp.FaceEmbedding == "" {
+		utils.Error(c, "Anda belum mendaftarkan Face ID. Silakan daftar di menu Profil.")
+		return
+	}
+
+	if req.FaceImage == "" {
+		utils.Error(c, "Foto wajah diperlukan untuk verifikasi absensi")
+		return
+	}
+
+	// Ambil embedding dari foto absen
+	liveEmb, err := getEmbedding(req.FaceImage)
+	if err != nil {
+		utils.Error(c, "Gagal memproses wajah: "+err.Error())
+		return
+	}
+
+	// Ambil embedding yang terdaftar
+	var registeredEmb []float32
+	if err := json.Unmarshal([]byte(emp.FaceEmbedding), &registeredEmb); err != nil {
+		utils.Error(c, "Data wajah terdaftar tidak valid")
+		return
+	}
+
+	// Hitung Cosine Similarity
+	if len(liveEmb) != len(registeredEmb) {
+		utils.Error(c, "Format data wajah tidak cocok")
+		return
+	}
+
+	var dotProduct, mag1, mag2 float32
+	for i := range liveEmb {
+		dotProduct += liveEmb[i] * registeredEmb[i]
+		mag1 += liveEmb[i] * liveEmb[i]
+		mag2 += registeredEmb[i] * registeredEmb[i]
+	}
+	similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
+
+	fmt.Printf("--> Verifikasi wajah (Check-out) untuk %s: Similarity = %.4f\n", emp.Name, similarity)
+
+	if similarity < 0.75 { // Threshold 0.75
+		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
 		return
 	}
 
@@ -1808,7 +1929,10 @@ func CalculateAttendanceAdjustments(userID string, month int, year int) (float64
 	}
 
 	var settings models.AttendanceSettings
-	database.DB.Where("company_id = ?", emp.CompanyID).First(&settings)
+	if err := database.DB.Where("company_id = ?", emp.CompanyID).First(&settings).Error; err != nil {
+		// Jika settings tidak ada, gunakan default atau skip
+		fmt.Printf("[Attendance] Settings tidak ditemukan untuk company %s\n", emp.CompanyID)
+	}
 
 	// Range tanggal
 	startT := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 
-import Link from 'next/link'
+import Link from '@components/Link'
 import { useRouter } from 'next/navigation'
 
 import { googleLogout } from '@react-oauth/google'
@@ -304,7 +304,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </button>
             </div>
           ) : (
-            <Link href='#' className='login-btn btn-disabled' onClick={e => e.preventDefault()}>Segera Hadir</Link>
+            <Link href='/login' className='login-btn'>Login</Link>
           )}
         </div>
 
@@ -337,7 +337,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               </div>
             ) : (
               <div className='sidebar-auth-buttons' style={{ marginTop: '0' }}>
-                <Link href='#' className='login-btn btn-disabled' onClick={e => { e.preventDefault(); toggleMenu(); }}>Segera Hadir</Link>
+                <Link href='/login' className='login-btn' onClick={toggleMenu}>Login</Link>
               </div>
             )}
           </div>
@@ -357,7 +357,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
             Kelola data kehadiran karyawan Anda dengan efisiensi tinggi tanpa ribet.
           </p>
           <div className='hero-cta'>
-            <a href='#' className='btn-primary btn-disabled' onClick={e => e.preventDefault()}>Segera Hadir</a>
+            <Link href='/login' className='btn-primary'>Mulai Sekarang</Link>
           </div>
         </div>
         
@@ -546,7 +546,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
               VIDENTI dirancang untuk memberikan pengalaman terbaik bagi admin maupun karyawan. 
               Dengan integrasi cloud, data Anda selalu aman dan dapat diakses dari mana saja tanpa kendala.
             </p>
-            <a href='#' className='btn-showcase btn-disabled' onClick={e => e.preventDefault()}>Segera Hadir</a>
+            <Link href='/login' className='btn-showcase'>Mulai Sekarang</Link>
           </div>
         </div>
       </section>
@@ -555,7 +555,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <section className='testimonials-section' id='testimonials'>
         <div className='section-header reveal reveal-up'>
           <h2>Apa Kata <span>Mereka?</span></h2>
-          <button className='btn-add-testi btn-disabled' disabled>Segera Hadir</button>
+          <button className='btn-add-testi' onClick={() => setShowTestimonialModal(true)}>Beri Ulasan Kami</button>
         </div>
 
         <div className='testimonials-marquee-wrapper'>

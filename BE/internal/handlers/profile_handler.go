@@ -7,7 +7,12 @@ import (
 	"employee-system/internal/models"
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"strings"
 	"time"
 
@@ -25,39 +30,43 @@ func GetMyProfile(c *gin.Context) {
 	}
 
 	type ProfileResponse struct {
-		ID                string  `json:"id"`
-		Name              string  `json:"name"`
-		Email             string  `json:"email"`
-		Phone             string  `json:"phone"`
-		BirthPlace        string  `json:"birth_place"`
-		BirthDate         string  `json:"birth_date"`
-		Address           string  `json:"address"`
-		PhotoURL          string  `json:"photo_url"`
-		Role              string  `json:"role"`
-		Status            string  `json:"status"`
-		PositionID        string  `json:"position_id"`
-		PositionName      string  `json:"position_name"`
-		Salary            float64 `json:"salary"`
-		CompanyID         string  `json:"company_id"`
-		BankName          string  `json:"bank_name"`
-		BankAccountNumber string  `json:"bank_account_number"`
+		ID                        string     `json:"id"`
+		Name                      string     `json:"name"`
+		Email                     string     `json:"email"`
+		Phone                     string     `json:"phone"`
+		BirthPlace                string     `json:"birth_place"`
+		BirthDate                 string     `json:"birth_date"`
+		Address                   string     `json:"address"`
+		PhotoURL                  string     `json:"photo_url"`
+		Role                      string     `json:"role"`
+		Status                    string     `json:"status"`
+		PositionID                string     `json:"position_id"`
+		PositionName              string     `json:"position_name"`
+		Salary                    float64    `json:"salary"`
+		CompanyID                 string     `json:"company_id"`
+		BankName                  string     `json:"bank_name"`
+		BankAccountNumber         string     `json:"bank_account_number"`
+		FaceEmbeddingRegistered   bool       `json:"face_embedding_registered"`
+		FaceUpdatedAt             *time.Time `json:"face_updated_at"`
 	}
 
 	resp := ProfileResponse{
-		ID:                user.ID,
-		Name:              user.Name,
-		Email:             user.Email,
-		Phone:             user.Phone,
-		BirthPlace:        user.BirthPlace,
-		BirthDate:         user.BirthDate,
-		Address:           user.Address,
-		PhotoURL:          user.PhotoURL,
-		Role:              user.Role,
-		Status:            user.Status,
-		PositionID:        "",
-		CompanyID:         user.CompanyID,
-		BankName:          user.BankName,
-		BankAccountNumber: user.BankAccountNumber,
+		ID:                        user.ID,
+		Name:                      user.Name,
+		Email:                     user.Email,
+		Phone:                     user.Phone,
+		BirthPlace:                user.BirthPlace,
+		BirthDate:                 user.BirthDate,
+		Address:                   user.Address,
+		PhotoURL:                  user.PhotoURL,
+		Role:                      user.Role,
+		Status:                    user.Status,
+		PositionID:                "",
+		CompanyID:                 user.CompanyID,
+		BankName:                  user.BankName,
+		BankAccountNumber:         user.BankAccountNumber,
+		FaceEmbeddingRegistered:   user.FaceEmbedding != "",
+		FaceUpdatedAt:             user.FaceUpdatedAt,
 	}
 
 	if user.PositionID != nil {
@@ -434,4 +443,232 @@ func DeleteAccount(c *gin.Context) {
 	}
 
 	utils.Success(c, "Proses Resign dan Hapus Akun Berhasil", nil)
+}
+
+// UpdateFaceEmbedding — mendaftarkan atau mengganti data wajah (cooldown 30 hari)
+func UpdateFaceEmbedding(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	var body struct {
+		FaceEmbedding string `json:"face_embedding"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || body.FaceEmbedding == "" {
+		utils.Error(c, "Data wajah tidak valid")
+		return
+	}
+
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan")
+		return
+	}
+
+	// Cek Cooldown 30 Hari
+	if dbUser.FaceUpdatedAt != nil {
+		daysPassed := int(time.Since(*dbUser.FaceUpdatedAt).Hours() / 24)
+		if daysPassed < 30 {
+			remaining := 30 - daysPassed
+			utils.Error(c, fmt.Sprintf("Anda baru saja mengganti Face ID. Silakan tunggu %d hari lagi.", remaining))
+			return
+		}
+	}
+
+	now := time.Now()
+	dbUser.FaceEmbedding = body.FaceEmbedding
+	dbUser.FaceUpdatedAt = &now
+
+	if err := database.DB.Save(&dbUser).Error; err != nil {
+		utils.Error(c, "Gagal menyimpan data wajah")
+		return
+	}
+
+	utils.Success(c, "Face ID berhasil didaftarkan", nil)
+}
+
+
+
+func RegisterFace(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	var in struct {
+		Images   []string `json:"images"`
+	}
+	if err := c.BindJSON(&in); err != nil {
+		utils.Error(c, "Input tidak valid")
+		return
+	}
+	if len(in.Images) == 0 {
+		utils.Error(c, "Data wajah tidak lengkap")
+		return
+	}
+
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan")
+		return
+	}
+
+	// Cek Cooldown 30 Hari
+	if dbUser.FaceUpdatedAt != nil {
+		daysPassed := int(time.Since(*dbUser.FaceUpdatedAt).Hours() / 24)
+		if daysPassed < 30 {
+			remaining := 30 - daysPassed
+			utils.Error(c, fmt.Sprintf("Anda baru saja mengganti Face ID. Silakan tunggu %d hari lagi.", remaining))
+			return
+		}
+	}
+
+	// Simpan semua gambar ke file temporary
+	var tempFiles []string
+	for i, b64 := range in.Images {
+		tempFile, err := os.CreateTemp("", fmt.Sprintf("face_reg_%d_*.jpg", i))
+		if err != nil {
+			continue
+		}
+		imgData, _ := base64.StdEncoding.DecodeString(b64)
+		tempFile.Write(imgData)
+		tempFile.Close()
+		tempFiles = append(tempFiles, tempFile.Name())
+	}
+	defer func() {
+		for _, f := range tempFiles {
+			os.Remove(f)
+		}
+	}()
+
+	fmt.Printf("--> Memproses registrasi wajah untuk: %s dengan %d gambar (Batch Mode)\n", dbUser.Name, len(tempFiles))
+
+	// Jalankan Python untuk semua gambar sekaligus
+	args := append([]string{"process_face.py"}, tempFiles...)
+	cmd := exec.Command("python", args...)
+	output, _ := cmd.CombinedOutput()
+	// Filter output menggunakan Tag JSON_START dan JSON_END
+	outStr := string(output)
+	var jsonStr string
+	
+	startTag := "JSON_START"
+	endTag := "JSON_END"
+	
+	startIdx := strings.Index(outStr, startTag)
+	endIdx := strings.LastIndex(outStr, endTag)
+	
+	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+		jsonStr = outStr[startIdx+len(startTag) : endIdx]
+	} else {
+		utils.Error(c, "Data AI tidak ditemukan dalam output. Output asli: "+outStr)
+		return
+	}
+
+	var allResults []interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &allResults); err != nil {
+		utils.Error(c, "Gagal mengurai data AI: "+err.Error())
+		return
+	}
+
+	var validEmbeddings [][]float32
+	for _, res := range allResults {
+		// Cek apakah hasil adalah array float (embedding) atau error object
+		if emb, ok := res.([]interface{}); ok {
+			var floatEmb []float32
+			for _, v := range emb {
+				floatEmb = append(floatEmb, float32(v.(float64)))
+			}
+			validEmbeddings = append(validEmbeddings, floatEmb)
+		}
+	}
+
+	if len(validEmbeddings) == 0 {
+		utils.Error(c, "Tidak ada wajah valid yang terdeteksi dari gambar yang dikirim")
+		return
+	}
+
+	// Hitung Rata-rata (Mean Embedding)
+	embSize := len(validEmbeddings[0])
+	meanEmb := make([]float32, embSize)
+	for _, emb := range validEmbeddings {
+		for i := 0; i < embSize; i++ {
+			meanEmb[i] += emb[i]
+		}
+	}
+	for i := 0; i < embSize; i++ {
+		meanEmb[i] /= float32(len(validEmbeddings))
+	}
+
+	embS, _ := json.Marshal(meanEmb)
+	dbUser.FaceEmbedding = string(embS)
+	now := time.Now()
+	dbUser.FaceUpdatedAt = &now
+
+	if err := database.DB.Save(&dbUser).Error; err != nil {
+		utils.Error(c, "Gagal menyimpan data wajah")
+		return
+	}
+
+	utils.Success(c, "Registrasi wajah berhasil", gin.H{
+		"images_processed": len(validEmbeddings),
+	})
+}
+
+// getEmbedding digunakan untuk verifikasi wajah tunggal (saat absen)
+func getEmbedding(base64Image string) ([]float32, error) {
+	tempFile, err := os.CreateTemp("", "face_verify_*.jpg")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tempFile.Name())
+
+	imgData, err := base64.StdEncoding.DecodeString(base64Image)
+	if err != nil {
+		return nil, err
+	}
+	tempFile.Write(imgData)
+	tempFile.Close()
+
+	// Panggil Python untuk 1 gambar
+	cmd := exec.Command("python", "process_face.py", tempFile.Name())
+	output, _ := cmd.CombinedOutput()
+	
+	// Filter output menggunakan Tag
+	outStr := string(output)
+	var jsonStr string
+	startTag := "JSON_START"
+	endTag := "JSON_END"
+	
+	startIdx := strings.Index(outStr, startTag)
+	endIdx := strings.LastIndex(outStr, endTag)
+	
+	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
+		jsonStr = outStr[startIdx+len(startTag) : endIdx]
+	} else {
+		return nil, fmt.Errorf("AI Error: Tag tidak ditemukan | %s", outStr)
+	}
+
+	var results []interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &results); err != nil {
+		return nil, fmt.Errorf("Format AI Error: %v", err)
+	}
+
+	if len(results) == 0 {
+		return nil, fmt.Errorf("wajah tidak terdeteksi")
+	}
+
+	// Hasil batch mode mengembalikan array of array
+	if emb, ok := results[0].([]interface{}); ok {
+		var floatEmb []float32
+		for _, v := range emb {
+			floatEmb = append(floatEmb, float32(v.(float64)))
+		}
+		return floatEmb, nil
+	}
+
+	// Jika Python mengembalikan error object di elemen pertama
+	if errMap, ok := results[0].(map[string]interface{}); ok {
+		if errMsg, exists := errMap["error"]; exists {
+			return nil, fmt.Errorf("%v", errMsg)
+		}
+	}
+
+	return nil, fmt.Errorf("gagal memproses embedding")
 }

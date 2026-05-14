@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../../../../core/network/api_client.dart';
 import '../../../../../core/storage/session_storage.dart';
+import '../face_verification_screen.dart';
 import '../../../../../core/utils/currency_formatter.dart';
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/providers/notification_provider.dart';
@@ -224,11 +225,33 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       return;
     }
 
+    final bool isFaceRegistered = _profileData?['face_embedding_registered'] ?? false;
+    if (!isFaceRegistered) {
+      HapticFeedback.vibrate();
+      AppDialog.showError(
+        context, 
+        'Wajah Tidak Terdeteksi di Sistem.\n\nAnda belum mendaftarkan Face ID. Silakan daftar di tab Profil terlebih dahulu untuk menggunakan fitur absensi.',
+      );
+      return;
+    }
+
+    // [NEW] Buka Layar Verifikasi Wajah
+    final String? faceImageB64 = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FaceVerificationScreen()),
+    );
+
+    if (faceImageB64 == null) {
+      // User membatalkan verifikasi
+      return;
+    }
+
     setState(() => _actionLoading = true);
     try {
       final res = await ApiClient.post('/api/employee/attendance/$action', {
         'latitude': _currentPosition!.latitude,
         'longitude': _currentPosition!.longitude,
+        'face_image': faceImageB64,
       });
       if (!mounted) return;
       if (res.success) {

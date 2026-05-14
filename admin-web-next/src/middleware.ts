@@ -4,13 +4,7 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Allow /landing explicitly if needed (though the matcher should handle it)
-  if (pathname === '/landing') {
-    return NextResponse.next()
-  }
-
-  // Redirect everything else to /landing
-  return NextResponse.redirect(new URL('/landing', request.url))
+  return NextResponse.next()
 }
 
 export const config = {

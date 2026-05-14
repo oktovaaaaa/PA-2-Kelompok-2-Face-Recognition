@@ -1,6 +1,7 @@
-# back_end
+A new Flutter project for the Employee Presence System.
 
-A new Flutter project.
+## 📱 Wireless Run Instructions
+For instructions on how to run this app wirelessly on your Android phone, please see the [Root README.md](../README.md#panduan-menjalankan-secara-wireless-android).
 
 ## Getting Started
 

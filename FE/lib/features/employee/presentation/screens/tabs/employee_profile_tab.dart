@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import '../../../../common/widgets/app_text_field.dart';
 import '../../../../common/widgets/app_dialog.dart';
 import '../../../../auth/data/auth_repository.dart';
+import '../face_registration_screen.dart';
 import 'package:pinput/pinput.dart';
 import '../../../../../core/utils/currency_formatter.dart';
 
@@ -520,6 +521,8 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                   const SizedBox(height: 20),
                   _buildSecurityCard(),
                   const SizedBox(height: 20),
+                  _buildFaceIdCard(),
+                  const SizedBox(height: 20),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -602,6 +605,85 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
             title: const Text('Resign & Hapus Akun', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
             subtitle: const Text('Data riwayat tetap tersimpan di perusahaan', style: TextStyle(fontSize: 12, color: Colors.red)),
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFaceIdCard() {
+    final bool isRegistered = _profile?['face_embedding_registered'] ?? false;
+    final String lastUpdated = _profile?['face_updated_at'] != null 
+        ? _profile!['face_updated_at'].toString().substring(0, 10) 
+        : '-';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Icon(Icons.face_retouching_natural_rounded, color: Color(0xFF2563EB), size: 24),
+                SizedBox(width: 16),
+                Text('Presensi Face ID', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A))),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isRegistered ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isRegistered ? Icons.verified_user_rounded : Icons.gpp_maybe_rounded,
+                color: isRegistered ? Colors.green : Colors.orange,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              isRegistered ? 'Face ID Terdaftar' : 'Face ID Belum Terdaftar',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            subtitle: Text(
+              isRegistered ? 'Terakhir diperbarui: $lastUpdated' : 'Daftarkan wajah untuk fitur absensi AI',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FaceRegistrationScreen()),
+                  );
+                  if (result == true) {
+                    _load();
+                  }
+                },
+                icon: const Icon(Icons.camera_front_rounded, size: 18),
+                label: Text(isRegistered ? 'Perbarui Face ID' : 'Daftar Face ID Sekarang'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isRegistered ? const Color(0xFF1E3A8A) : const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+              ),
+            ),
           ),
         ],
       ),
