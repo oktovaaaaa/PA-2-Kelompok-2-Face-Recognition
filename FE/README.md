@@ -1,4 +1,11 @@
+# Videnti - Employee Presence System (Mobile)
+
 A new Flutter project for the Employee Presence System.
+
+> [!IMPORTANT]
+> **Android Only Project**: Proyek ini dikembangkan secara khusus untuk platform **Android**. Folder untuk platform lain (iOS, macOS, Linux, Windows, Web) telah dihapus untuk menjaga kebersihan proyek dan efisiensi pengembangan.
+
+---
 
 ## 📱 Wireless Run Instructions
 For instructions on how to run this app wirelessly on your Android phone, please see the [Root README.md](../README.md#panduan-menjalankan-secara-wireless-android).
