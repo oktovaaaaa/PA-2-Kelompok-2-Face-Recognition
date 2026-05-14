@@ -42,19 +42,36 @@ class SessionProvider extends ChangeNotifier {
     _inactivityTimer = null;
   }
 
+  bool _isInForeground = true;
+
   void handleAppLifecycleState(AppLifecycleState state) {
-    if (!authProvider.isAuthenticated) return; // Ignore if not logged in
+    print("DEBUG: Lifecycle State Changed to: $state");
+    if (!authProvider.isAuthenticated) {
+      print("DEBUG: User not authenticated, ignoring lifecycle change.");
+      return;
+    }
 
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _lastActiveTime = DateTime.now();
-      _cancelTimer(); // Stop the timer when backgrounded
+      if (_isInForeground) {
+        _lastActiveTime = DateTime.now();
+        _isInForeground = false;
+        print("DEBUG: App leaving foreground at: $_lastActiveTime");
+        _cancelTimer();
+      }
     } else if (state == AppLifecycleState.resumed) {
-      if (_lastActiveTime != null) {
-        final diff = DateTime.now().difference(_lastActiveTime!);
-        if (diff.inMinutes >= 15) {
-          authProvider.lockSession();
-        } else {
-          startTimer(); // Resume the timer
+      print("DEBUG: App resumed. Previous foreground state: $_isInForeground");
+      if (!_isInForeground) {
+        _isInForeground = true;
+        if (_lastActiveTime != null) {
+          final diff = DateTime.now().difference(_lastActiveTime!);
+          print("DEBUG: Time spent in background: ${diff.inSeconds} seconds");
+          if (diff.inMinutes >= 1) {
+            print("DEBUG: Lock threshold (1m) reached. Locking session...");
+            authProvider.lockSession();
+          } else {
+            print("DEBUG: Lock threshold not reached. Resuming session.");
+            startTimer();
+          }
         }
       }
     }

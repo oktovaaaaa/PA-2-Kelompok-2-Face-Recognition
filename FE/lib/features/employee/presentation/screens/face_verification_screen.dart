@@ -180,14 +180,14 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
       isCamReady = _ctrl.value.isInitialized;
     } catch (_) {}
 
-    if (!_isInitialized || !isCamReady) return const Scaffold(backgroundColor: Colors.black, body: Center(child: CircularProgressIndicator(color: Colors.white)));
+    if (!_isInitialized || !isCamReady) return const Scaffold(backgroundColor: Colors.white, body: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))));
     
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           const SizedBox(height: 60),
-          const Text("VERIFIKASI WAJAH", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 18)),
+          const Text("VERIFIKASI WAJAH", style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 18)),
           const Spacer(),
           Center(
             child: Stack(
@@ -196,7 +196,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
                 SizedBox(width: 360, height: 360, child: CustomPaint(painter: VerificationTicksPainter(_progress))),
                 Container(
                   width: 280, height: 280,
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white24, width: 2)),
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black12, width: 2)),
                   child: ClipOval(
                     child: FittedBox(
                       fit: BoxFit.cover,
@@ -211,8 +211,8 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
                 if (_cooldown)
                   Container(
                     width: 280, height: 280,
-                    decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle),
-                    child: const Icon(Icons.check_circle, color: Colors.greenAccent, size: 80),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), shape: BoxShape.circle),
+                    child: const Icon(Icons.check_circle, color: Colors.green, size: 80),
                   ),
               ],
             ),
@@ -221,15 +221,15 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
           Text(
             _hint,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
           ),
           const Spacer(),
           Padding(
             padding: const EdgeInsets.only(bottom: 40),
             child: TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("BATALKAN", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
-            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("BATALKAN", style: TextStyle(color: Colors.black38, fontWeight: FontWeight.bold)),
+          ),
           ),
         ],
       ),
@@ -256,7 +256,7 @@ class VerificationTicksPainter extends CustomPainter {
     for (int i = 0; i < totalTicks; i++) {
       final angle = (i * 2 * math.pi) / totalTicks - (math.pi / 2);
       final isCompleted = (i / totalTicks) < progress;
-      paint.color = isCompleted ? Colors.greenAccent : Colors.white12;
+      paint.color = isCompleted ? const Color(0xFF2563EB) : Colors.black.withOpacity(0.1);
       paint.strokeWidth = isCompleted ? 4 : 2;
       final innerR = radius - 25;
       final outerR = radius - 5;

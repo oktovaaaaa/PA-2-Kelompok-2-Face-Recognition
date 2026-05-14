@@ -465,5 +465,32 @@ return resData.data as CompanyLocation;
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus lokasi.');
         
 return data;
+    },
+
+    // 10. Session Methods
+    async getSessions() {
+        const response = await fetch(`${API_URL}/sessions`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar perangkat.');
+        
+return data.data as any[];
+    },
+
+    async deleteSession(id: string) {
+        const response = await fetch(`${API_URL}/sessions/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Gagal mengeluarkan perangkat.');
+        
+return data;
     }
 };

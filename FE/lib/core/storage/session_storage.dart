@@ -1,6 +1,5 @@
-// lib/storage/session_storage.dart
-
-
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionStorage {
@@ -11,6 +10,20 @@ class SessionStorage {
   static const _companyIdKey = 'company_id';
   static const _deviceIdKey = 'device_id';
   static const _nameKey = 'user_name';
+
+  static Future<String> getDeviceName() async {
+    final deviceInfo = DeviceInfoPlugin();
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return '${androidInfo.manufacturer} ${androidInfo.model} (Android)';
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return '${iosInfo.name ?? iosInfo.model ?? 'iPhone'} (iOS)';
+      }
+    } catch (_) {}
+    return Platform.isAndroid ? 'Android Device' : 'iOS Device';
+  }
 
   static Future<void> saveSession({
     required String token,

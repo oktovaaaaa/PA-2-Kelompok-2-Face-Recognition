@@ -10,6 +10,7 @@ import AccountSettings from '@views/account-settings'
 const AccountTab = dynamic(() => import('@views/account-settings/account'))
 const SecurityTab = dynamic(() => import('@views/account-settings/security'))
 const CompanyTab = dynamic(() => import('@views/account-settings/company'))
+const DevicesTab = dynamic(() => import('@views/account-settings/devices'))
 
 const AccountSettingsPage = () => {
   const [role, setRole] = useState<string | null>(null)
@@ -24,6 +25,7 @@ const AccountSettingsPage = () => {
     const tabs: { [key: string]: ReactElement } = {
       account: <AccountTab />,
       security: <SecurityTab />,
+      devices: <DevicesTab />,
     }
 
     // Hanya tampilkan tab instansi jika bukan Super Admin

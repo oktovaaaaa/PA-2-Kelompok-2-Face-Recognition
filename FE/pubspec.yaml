@@ -36,11 +36,21 @@ dependencies:
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   calendar_date_picker2: ^1.1.9
+  pdf: ^3.12.0
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  image_path: "assets/images/videnti_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/videnti_icon.png"
 
 flutter:
   uses-material-design: true

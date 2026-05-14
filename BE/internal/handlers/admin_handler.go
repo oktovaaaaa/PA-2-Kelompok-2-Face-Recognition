@@ -236,5 +236,8 @@ func ResetDeviceBinding(c *gin.Context) {
 	user.DeviceID = ""
 	database.DB.Save(&user)
 
+	// Clear all active sessions for this user (Force Logout everywhere)
+	database.DB.Where("user_id = ?", user.ID).Delete(&models.Session{})
+
 	utils.Success(c, "Device binding berhasil direset", nil)
 }

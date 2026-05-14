@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/excel_export_service.dart';
+import '../../../../core/services/pdf_export_service.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -106,8 +107,71 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
           children: [
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 24),
-            const Text('Unduh Laporan Excel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-            const Text('Pilih periode laporan yang ingin Anda unduh', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+            const Text('Unduh Laporan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            const Text('Pilih format laporan yang ingin Anda unduh', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+            const SizedBox(height: 24),
+            
+            // Format Selector
+            Row(
+              children: [
+                _buildFormatBtn('PDF', Icons.picture_as_pdf_rounded, const Color(0xFFEF4444), 'pdf'),
+                const SizedBox(width: 12),
+                _buildFormatBtn('Excel', Icons.table_chart_rounded, const Color(0xFF10B981), 'excel'),
+              ],
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormatBtn(String label, IconData icon, Color color, String format) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(context);
+          _showDownloadPeriodSelector(format);
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.1)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(height: 8),
+              Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDownloadPeriodSelector(String format) {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 24),
+            Text('Pilih Periode (${format.toUpperCase()})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            const Text('Pilih periode data yang akan diekspor', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
             const SizedBox(height: 24),
             _buildDownloadOption(
               icon: Icons.calendar_month_rounded,
@@ -115,7 +179,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               desc: 'Unduh laporan per bulan tertentu',
               onTap: () {
                 Navigator.pop(context);
-                _showDownloadFilterSelector('month');
+                _showDownloadFilterSelector('month', format);
               },
             ),
             const SizedBox(height: 12),
@@ -125,7 +189,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               desc: 'Unduh laporan satu tahun penuh',
               onTap: () {
                 Navigator.pop(context);
-                _showDownloadFilterSelector('year');
+                _showDownloadFilterSelector('year', format);
               },
             ),
             const SizedBox(height: 12),
@@ -135,7 +199,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
               desc: 'Unduh laporan berdasarkan rentang dari-sampai',
               onTap: () {
                 Navigator.pop(context);
-                _showDownloadFilterSelector('custom');
+                _showDownloadFilterSelector('custom', format);
               },
             ),
             const SizedBox(height: 32),
@@ -180,7 +244,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     );
   }
 
-  Future<void> _showDownloadFilterSelector(String type) async {
+  Future<void> _showDownloadFilterSelector(String type, String format) async {
     int dlMonth = _selectedMonth;
     int dlYear = _selectedYear;
     DateTimeRange? dlRange = _selectedDateRange;
@@ -234,7 +298,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _handleDownloadProcess(type, month: dlMonth, year: dlYear, range: dlRange);
+              _handleDownloadProcess(type, format, month: dlMonth, year: dlYear, range: dlRange);
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: const Text('Unduh Sekarang', style: TextStyle(color: Colors.white)),
@@ -244,7 +308,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
     );
   }
 
-  Future<void> _handleDownloadProcess(String filterType, {int? month, int? year, DateTimeRange? range}) async {
+  Future<void> _handleDownloadProcess(String filterType, String format, {int? month, int? year, DateTimeRange? range}) async {
     // Show Loading
     AppDialog.showLoading(context, message: 'Menyiapkan laporan...');
     
@@ -272,14 +336,20 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
         final List<dynamic> records = res.data;
         
         // Calculate stats
-        Map<String, int> stats = {'PRESENT': 0, 'LATE': 0, 'ABSENT': 0, 'WORKING': 0, 'NOT_YET': 0, 'EARLY_LEAVE': 0};
+        Map<String, int> stats = {'PRESENT': 0, 'LATE': 0, 'ABSENT': 0, 'WORKING': 0, 'NOT_YET': 0, 'EARLY_LEAVE': 0, 'LEAVE': 0, 'SICK': 0, 'IZIN': 0, 'SAKIT': 0};
         for (var r in records) {
           final s = (r['status'] ?? '').toString().toUpperCase();
-          if (stats.containsKey(s)) stats[s] = (stats[s] ?? 0) + 1;
+          stats[s] = (stats[s] ?? 0) + 1;
         }
 
         final fileName = 'Laporan_Kehadiran_${periodLabel.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
-        final path = await ExcelExportService.exportAttendance(records, fileName, stats: stats, periodLabel: periodLabel);
+        
+        String path;
+        if (format == 'excel') {
+          path = await ExcelExportService.exportAttendance(records, fileName, stats: stats, periodLabel: periodLabel);
+        } else {
+          path = await PdfExportService.exportAttendance(records, fileName, stats: stats, periodLabel: periodLabel);
+        }
         
         if (mounted) {
           AppDialog.showSuccess(

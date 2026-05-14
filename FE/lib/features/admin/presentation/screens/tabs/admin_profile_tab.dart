@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import '../location_management_screen.dart';
+import '../../../../common/presentation/screens/device_management_screen.dart';
 import '../../../../common/widgets/premium_bottom_nav.dart';
 import '../holiday_management_screen.dart';
 import 'dart:convert';
@@ -61,19 +62,48 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
     });
   }
 
-  Future<void> _logout() async {
-    final act = await AppDialog.showConfirm(
-      context,
-      title: 'Keluar Aplikasi',
-      message: 'Apakah Anda yakin ingin keluar dari sesi ini?',
-      confirmText: 'Ya, Keluar',
-      confirmColor: Colors.red.shade600,
-    );
+  bool _isLoggingOut = false;
 
-    if (act != true) return;
-    await SessionStorage.clear();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LandingScreen()), (_) => false);
+  Future<void> _logout() async {
+    if (_isLoggingOut) return;
+    
+    setState(() => _isLoggingOut = true);
+    
+    // Beri jeda sedikit agar Navigator stabil
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    try {
+      if (!mounted) return;
+      
+      final act = await AppDialog.showConfirm(
+        context,
+        title: 'Keluar Aplikasi',
+        message: 'Apakah Anda yakin ingin keluar dari sesi ini?',
+        confirmText: 'Ya, Keluar',
+        confirmColor: Colors.red.shade600,
+      );
+
+      if (act != true) {
+        if (mounted) setState(() => _isLoggingOut = false);
+        return;
+      }
+
+      await SessionStorage.clear();
+      if (!mounted) return;
+      
+      Navigator.pushAndRemoveUntil(
+        context, 
+        MaterialPageRoute(builder: (_) => const LandingScreen()), 
+        (_) => false
+      );
+    } catch (e) {
+      if (mounted) setState(() => _isLoggingOut = false);
+    } finally {
+      // Pastikan flag direset jika tidak pindah halaman
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _isLoggingOut = false);
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -862,6 +892,16 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
           ),
           const Divider(height: 1, indent: 70),
           ListTile(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const DeviceManagementScreen()));
+            },
+            leading: const Icon(Icons.devices_rounded, color: Color(0xFF1E3A8A)),
+            title: const Text('Daftar Perangkat', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            subtitle: const Text('Lihat dan kelola perangkat yang sedang login', style: TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+          ),
+          const Divider(height: 1, indent: 70),
+          ListTile(
             onTap: _showDeleteAccountFlow,
             leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
             title: const Text('Hapus Akun Permanen', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.red)),
@@ -903,136 +943,139 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
 
           return Container(
             decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-            padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Ubah Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF0F172A))),
-                    IconButton(onPressed: () {
-                      localTimer?.cancel();
-                      Navigator.pop(context);
-                    }, icon: const Icon(Icons.close_rounded)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  otpSent 
-                    ? 'Silakan masukkan kode OTP yang telah dikirim ke email Anda dan buat password baru.'
-                    : 'Untuk keamanan Admin, silakan masukkan password lama Anda untuk meminta kode OTP verifikasi.',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey)
-                ),
-                const SizedBox(height: 24),
-                
-                // STEP 1: PASSWORD LAMA
-                AppTextField(
-                  controller: oldPassCtrl, 
-                  label: 'Password Lama', 
-                  obscure: true, 
-                  prefixIcon: Icons.lock_outline_rounded,
-                  enabled: !otpSent,
-                ),
-                const SizedBox(height: 24),
-
-                if (!otpSent) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: sendingOtp ? null : () async {
-                        if (oldPassCtrl.text.isEmpty) {
-                          AppDialog.showError(context, 'Masukkan password lama Anda');
-                          return;
-                        }
-                        setModalState(() => sendingOtp = true);
-                        try {
-                          await _repo.requestProfileOtp();
-                          startLocalTimer();
-                          setModalState(() {
-                            sendingOtp = false;
-                            otpSent = true;
-                          });
-                          AppDialog.showSuccess(context, 'Kode OTP berhasil dikirim ke email');
-                        } catch (e) {
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showError(context, 'Gagal: $e');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      child: sendingOtp 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Kirim Kode OTP ke Email', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(left: 24, right: 24, top: 32, bottom: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Ubah Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF0F172A))),
+                      IconButton(onPressed: () {
+                        localTimer?.cancel();
+                        Navigator.pop(context);
+                      }, icon: const Icon(Icons.close_rounded)),
+                    ],
                   ),
-                ] else ...[
-                  // STEP 2: OTP & PASSWORD BARU
-                  const Text('Kode OTP (6 Digit)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Pinput(
-                      controller: otpCtrl,
-                      length: 6,
-                      defaultPinTheme: PinTheme(
-                        width: 46, height: 52,
-                        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF3B82F6))),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: TextButton(
-                      onPressed: localCountdown > 0 ? null : () async {
-                        setModalState(() => sendingOtp = true);
-                        try {
-                          await _repo.requestProfileOtp();
-                          startLocalTimer();
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showSuccess(context, 'OTP dikirim ulang');
-                        } catch (e) {
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showError(context, 'Gagal: $e');
-                        }
-                      },
-                      child: Text(localCountdown > 0 ? 'Kirim Ulang dalam $localCountdown s' : 'Kirim Ulang OTP'),
-                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    otpSent 
+                      ? 'Silakan masukkan kode OTP yang telah dikirim ke email Anda dan buat password baru.'
+                      : 'Untuk keamanan Admin, silakan masukkan password lama Anda untuk meminta kode OTP verifikasi.',
+                    style: const TextStyle(fontSize: 13, color: Colors.grey)
                   ),
                   const SizedBox(height: 24),
-                  AppTextField(controller: newPassCtrl, label: 'Password Baru', obscure: true, prefixIcon: Icons.vpn_key_outlined),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: sendingOtp ? null : () async {
-                        if (otpCtrl.text.length != 6 || newPassCtrl.text.isEmpty) {
-                          AppDialog.showError(context, 'Lengkapi OTP dan Password Baru');
-                          return;
-                        }
-                        setModalState(() => sendingOtp = true);
-                        try {
-                          await _repo.changePassword(
-                            oldPassword: oldPassCtrl.text, 
-                            otpCode: otpCtrl.text, 
-                            newPassword: newPassCtrl.text
-                          );
-                          Navigator.pop(context); // Close modal
-                          AppDialog.showSuccess(context, 'Password berhasil diperbarui');
-                        } catch (e) {
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showError(context, 'Gagal: $e');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      child: sendingOtp 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Simpan Password Baru', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
+                  
+                  // STEP 1: PASSWORD LAMA
+                  AppTextField(
+                    controller: oldPassCtrl, 
+                    label: 'Password Lama', 
+                    obscure: true, 
+                    prefixIcon: Icons.lock_outline_rounded,
+                    enabled: !otpSent,
                   ),
+                  const SizedBox(height: 24),
+
+                  if (!otpSent) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: sendingOtp ? null : () async {
+                          if (oldPassCtrl.text.isEmpty) {
+                            AppDialog.showError(context, 'Masukkan password lama Anda');
+                            return;
+                          }
+                          setModalState(() => sendingOtp = true);
+                          try {
+                            await _repo.requestProfileOtp();
+                            startLocalTimer();
+                            setModalState(() {
+                              sendingOtp = false;
+                              otpSent = true;
+                            });
+                            AppDialog.showSuccess(context, 'Kode OTP berhasil dikirim ke email');
+                          } catch (e) {
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showError(context, 'Gagal: $e');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        child: sendingOtp 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Kirim Kode OTP ke Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ] else ...[
+                    // STEP 2: OTP & PASSWORD BARU
+                    const Text('Kode OTP (6 Digit)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Pinput(
+                        controller: otpCtrl,
+                        length: 6,
+                        defaultPinTheme: PinTheme(
+                          width: 46, height: 52,
+                          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF3B82F6))),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton(
+                        onPressed: localCountdown > 0 ? null : () async {
+                          setModalState(() => sendingOtp = true);
+                          try {
+                            await _repo.requestProfileOtp();
+                            startLocalTimer();
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showSuccess(context, 'OTP dikirim ulang');
+                          } catch (e) {
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showError(context, 'Gagal: $e');
+                          }
+                        },
+                        child: Text(localCountdown > 0 ? 'Kirim Ulang dalam $localCountdown s' : 'Kirim Ulang OTP'),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    AppTextField(controller: newPassCtrl, label: 'Password Baru', obscure: true, prefixIcon: Icons.vpn_key_outlined),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: sendingOtp ? null : () async {
+                          if (otpCtrl.text.length != 6 || newPassCtrl.text.isEmpty) {
+                            AppDialog.showError(context, 'Lengkapi OTP dan Password Baru');
+                            return;
+                          }
+                          setModalState(() => sendingOtp = true);
+                          try {
+                            await _repo.changePassword(
+                              oldPassword: oldPassCtrl.text, 
+                              otpCode: otpCtrl.text, 
+                              newPassword: newPassCtrl.text
+                            );
+                            Navigator.pop(context); // Close modal
+                            AppDialog.showSuccess(context, 'Password berhasil diperbarui');
+                          } catch (e) {
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showError(context, 'Gagal: $e');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        child: sendingOtp 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Simpan Password Baru', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         }
@@ -1070,159 +1113,162 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
 
           return Container(
             decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-            padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Ubah PIN Transaksi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF0F172A))),
-                    IconButton(onPressed: () {
-                      localTimer?.cancel();
-                      Navigator.pop(context);
-                    }, icon: const Icon(Icons.close_rounded)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  otpSent 
-                    ? 'Silakan masukkan kode OTP yang telah dikirim ke email Anda dan buat PIN baru.'
-                    : 'Sebagai Admin, Anda perlu memverifikasi identitas dengan PIN lama untuk meminta OTP.',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey)
-                ),
-                const SizedBox(height: 24),
-                
-                // STEP 1: PIN LAMA
-                const Text('PIN Lama', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                const SizedBox(height: 12),
-                Center(
-                  child: Pinput(
-                    controller: oldPinCtrl,
-                    length: 6,
-                    obscureText: true,
-                    enabled: !otpSent,
-                    defaultPinTheme: PinTheme(
-                      width: 46, height: 52,
-                      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
-                    ),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(left: 24, right: 24, top: 32, bottom: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Ubah PIN Transaksi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF0F172A))),
+                      IconButton(onPressed: () {
+                        localTimer?.cancel();
+                        Navigator.pop(context);
+                      }, icon: const Icon(Icons.close_rounded)),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                if (!otpSent) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: sendingOtp ? null : () async {
-                        if (oldPinCtrl.text.length != 6) {
-                          AppDialog.showError(context, 'Masukkan PIN lama 6 digit');
-                          return;
-                        }
-                        setModalState(() => sendingOtp = true);
-                        try {
-                          await _repo.requestProfileOtp();
-                          startLocalTimer();
-                          setModalState(() {
-                            sendingOtp = false;
-                            otpSent = true;
-                          });
-                          AppDialog.showSuccess(context, 'OTP berhasil dikirim ke email Anda');
-                        } catch (e) {
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showError(context, 'Gagal mengirim OTP: $e');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      child: sendingOtp 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Kirim Kode OTP ke Email', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ] else ...[
-                  // STEP 2: OTP & PIN BARU
-                  const Text('Kode OTP (Cek Email)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Pinput(
-                      controller: otpCtrl,
-                      length: 6,
-                      defaultPinTheme: PinTheme(
-                        width: 46, height: 52,
-                        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF3B82F6))),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: TextButton(
-                      onPressed: localCountdown > 0 ? null : () async {
-                        setModalState(() => sendingOtp = true);
-                        try {
-                          await _repo.requestProfileOtp();
-                          startLocalTimer();
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showSuccess(context, 'OTP dikirim ulang');
-                        } catch (e) {
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showError(context, 'Gagal: $e');
-                        }
-                      },
-                      child: Text(localCountdown > 0 ? 'Kirim Ulang dalam $localCountdown s' : 'Kirim Ulang OTP'),
-                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    otpSent 
+                      ? 'Silakan masukkan kode OTP yang telah dikirim ke email Anda dan buat PIN baru.'
+                      : 'Sebagai Admin, Anda perlu memverifikasi identitas dengan PIN lama untuk meminta OTP.',
+                    style: const TextStyle(fontSize: 13, color: Colors.grey)
                   ),
                   const SizedBox(height: 24),
-                  const Text('PIN Baru', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                  
+                  // STEP 1: PIN LAMA
+                  const Text('PIN Lama', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
                   const SizedBox(height: 12),
                   Center(
                     child: Pinput(
-                      controller: newPinCtrl,
+                      controller: oldPinCtrl,
                       length: 6,
                       obscureText: true,
+                      enabled: !otpSent,
                       defaultPinTheme: PinTheme(
                         width: 46, height: 52,
                         decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: sendingOtp ? null : () async {
-                        if (otpCtrl.text.length != 6 || newPinCtrl.text.length != 6) {
-                          AppDialog.showError(context, 'Lengkapi OTP dan PIN Baru');
-                          return;
-                        }
-                        setModalState(() => sendingOtp = true);
-                        try {
-                          await _repo.changePin(
-                            oldPin: oldPinCtrl.text, 
-                            otpCode: otpCtrl.text, 
-                            newPin: newPinCtrl.text
-                          );
-                          Navigator.pop(context); // Close modal
-                          AppDialog.showSuccess(context, 'PIN berhasil diperbarui');
-                        } catch (e) {
-                          setModalState(() => sendingOtp = false);
-                          AppDialog.showError(context, 'Gagal: $e');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB), 
-                        foregroundColor: Colors.white, 
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
+                  const SizedBox(height: 24),
+
+                  if (!otpSent) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: sendingOtp ? null : () async {
+                          if (oldPinCtrl.text.length != 6) {
+                            AppDialog.showError(context, 'Masukkan PIN lama 6 digit');
+                            return;
+                          }
+                          setModalState(() => sendingOtp = true);
+                          try {
+                            await _repo.requestProfileOtp();
+                            startLocalTimer();
+                            setModalState(() {
+                              sendingOtp = false;
+                              otpSent = true;
+                            });
+                            AppDialog.showSuccess(context, 'OTP berhasil dikirim ke email Anda');
+                          } catch (e) {
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showError(context, 'Gagal mengirim OTP: $e');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        child: sendingOtp 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Kirim Kode OTP ke Email', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
-                      child: sendingOtp 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Simpan PIN Baru', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  ),
+                  ] else ...[
+                    // STEP 2: OTP & PIN BARU
+                    const Text('Kode OTP (Cek Email)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Pinput(
+                        controller: otpCtrl,
+                        length: 6,
+                        defaultPinTheme: PinTheme(
+                          width: 46, height: 52,
+                          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF3B82F6))),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton(
+                        onPressed: localCountdown > 0 ? null : () async {
+                          setModalState(() => sendingOtp = true);
+                          try {
+                            await _repo.requestProfileOtp();
+                            startLocalTimer();
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showSuccess(context, 'OTP dikirim ulang');
+                          } catch (e) {
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showError(context, 'Gagal: $e');
+                          }
+                        },
+                        child: Text(localCountdown > 0 ? 'Kirim Ulang dalam $localCountdown s' : 'Kirim Ulang OTP'),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('PIN Baru', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Pinput(
+                        controller: newPinCtrl,
+                        length: 6,
+                        obscureText: true,
+                        defaultPinTheme: PinTheme(
+                          width: 46, height: 52,
+                          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: sendingOtp ? null : () async {
+                          if (otpCtrl.text.length != 6 || newPinCtrl.text.length != 6) {
+                            AppDialog.showError(context, 'Lengkapi OTP dan PIN Baru');
+                            return;
+                          }
+                          setModalState(() => sendingOtp = true);
+                          try {
+                            await _repo.changePin(
+                              oldPin: oldPinCtrl.text, 
+                              otpCode: otpCtrl.text, 
+                              newPin: newPinCtrl.text
+                            );
+                            Navigator.pop(context); // Close modal
+                            AppDialog.showSuccess(context, 'PIN berhasil diperbarui');
+                          } catch (e) {
+                            setModalState(() => sendingOtp = false);
+                            AppDialog.showError(context, 'Gagal: $e');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB), 
+                          foregroundColor: Colors.white, 
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
+                        ),
+                        child: sendingOtp 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Simpan PIN Baru', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         }
@@ -1259,11 +1305,13 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-          padding: EdgeInsets.only(left: 24, right: 24, top: 32, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(left: 24, right: 24, top: 32, bottom: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1322,7 +1370,8 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
           ),
         ),
       ),
-    );
+    ),
+  );
 
     if (passwordFromStep2 == null || passwordFromStep2!.isEmpty || !mounted) return;
 

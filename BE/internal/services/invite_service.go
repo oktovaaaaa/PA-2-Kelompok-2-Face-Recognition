@@ -17,7 +17,7 @@ func GenerateInvite(companyID string) (models.InviteToken, error) {
 		Token:     token,
 		CompanyID: companyID,
 		Status:    "UNUSED",
-		ExpiresAt: time.Now().Add(1 * time.Hour),
+		ExpiresAt: time.Now().Add(3 * time.Hour),
 	}
 
 	err := database.DB.Create(&invite).Error

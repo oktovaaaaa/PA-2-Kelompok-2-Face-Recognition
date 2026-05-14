@@ -82,6 +82,13 @@ const AccountSettings = ({ tabContentList }: { tabContentList: { [key: string]: 
                 value='security'
                 className='font-bold min-h-[60px]'
               />
+              <Tab
+                label='Daftar Perangkat'
+                icon={<i className='ri-device-line text-lg' />}
+                iconPosition='start'
+                value='devices'
+                className='font-bold min-h-[60px]'
+              />
               {role !== 'SUPER_ADMIN' && (
                 <Tab 
                   label='Detail Instansi' 

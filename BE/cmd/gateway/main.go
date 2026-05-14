@@ -36,6 +36,8 @@ func main() {
 	r.Any("/api/testimonials/*any", authProxy)
 	r.Any("/api/notifications", authProxy)
 	r.Any("/api/notifications/*any", authProxy)
+	r.Any("/api/sessions", authProxy)
+	r.Any("/api/sessions/*any", authProxy)
 
 	// User/Employee Management (Auth)
 	r.Any("/api/admin/employees", authProxy)

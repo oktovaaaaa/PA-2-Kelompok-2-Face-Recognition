@@ -405,22 +405,27 @@ class _AdminEmployeeTabState extends State<AdminEmployeeTab> with SingleTickerPr
           children: [
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.1), width: 2),
-              ),
-              child: CircleAvatar(
-                radius: 32,
-                backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
-                backgroundImage: (emp['photo_url'] != null && emp['photo_url'].toString().isNotEmpty)
-                    ? NetworkImage('${AppConstants.baseUrl}${emp['photo_url']}')
-                    : null,
+            Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF2563EB).withOpacity(0.1),
+                  border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.1), width: 2),
+                  image: (emp['photo_url'] != null && emp['photo_url'].toString().isNotEmpty)
+                      ? DecorationImage(
+                          image: NetworkImage('${AppConstants.baseUrl}${emp['photo_url']}'),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
                 child: (emp['photo_url'] == null || emp['photo_url'].toString().isEmpty)
-                    ? Text(
-                        _getInitials(emp['name'] ?? 'Karyawan'),
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                    ? Center(
+                        child: Text(
+                          _getInitials(emp['name'] ?? 'Karyawan'),
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                        ),
                       )
                     : null,
               ),
@@ -549,8 +554,6 @@ class _AdminEmployeeTabState extends State<AdminEmployeeTab> with SingleTickerPr
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text('Kelola data dan status semua karyawan', style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 13)),
               const SizedBox(height: 20),
               // Search Bar
               Container(

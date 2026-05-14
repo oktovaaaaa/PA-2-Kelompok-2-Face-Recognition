@@ -39,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _loading = false;
   bool _canCheckBiometrics = false;
+  bool _isUnlocked = false;
 
   @override
   void initState() {
@@ -54,13 +55,20 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (mounted) setState(() {});
       
-      // Removed automatic _authenticateBiometrics call to prevent sudden dialogs.
-      // Users can now trigger it manually using the biometric icon.
+      if (widget.pinOnlyMode && _canCheckBiometrics) {
+        // Beri sedikit jeda agar UI siap
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && !authProvider.isSessionLocked) return;
+          _authenticateBiometrics();
+        });
+      }
     } catch (_) {}
   }
 
+  AuthProvider get authProvider => Provider.of<AuthProvider>(context, listen: false);
+
   Future<void> _authenticateBiometrics() async {
-    if (!_canCheckBiometrics) return;
+    if (!_canCheckBiometrics || _isUnlocked) return;
     try {
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Gunakan biometrik untuk login cepat',
@@ -70,12 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      if (authenticated) {
+      if (authenticated && mounted) {
+        setState(() => _isUnlocked = true);
+        
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Provider.of<AuthProvider>(context, listen: false).unlockSession();
+          authProvider.unlockSession();
 
-          if (widget.pinOnlyMode) return; // In lockscreen, just unlock
+          if (widget.pinOnlyMode) return;
 
           Navigator.pushAndRemoveUntil(
             context,
@@ -144,34 +154,57 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+
   Future<void> _loginPin() async {
-    if (_pin.text.trim().length != 6) {
-      AppDialog.showError(context, 'PIN harus 6 digit.');
+    if (_isUnlocked) return;
+    
+    final pinText = _pin.text.trim();
+    if (pinText.length != 6) {
+      await AppDialog.showError(context, 'PIN harus 6 digit.', useRoot: !widget.pinOnlyMode);
       return;
     }
 
     setState(() => _loading = true);
     try {
-      await _repo.loginPin(_pin.text.trim());
+      // Debug log untuk membantu analisa kenapa PIN gagal
+      final userId = await SessionStorage.getUserId();
+      final deviceId = await SessionStorage.getOrCreateDeviceId();
+      print("DEBUG: Attempting PIN login for User: $userId, Device: $deviceId");
+
+      await _repo.loginPin(pinText);
+      
       if (!mounted) return;
-      Provider.of<AuthProvider>(context, listen: false).unlockSession();
 
-      if (widget.pinOnlyMode) return; // In lockscreen, just unlock
+      // Cek lagi apakah sudah diunlock oleh proses lain (misal biometrik yang paralel)
+      if (_isUnlocked) return;
+      
+      setState(() => _isUnlocked = true);
+      
+      // Berhasil: Buka sesi
+      authProvider.unlockSession();
 
-      if (!mounted) return;
-
-      // Sync FCM token setelah login berhasil (PIN mode)
-      NotificationService.syncToken();
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const SplashGate()),
-        (_) => false,
-      );
+      if (!widget.pinOnlyMode) {
+        NotificationService.syncToken();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const SplashGate()),
+          (_) => false,
+        );
+      }
     } catch (e) {
+      if (!mounted || _isUnlocked) return;
+      
       final msg = ErrorMapper.map(e);
+      
+      // Tunggu user menekan "Oke" di dialog sebelum membersihkan PIN
+      await AppDialog.showError(context, msg, useRoot: !widget.pinOnlyMode);
+      
       if (!mounted) return;
-      AppDialog.showError(context, msg);
+      
+      // Hanya hapus PIN jika benar-benar gagal (bukan karena error jaringan/rebuild)
+      if (msg.toLowerCase().contains('pin') || msg.toLowerCase().contains('salah') || msg.toLowerCase().contains('tidak valid')) {
+        _pin.clear();
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -219,14 +252,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 32),
+              if (pinOnly) ...[
+                const SizedBox(height: 8),
+                Image.asset(
+                  'assets/images/videntipin.png',
+                  height: 280,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.lock_person_rounded, color: Color(0xFF1E3A8A), size: 100),
+                ),
+                const SizedBox(height: 16),
+              ] else 
+                const SizedBox(height: 32),
+                
               Text(
                 pinOnly ? 'Login PIN' : 'Selamat Datang!',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E3A8A),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E3A8A),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -234,12 +278,13 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 pinOnly ? 'Masukkan PIN untuk melanjutkan' : 'Masuk ke akun Anda untuk memulai sesi',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
+                style: const TextStyle(
+                  fontSize: 14,
                   color: Colors.black54,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
               
               Container(
                 padding: const EdgeInsets.all(32),
@@ -261,12 +306,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _pin,
                             length: 6,
                             obscureText: true,
+                            autofillHints: null,
                             keyboardType: TextInputType.number,
                             onCompleted: (_) => _loginPin(),
+                            hapticFeedbackType: HapticFeedbackType.lightImpact,
                             defaultPinTheme: PinTheme(
-                              width: 48,
-                              height: 56,
-                              textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                              width: 44,
+                              height: 52,
+                              textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(12),
@@ -274,9 +321,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             focusedPinTheme: PinTheme(
-                              width: 48,
-                              height: 56,
-                              textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                              width: 44,
+                              height: 52,
+                              textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 border: Border.all(color: const Color(0xFF2563EB), width: 2),

@@ -3,8 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../../core/network/api_client.dart';
+import '../../../../../core/services/pdf_export_service.dart';
+import '../../../../common/widgets/app_dialog.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/utils/date_formatter.dart';
+import 'package:intl/intl.dart';
 
 class EmployeeHistoryTab extends StatefulWidget {
   const EmployeeHistoryTab({super.key});
@@ -172,6 +176,63 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
     );
   }
 
+  Future<void> _exportPdf() async {
+    if (_records.isEmpty) {
+      AppDialog.showInfo(context, 'Tidak ada data untuk diekspor');
+      return;
+    }
+
+    AppDialog.showLoading(context, message: 'Menyiapkan PDF...');
+    
+    try {
+      String periodLabel = '';
+      if (_filter == 'week') {
+        periodLabel = 'Minggu Ini';
+      } else if (_filter == 'month') {
+        periodLabel = 'Bulan Ini';
+      } else if (_filter == 'year') {
+        periodLabel = 'Tahun Ini';
+      } else {
+        periodLabel = '${_months[_selectedMonth]} $_selectedYear';
+      }
+
+      final fileName = 'Riwayat_Presensi_${periodLabel.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Prepare stats for PDF
+      Map<String, int> pdfStats = {
+        'PRESENT': _stats?['present'] ?? 0,
+        'LATE': _stats?['late'] ?? 0,
+        'ABSENT': _stats?['absent'] ?? 0,
+        'LEAVE': _stats?['leave'] ?? 0,
+        'SICK': _stats?['sick'] ?? 0,
+        'IZIN': _stats?['leave'] ?? 0,
+        'SAKIT': _stats?['sick'] ?? 0,
+      };
+
+      final path = await PdfExportService.exportAttendance(
+        _records, 
+        fileName, 
+        stats: pdfStats, 
+        periodLabel: periodLabel
+      );
+
+      if (mounted) Navigator.pop(context); // Hide loading
+
+      if (mounted) {
+        AppDialog.showSuccess(
+          context, 
+          'PDF berhasil dibuat',
+          confirmText: 'Buka File',
+        ).then((confirmed) {
+          if (confirmed == true) OpenFilex.open(path);
+        });
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Hide loading
+      if (mounted) AppDialog.showError(context, 'Gagal membuat PDF: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final present = _stats?['present'] ?? 0;
@@ -227,6 +288,11 @@ class _EmployeeHistoryTabState extends State<EmployeeHistoryTab> {
                             style: TextStyle(fontSize: 13, color: Colors.white70),
                           ),
                         ],
+                      ),
+                      IconButton(
+                        onPressed: _exportPdf,
+                        icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
+                        tooltip: 'Unduh PDF',
                       ),
                     ],
                   ),

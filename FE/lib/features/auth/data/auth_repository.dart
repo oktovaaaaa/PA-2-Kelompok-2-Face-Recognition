@@ -122,11 +122,13 @@ class AuthRepository {
     required String code,
   }) async {
     final deviceId = await SessionStorage.getOrCreateDeviceId();
+    final deviceName = await SessionStorage.getDeviceName();
 
     final tokenRes = await ApiClient.post('/auth/verify-login-otp', {
       'email': email,
       'code': code,
       'device_id': deviceId,
+      'device_name': deviceName,
     });
 
     if (!tokenRes.status) {
@@ -135,6 +137,11 @@ class AuthRepository {
 
     final token = (tokenRes.data?['token'] ?? '').toString();
     final userId = (tokenRes.data?['userId'] ?? '').toString();
+    
+    if (token.isEmpty || userId.isEmpty) {
+      throw Exception('Data sesi dari server tidak lengkap.');
+    }
+
     final userEmail = (tokenRes.data?['email'] ?? '').toString();
     final role = (tokenRes.data?['role'] ?? '').toString();
     final companyId = (tokenRes.data?['companyId'] ?? '').toString();
@@ -175,11 +182,13 @@ class AuthRepository {
     }
 
     final deviceId = await SessionStorage.getOrCreateDeviceId();
+    final deviceName = await SessionStorage.getDeviceName();
 
     final res = await ApiClient.post('/auth/login-pin', {
-      'user_id': userId,
+      'userID': userId,
       'pin': pin,
       'device_id': deviceId,
+      'device_name': deviceName,
     });
 
     if (!res.status) {

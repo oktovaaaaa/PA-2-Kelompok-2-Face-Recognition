@@ -665,6 +665,25 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
+                  final faceUpdatedAtStr = _profile?['face_updated_at'];
+                  if (faceUpdatedAtStr != null && faceUpdatedAtStr != '-') {
+                    try {
+                      final faceUpdatedAt = DateTime.parse(faceUpdatedAtStr.toString());
+                      final now = DateTime.now();
+                      final diffInDays = now.difference(faceUpdatedAt).inDays;
+                      
+                      if (diffInDays < 30) {
+                        AppDialog.showError(
+                          context, 
+                          'Anda baru saja mengganti Face ID. Silakan tunggu ${30 - diffInDays} hari lagi.'
+                        );
+                        return;
+                      }
+                    } catch (e) {
+                      // Jika format tanggal salah, biarkan lanjut
+                    }
+                  }
+
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const FaceRegistrationScreen()),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../app.dart';
 
 class AppDialog {
-  static void showLoading(BuildContext context, {String message = 'Memuat...'}) {
+  static void showLoading(BuildContext context, {String message = 'Memuat...', bool useRoot = true}) {
+    final effectiveContext = useRoot ? (navigatorKey.currentContext ?? context) : context;
     showDialog(
-      context: context,
+      context: effectiveContext,
       barrierDismissible: false,
       builder: (ctx) => WillPopScope(
         onWillPop: () async => false,
@@ -28,7 +30,7 @@ class AppDialog {
     );
   }
 
-  static Future<bool?> showError(BuildContext context, String message, {String confirmText = 'Oke, Mengerti'}) {
+  static Future<bool?> showError(BuildContext context, String message, {String confirmText = 'Oke, Mengerti', bool useRoot = true}) {
     return _show(
       context,
       title: 'Terjadi Kesalahan',
@@ -37,10 +39,11 @@ class AppDialog {
       iconColor: Colors.redAccent,
       buttonColor: Colors.redAccent,
       confirmText: confirmText,
+      useRoot: useRoot,
     );
   }
 
-  static Future<bool?> showSuccess(BuildContext context, String message, {String confirmText = 'Oke, Mengerti'}) {
+  static Future<bool?> showSuccess(BuildContext context, String message, {String confirmText = 'Oke, Mengerti', bool useRoot = true}) {
     return _show(
       context,
       title: 'Berhasil',
@@ -49,10 +52,11 @@ class AppDialog {
       iconColor: Colors.green,
       buttonColor: Colors.green,
       confirmText: confirmText,
+      useRoot: useRoot,
     );
   }
 
-  static Future<bool?> showInfo(BuildContext context, String message, {String confirmText = 'Oke, Mengerti'}) {
+  static Future<bool?> showInfo(BuildContext context, String message, {String confirmText = 'Oke, Mengerti', bool useRoot = true}) {
     return _show(
       context,
       title: 'Informasi',
@@ -61,6 +65,7 @@ class AppDialog {
       iconColor: const Color(0xFF2563EB),
       buttonColor: const Color(0xFF2563EB),
       confirmText: confirmText,
+      useRoot: useRoot,
     );
   }
 
@@ -71,11 +76,12 @@ class AppDialog {
     String confirmText = 'Ya, Lanjutkan',
     String cancelText = 'Batal',
     Color confirmColor = const Color(0xFF2563EB),
+    bool useRoot = true,
   }) {
-    if (!context.mounted) return Future.value(false);
+    final effectiveContext = useRoot ? (navigatorKey.currentContext ?? context) : context;
 
     return showDialog<bool>(
-      context: context,
+      context: effectiveContext,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         contentPadding: const EdgeInsets.all(24),
@@ -164,11 +170,12 @@ class AppDialog {
     required Color iconColor,
     required Color buttonColor,
     required String confirmText,
+    bool useRoot = true,
   }) {
-    if (!context.mounted) return Future.value(false);
+    final effectiveContext = useRoot ? (navigatorKey.currentContext ?? context) : context;
 
     return showDialog<bool>(
-      context: context,
+      context: effectiveContext,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),

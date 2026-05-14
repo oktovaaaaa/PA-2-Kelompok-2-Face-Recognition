@@ -477,7 +477,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                   icon: Icons.analytics_rounded,
                   color: const Color(0xFF8B5CF6),
                   title: 'Laporan Kehadiran',
-                  subtitle: 'Lihat seluruh riwayat & ekspor Excel',
+                  subtitle: 'Lihat seluruh riwayat & unduh laporan',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AttendanceReportScreen()),
@@ -497,7 +497,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                   context,
                   icon: Icons.person_add_rounded,
                   color: const Color(0xFF2563EB),
-                  title: 'Karyawan Pending',
+                  title: 'Persetujuan Karyawan',
                   subtitle: 'Approve atau reject pendaftaran baru',
                   onTap: () => Navigator.push(
                     context,

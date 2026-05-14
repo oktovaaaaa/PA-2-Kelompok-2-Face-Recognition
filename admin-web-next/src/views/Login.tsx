@@ -81,7 +81,7 @@ return () => clearInterval(interval)
         
         if (userData && userData.email) {
           // Trigger backend OTP send for this email
-          await authService.sendOTP(userData.email)
+          await authService.sendOTP(userData.email, true)
           
           setEmail(userData.email)
           handleShowNotification('Akun Google diverifikasi. Kode OTP telah dikirim ke email Anda.', 'success')
@@ -172,7 +172,7 @@ return () => clearInterval(interval)
     setIsResending(true)
 
     try {
-      await authService.sendOTP(email)
+      await authService.sendOTP(email, true)
       handleShowNotification('Kode OTP baru telah dikirim ke email Anda', 'success')
       setResendTimer(30)
     } catch (error: any) {
@@ -325,7 +325,7 @@ return () => clearInterval(interval)
           ) : (
             <div className='view-container animate-fade-in text-center'>
               <div className='mb-6'>
-                <i className='bx bx-shield-quarter text-[64px] text-[#2563EB]' />
+                <i className='bx bx-envelope text-[64px] text-[#2563EB]' />
               </div>
               <h2 className='text-[32px] font-extrabold mb-2 text-[#0F172A]'>Verifikasi</h2>
               <p className='text-[#64748B] text-[14px] mb-8'>

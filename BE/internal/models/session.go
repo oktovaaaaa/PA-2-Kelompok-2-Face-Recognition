@@ -9,6 +9,7 @@ type Session struct {
 	UserID    string
 	Token     string
 	DeviceID  string
+	DeviceName string
 	IsLocked     bool
 	LastActiveAt time.Time
 	ExpiresAt    time.Time

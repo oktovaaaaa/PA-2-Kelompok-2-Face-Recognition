@@ -204,14 +204,14 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
       isCamReady = _ctrl.value.isInitialized;
     } catch (_) {}
 
-    if (!isCamReady) return const Scaffold(backgroundColor: Colors.black, body: Center(child: CircularProgressIndicator(color: Colors.white)));
+    if (!isCamReady) return const Scaffold(backgroundColor: Colors.white, body: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))));
     
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           _buildScannerUI(),
-          if (_isBusy) Container(color: Colors.black54, child: const Center(child: CircularProgressIndicator(color: Colors.white))),
+          if (_isBusy) Container(color: Colors.white.withOpacity(0.6), child: const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))),
         ],
       ),
     );
@@ -223,13 +223,13 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle, color: Colors.greenAccent, size: 100),
+            const Icon(Icons.check_circle, color: Colors.green, size: 100),
             const SizedBox(height: 20),
-            const Text("Wajah Berhasil Dipindai", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text("Wajah Berhasil Dipindai", style: TextStyle(color: Color(0xFF1E3A8A), fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: _saveFace,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
               child: const Text("SIMPAN FACE ID", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             )
           ],
@@ -240,7 +240,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
     return Column(
       children: [
         const SizedBox(height: 60),
-        const Text("PENDAFTARAN WAJAH", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 18)),
+        const Text("PENDAFTARAN WAJAH", style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 18)),
         const Spacer(),
         Center(
           child: Stack(
@@ -249,7 +249,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
               SizedBox(width: 360, height: 360, child: CustomPaint(painter: CircularTicksPainter(_progress))),
               Container(
                 width: 280, height: 280,
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white24, width: 2)),
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black12, width: 2)),
                 child: ClipOval(
                   child: FittedBox(
                     fit: BoxFit.cover,
@@ -264,20 +264,20 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
               if (_cooldown)
                 Container(
                   width: 280, height: 280,
-                  decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle),
-                  child: const Icon(Icons.check_circle, color: Colors.greenAccent, size: 80),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), shape: BoxShape.circle),
+                  child: const Icon(Icons.check_circle, color: Colors.green, size: 80),
                 ),
             ],
           ),
         ),
         const SizedBox(height: 40),
-        Text(_hint, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(_hint, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
         const Spacer(),
         Padding(
           padding: const EdgeInsets.only(bottom: 40),
           child: TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("BATALKAN", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
+            child: const Text("BATALKAN", style: TextStyle(color: Colors.black38, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -304,7 +304,7 @@ class CircularTicksPainter extends CustomPainter {
     for (int i = 0; i < totalTicks; i++) {
       final angle = (i * 2 * math.pi) / totalTicks - (math.pi / 2);
       final isCompleted = (i / totalTicks) < progress;
-      paint.color = isCompleted ? Colors.greenAccent : Colors.white12;
+      paint.color = isCompleted ? const Color(0xFF2563EB) : Colors.black.withOpacity(0.1);
       paint.strokeWidth = isCompleted ? 4 : 2;
       final innerR = radius - 25;
       final outerR = radius - 5;

@@ -1,5 +1,7 @@
 // admin-web-next/src/libs/auth.ts
 
+import { getBrowserInfo } from '@/utils/deviceInfo';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export const authService = {
@@ -21,11 +23,11 @@ export const authService = {
   },
 
   // Send OTP (General)
-  async sendOTP(email: string) {
+  async sendOTP(email: string, isAdminPanel: boolean = false) {
     const response = await fetch(`${API_URL}/auth/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, isAdminPanel }),
     });
 
     const data = await response.json();
@@ -45,7 +47,8 @@ export const authService = {
       body: JSON.stringify({ 
         email, 
         code, 
-        device_id: 'WEB-ADMIN-DASHBOARD' 
+        device_id: 'web-session-' + Math.random().toString(36).substring(7),
+        device_name: getBrowserInfo()
       }),
     });
 
@@ -107,11 +110,11 @@ export const authService = {
   },
 
   // Forgot Password Step 1
-  async requestResetOTP(email: string) {
+  async requestResetOTP(email: string, isAdminPanel: boolean = false) {
     const response = await fetch(`${API_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, isAdminPanel }),
     });
 
     const data = await response.json();

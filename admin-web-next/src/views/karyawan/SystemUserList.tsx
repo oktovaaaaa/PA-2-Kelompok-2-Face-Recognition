@@ -150,8 +150,14 @@ const SystemUserList = () => {
               <i className='ri-team-line text-xl' />
             </Box>
             <Box className='flex flex-col'>
-              <Typography variant='body1' fontWeight='900' color='text.primary' sx={{ lineHeight: 1.2 }}>{users.length}</Typography>
-              <Typography variant='caption' fontWeight='bold' className='text-slate-400 uppercase tracking-wider' sx={{ fontSize: '0.65rem' }}>Total Pengguna</Typography>
+              <Typography variant='body1' fontWeight='900' color='text.primary' sx={{ lineHeight: 1.2 }}>
+                {statusFilter === 'ACTIVE' 
+                  ? users.filter(u => u.status === 'ACTIVE').length 
+                  : users.filter(u => u.status === 'RESIGNED').length}
+              </Typography>
+              <Typography variant='caption' fontWeight='bold' className='text-slate-400 uppercase tracking-wider' sx={{ fontSize: '0.65rem' }}>
+                {statusFilter === 'ACTIVE' ? 'Pengguna Aktif' : 'Total Diberhentikan'}
+              </Typography>
             </Box>
           </Box>
           <Box className='flex items-center gap-3'>
@@ -159,8 +165,14 @@ const SystemUserList = () => {
               <i className='ri-building-line text-xl' />
             </Box>
             <Box className='flex flex-col'>
-              <Typography variant='body1' fontWeight='900' color='text.primary' sx={{ lineHeight: 1.2 }}>{companies.length}</Typography>
-              <Typography variant='caption' fontWeight='bold' className='text-slate-400 uppercase tracking-wider' sx={{ fontSize: '0.65rem' }}>Unit Perusahaan</Typography>
+              <Typography variant='body1' fontWeight='900' color='text.primary' sx={{ lineHeight: 1.2 }}>
+                {statusFilter === 'ACTIVE'
+                  ? companies.filter(c => c.status === 'ACTIVE').length
+                  : companies.filter(c => c.status === 'INACTIVE').length}
+              </Typography>
+              <Typography variant='caption' fontWeight='bold' className='text-slate-400 uppercase tracking-wider' sx={{ fontSize: '0.65rem' }}>
+                {statusFilter === 'ACTIVE' ? 'Unit Aktif' : 'Unit Nonaktif'}
+              </Typography>
             </Box>
           </Box>
         </Box>

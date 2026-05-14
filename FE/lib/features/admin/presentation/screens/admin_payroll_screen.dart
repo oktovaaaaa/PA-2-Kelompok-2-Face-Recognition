@@ -451,7 +451,7 @@ class _AdminPayrollScreenState extends State<AdminPayrollScreen> {
                                               borderRadius: BorderRadius.circular(20),
                                             ),
                                             child: Text(
-                                              isPaid ? 'Lunas' : (isPartial ? 'Dicicil' : 'Pending'),
+                                              isPaid ? 'Lunas' : (isPartial ? 'Dicicil' : 'Menunggu'),
                                               style: TextStyle(
                                                 color: isPaid ? Colors.green : (isPartial ? Colors.blue : Colors.orange), 
                                                 fontWeight: FontWeight.bold, fontSize: 11

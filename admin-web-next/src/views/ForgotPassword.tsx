@@ -61,7 +61,7 @@ const ForgotPassword = ({ mode }: { mode: Mode }) => {
     setLoading(true)
 
     try {
-      await authService.requestResetOTP(email)
+      await authService.requestResetOTP(email, true)
       handleShowNotification('Kode OTP telah dikirim ke email Anda', 'success')
       setStep('reset')
     } catch (error: any) {

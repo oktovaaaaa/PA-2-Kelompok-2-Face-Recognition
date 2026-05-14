@@ -2,7 +2,7 @@
 
 class ErrorMapper {
   static String map(dynamic error) {
-    final message = error.toString();
+    String message = error.toString().replaceFirst('Exception: ', '').replaceFirst('Exception:', '');
 
     if (message.contains('SocketException')) {
       return 'Tidak dapat terhubung ke server. Pastikan backend aktif dan IP benar.';

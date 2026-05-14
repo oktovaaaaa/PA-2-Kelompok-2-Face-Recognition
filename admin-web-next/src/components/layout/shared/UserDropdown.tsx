@@ -117,7 +117,7 @@ const UserDropdown = () => {
                       <Typography className='font-medium' color='text.primary'>
                         {profile?.name || 'Admin'}
                       </Typography>
-                      <Typography variant='caption'>{profile?.role === 'ADMIN' ? 'Bos' : (profile?.role === 'EMPLOYEE' ? 'Karyawan' : profile?.role || 'Admin')}</Typography>
+                      <Typography variant='caption'>{profile?.role === 'ADMIN' ? 'Bos' : (profile?.role === 'EMPLOYEE' ? 'Karyawan' : (profile?.role?.replace('_', ' ') || 'Admin'))}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />

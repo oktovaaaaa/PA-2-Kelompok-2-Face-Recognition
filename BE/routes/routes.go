@@ -76,6 +76,10 @@ func SetupAuthRouter() *gin.Engine {
 		protected.PUT("/notifications/read-all", handlers.MarkAllNotificationsRead)
 		protected.DELETE("/notifications/:id", handlers.DeleteNotification)
 		protected.DELETE("/notifications", handlers.DeleteAllNotifications)
+		
+		// Session Management (Device List)
+		protected.GET("/sessions", handlers.GetMySessions)
+		protected.DELETE("/sessions/:id", handlers.DeleteSession)
 	}
 
 	// Protected Admin Routes
@@ -266,6 +270,10 @@ func SetupRouter() *gin.Engine {
 		protected.DELETE("/notifications", handlers.DeleteAllNotifications)
 		// Denda Pelanggaran (Melihat denda sendiri)
 		protected.GET("/penalties", handlers.GetPenalties)
+
+		// Session Management (Device List)
+		protected.GET("/sessions", handlers.GetMySessions)
+		protected.DELETE("/sessions/:id", handlers.DeleteSession)
 	}
 
 	// Protected Admin Routes

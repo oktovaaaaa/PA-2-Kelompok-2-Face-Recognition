@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"strings"
+	"os"
 
+	"employee-system/internal/database"
 	"employee-system/internal/models"
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
@@ -30,6 +32,17 @@ func AuthMiddleware() gin.HandlerFunc {
 		userID, _ := claims["user_id"].(string)
 		role, _ := claims["role"].(string)
 		companyID, _ := claims["company_id"].(string)
+
+		// Conditional Session Check for Admin/Super Admin
+		// Only enforced in services that manage sessions (Auth Service)
+		if (role == "ADMIN" || role == "SUPER_ADMIN") && os.Getenv("CHECK_SESSION_DB") == "true" {
+			var session models.Session
+			if err := database.DB.Where("user_id = ? AND token = ?", userID, tokenString).First(&session).Error; err != nil {
+				utils.Error(c, "Sesi Anda telah dicabut, silakan login kembali")
+				c.Abort()
+				return
+			}
+		}
 
 		// Buat objek user minimal dari data Token (Microservices style)
 		user := models.User{

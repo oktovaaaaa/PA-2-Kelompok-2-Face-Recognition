@@ -272,6 +272,131 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     }
   }
 
+  const handleExportPDF = async () => {
+    const { default: jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
+    
+    const doc = new jsPDF()
+    const primaryColor = [37, 99, 235] // #2563EB
+    const periodLabel = parentPeriod === 'today' ? 'Hari Ini' : parentPeriod === 'week' ? 'Minggu Ini' : parentPeriod === 'month' ? `${months.find(m => m.value === parentMonth)?.label} ${parentYear}` : `Tahun ${parentYear}`
+    
+    // 1. Professional Header Background
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
+    doc.rect(0, 0, 210, 45, 'F')
+    
+    // 2. Title & Subtitle (Centered)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(24)
+    doc.setTextColor(255, 255, 255)
+    doc.text('VIDENTI', 105, 18, { align: 'center' })
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(12)
+    doc.text('Laporan Kehadiran Karyawan & Detail Absensi', 105, 26, { align: 'center' })
+    
+    doc.setFontSize(10)
+    doc.text(`Periode: ${periodLabel}`, 105, 33, { align: 'center' })
+    
+    // 3. Dicetak Pada (Right Bottom of Header)
+    doc.setFontSize(8)
+    const printDate = `Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    doc.text(printDate, 196, 40, { align: 'right' })
+    
+    // 4. Logo (Right Side)
+    try {
+      doc.addImage('/images/videnti.png', 'PNG', 172, 10, 22, 22)
+    } catch (e) {
+      console.error('Failed to add logo:', e)
+    }
+    
+    // 5. Summary Section (Below Header)
+    const summaryData = [
+      { label: 'Hadir', count: filteredData.filter(r => r.status === 'PRESENT').length, color: [34, 197, 94] },
+      { label: 'Terlambat', count: filteredData.filter(r => r.status === 'LATE').length, color: [245, 158, 11] },
+      { label: 'Alpha', count: filteredData.filter(r => r.status === 'ABSENT').length, color: [239, 68, 68] },
+      { label: 'Izin/Sakit', count: filteredData.filter(r => ['LEAVE', 'SICK'].includes(r.status)).length, color: [59, 130, 246] }
+    ]
+    
+    let startX = 14
+    summaryData.forEach(item => {
+      doc.setDrawColor(241, 245, 249)
+      doc.setFillColor(255, 255, 255)
+      doc.roundedRect(startX, 52, 43, 20, 3, 3, 'FD')
+      
+      doc.setFontSize(8)
+      doc.setTextColor(100, 116, 139)
+      doc.text(item.label.toUpperCase(), startX + 5, 58)
+      
+      doc.setFontSize(12)
+      doc.setTextColor(item.color[0], item.color[1], item.color[2])
+      doc.setFont('helvetica', 'bold')
+      doc.text(item.count.toString(), startX + 5, 66)
+      doc.setFont('helvetica', 'normal')
+      
+      startX += 47
+    })
+    
+    // 6. Detailed Table
+    const tableHeaders = [['No', 'Karyawan', 'Tanggal', 'Masuk', 'Keluar', 'Status']]
+    const tableBody = filteredData.map((r, i) => [
+      i + 1,
+      r.user_name,
+      formatFullDate(r.date),
+      r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-',
+      r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-',
+      _translateStatus(r.status)
+    ])
+    
+    autoTable(doc, {
+      startY: 85,
+      head: tableHeaders,
+      body: tableBody,
+      theme: 'striped',
+      headStyles: {
+        fillColor: primaryColor,
+        textColor: 255,
+        fontSize: 10,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: 51,
+        cellPadding: 4
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 15 },
+        3: { halign: 'center' },
+        4: { halign: 'center' },
+        5: { halign: 'center' }
+      },
+      margin: { top: 25 }, // Normal margin for pages after page 1
+      didDrawPage: (data) => {
+        // Footer
+        doc.setFontSize(8)
+        doc.setTextColor(150)
+        doc.text(
+          `Halaman ${data.pageNumber} dari ${doc.getNumberOfPages()}`,
+          doc.internal.pageSize.width / 2,
+          doc.internal.pageSize.height - 10,
+          { align: 'center' }
+        )
+      }
+    })
+    
+    let fileName = 'Laporan_Absensi'
+    if (parentPeriod === 'today') fileName += '_Hari_Ini'
+    else if (parentPeriod === 'month') fileName += `_${months.find(m => m.value === parentMonth)?.label}_${parentYear}`
+    else if (parentPeriod === 'year') fileName += `_Tahun_${parentYear}`
+    
+    showNotification('Sedang menyiapkan file PDF...', 'info')
+    doc.save(`${fileName}.pdf`)
+    showNotification('Laporan PDF berhasil diunduh!', 'success')
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PRESENT': return 'success'
@@ -300,9 +425,23 @@ return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         title='Laporan Kehadiran Terperinci' 
         subheader='Filter berdasarkan periode, status, dan cari karyawan'
         action={
-          <Button variant='contained' onClick={handleExport} startIcon={<i className='ri-file-excel-line' />}>
-            Export Excel
-          </Button>
+          <Stack direction='row' spacing={2}>
+            <Button 
+              variant='outlined' 
+              color='primary'
+              onClick={handleExportPDF} 
+              startIcon={<i className='ri-file-pdf-line' />}
+            >
+              Export PDF
+            </Button>
+            <Button 
+              variant='contained' 
+              onClick={handleExport} 
+              startIcon={<i className='ri-file-excel-line' />}
+            >
+              Export Excel
+            </Button>
+          </Stack>
         }
       />
       <CardContent>

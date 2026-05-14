@@ -9,7 +9,9 @@ import (
 	"employee-system/internal/utils"
 
 	"fmt"
+	"time"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func RegisterAdmin(c *gin.Context) {
@@ -92,27 +94,36 @@ func RegisterAdmin(c *gin.Context) {
 }
 
 func SendOTP(c *gin.Context) {
-
 	var body struct {
-		Email string
+		Email        string `json:"email"`
+		IsAdminPanel bool   `json:"isAdminPanel"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-
 		utils.Error(c, "Email tidak valid")
 		return
 	}
 
+	// Jika dipanggil dari Admin Panel, cek proteksi
+	if body.IsAdminPanel {
+		var user models.User
+		if err := database.DB.Where("email = ?", body.Email).First(&user).Error; err == nil {
+			// User ada, cek role-nya. Jika Karyawan, blokir dari Admin Panel.
+			if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
+				utils.Error(c, "Akses Ditolak: Akun Anda tidak memiliki hak akses administrator.")
+				return
+			}
+		}
+		// Jika user tidak ditemukan, biarkan lanjut (mungkin sedang proses Register)
+	}
+
 	code, err := services.GenerateOTP(body.Email)
-
 	if err != nil {
-
 		utils.Error(c, err.Error())
 		return
 	}
 
 	services.SendOTPEmail(body.Email, code)
-
 	utils.Success(c, "OTP berhasil dikirim", nil)
 }
 
@@ -171,7 +182,7 @@ func Login(c *gin.Context) {
 
 	// PROTEKSI MULTI-LAPIS: Jika mencoba login ke Panel Admin, WAJIB ROLE ADMIN
 	if body.IsAdminPanel {
-		if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" {
+		if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
 			utils.Error(c, "Akses Ditolak: Akun Anda tidak diperbolehkan masuk ke Panel Admin.")
 			return
 		}
@@ -202,6 +213,7 @@ func VerifyLoginOTP(c *gin.Context) {
 		Email    string `json:"email"`
 		Code     string `json:"code"`
 		DeviceID string `json:"device_id"`
+		DeviceName string `json:"device_name"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -243,7 +255,7 @@ func VerifyLoginOTP(c *gin.Context) {
 	}
 
 	// Device Binding Logic (Hanya untuk KARYAWAN)
-	if user.Role != "ADMIN" {
+	if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
 		if user.DeviceID != "" && user.DeviceID != body.DeviceID {
 			utils.Error(c, "Akun ini sudah aktif di perangkat lain")
 			return
@@ -257,6 +269,22 @@ func VerifyLoginOTP(c *gin.Context) {
 
 	token, _ := services.GenerateToken(user.ID, user.Role, user.CompanyID)
 
+	// Record Session ONLY for ADMIN or SUPER_ADMIN
+	if user.Role == "ADMIN" || user.Role == "SUPER_ADMIN" {
+		session := models.Session{
+			ID:           uuid.New().String(),
+			UserID:       user.ID,
+			Token:        token,
+			DeviceID:     body.DeviceID,
+			DeviceName:   body.DeviceName,
+			IsLocked:     false,
+			LastActiveAt: time.Now(),
+			ExpiresAt:    time.Now().Add(24 * time.Hour), // 24 hours
+			CreatedAt:    time.Now(),
+		}
+		database.DB.Create(&session)
+	}
+
 	utils.Success(c, "Login berhasil", gin.H{
 		"token":     token,
 		"userId":    user.ID,
@@ -267,19 +295,17 @@ func VerifyLoginOTP(c *gin.Context) {
 }
 
 func GoogleLogin(c *gin.Context) {
-
 	var body struct {
-		IDToken string `json:"id_token"`
+		IDToken      string `json:"id_token"`
+		IsAdminPanel bool   `json:"isAdminPanel"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-
 		utils.Error(c, "Token tidak valid")
 		return
 	}
 
 	payload, err := services.VerifyGoogleToken(body.IDToken)
-
 	if err != nil {
 		utils.Error(c, "Token Google tidak valid: "+err.Error())
 		return
@@ -289,10 +315,17 @@ func GoogleLogin(c *gin.Context) {
 
 	var user models.User
 	err = database.DB.Preload("Company").Where("email = ?", email).First(&user).Error
-
 	if err != nil {
 		utils.Error(c, "Akun Google ini belum terdaftar di sistem")
 		return
+	}
+
+	// Proteksi Admin Panel
+	if body.IsAdminPanel {
+		if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
+			utils.Error(c, "Akses Ditolak: Akun Anda tidak diperbolehkan masuk ke Panel Admin.")
+			return
+		}
 	}
 
 	// Proteksi Perusahaan: Jika perusahaan nonaktif, blokir login (kecuali Super Admin)
@@ -335,6 +368,7 @@ func LoginPin(c *gin.Context) {
 		UserID   string `json:"userID"`
 		Pin      string `json:"pin"`
 		DeviceID string `json:"device_id"`
+		DeviceName string `json:"device_name"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -361,7 +395,7 @@ func LoginPin(c *gin.Context) {
 	}
 
 	// Device Binding Logic (Hanya untuk KARYAWAN)
-	if user.Role != "ADMIN" {
+	if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
 		if user.DeviceID != "" && user.DeviceID != body.DeviceID {
 			utils.Error(c, "Akun ini sudah aktif di perangkat lain")
 			return
@@ -375,6 +409,22 @@ func LoginPin(c *gin.Context) {
 
 	token, _ := services.GenerateToken(user.ID, user.Role, user.CompanyID)
 
+	// Record Session ONLY for ADMIN or SUPER_ADMIN
+	if user.Role == "ADMIN" || user.Role == "SUPER_ADMIN" {
+		session := models.Session{
+			ID:           uuid.New().String(),
+			UserID:       user.ID,
+			Token:        token,
+			DeviceID:     body.DeviceID,
+			DeviceName:   body.DeviceName,
+			IsLocked:     false,
+			LastActiveAt: time.Now(),
+			ExpiresAt:    time.Now().Add(24 * time.Hour), // 24 hours
+			CreatedAt:    time.Now(),
+		}
+		database.DB.Create(&session)
+	}
+
 	utils.Success(c, "Login berhasil", gin.H{
 		"token": token,
 	})
@@ -382,12 +432,28 @@ func LoginPin(c *gin.Context) {
 
 func ForgotPassword(c *gin.Context) {
 	var body struct {
-		Email string `json:"email"`
+		Email        string `json:"email"`
+		IsAdminPanel bool   `json:"isAdminPanel"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		utils.Error(c, "Email tidak valid")
 		return
+	}
+
+	// Cek Role jika dari Admin Panel
+	if body.IsAdminPanel {
+		var user models.User
+		if err := database.DB.Where("email = ?", body.Email).First(&user).Error; err == nil {
+			if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
+				utils.Error(c, "Akses Ditolak: Anda tidak dapat mereset sandi dari sini.")
+				return
+			}
+		} else {
+			// User tidak ditemukan
+			utils.Error(c, "Email tidak terdaftar")
+			return
+		}
 	}
 
 	code, err := services.GenerateResetOTP(body.Email)
