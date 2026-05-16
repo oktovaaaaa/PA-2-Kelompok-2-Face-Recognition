@@ -75,10 +75,30 @@ class PremiumBottomNav extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 12),
-            Icon(
-              item.icon,
-              color: isActive ? activeColor : inactiveColor,
-              size: 24,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  item.icon,
+                  color: isActive ? activeColor : inactiveColor,
+                  size: 24,
+                ),
+                if ((item.badgeCount ?? 0) > 0)
+                  Positioned(
+                    top: -5,
+                    right: -8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        item.badgeCount! > 9 ? '9+' : item.badgeCount.toString(),
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -99,7 +119,8 @@ class PremiumBottomNav extends StatelessWidget {
 class BottomNavItem {
   final IconData icon;
   final String label;
-  const BottomNavItem({required this.icon, required this.label});
+  final int? badgeCount; // [NEW]
+  const BottomNavItem({required this.icon, required this.label, this.badgeCount});
 }
 
 class BNBCustomPainter extends CustomPainter {

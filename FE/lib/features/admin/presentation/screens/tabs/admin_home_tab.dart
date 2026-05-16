@@ -23,6 +23,7 @@ import 'admin_position_tab.dart';
 import '../../../../common/widgets/app_dialog.dart';
 import '../../../../common/presentation/screens/notification_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminHomeTab extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -427,11 +428,16 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildQuickAction(
-                      icon: Icons.assignment_turned_in_rounded,
-                      label: 'Perizinan',
-                      color: const Color(0xFFD97706),
-                      onTap: () => widget.onNavigate?.call(1),
+                    Consumer<NotificationProvider>(
+                      builder: (context, notif, _) {
+                        return _buildQuickAction(
+                          icon: Icons.assignment_turned_in_rounded,
+                          label: 'Perizinan',
+                          color: const Color(0xFFD97706),
+                          onTap: () => widget.onNavigate?.call(1),
+                          badgeCount: notif.leaveRequestCount,
+                        );
+                      },
                     ),
                     _buildQuickAction(
                       icon: Icons.people_rounded,
@@ -470,6 +476,20 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                 const Text(
                   'Manajemen & Laporan',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 16),
+                _buildMenuCard(
+                  context,
+                  icon: Icons.language_rounded,
+                  color: const Color(0xFF1E3A8A),
+                  title: 'Dashboard Web Utama',
+                  subtitle: 'Menu administrasi lengkap via browser',
+                  onTap: () async {
+                    final url = Uri.parse('http://localhost:3000/dashboard');
+                    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                      if (context.mounted) AppDialog.showError(context, 'Tidak dapat membuka dashboard web');
+                    }
+                  },
                 ),
                 const SizedBox(height: 16),
                 _buildMenuCard(
@@ -674,18 +694,39 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
     required String label,
     required Color color,
     required VoidCallback onTap,
+    int? badgeCount, // [NEW]
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Color.lerp(color, Colors.white, 0.82),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 28),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color.lerp(color, Colors.white, 0.82),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              if ((badgeCount ?? 0) > 0)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                    child: Text(
+                      badgeCount! > 9 ? '9+' : badgeCount.toString(),
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(

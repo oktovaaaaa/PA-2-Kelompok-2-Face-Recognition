@@ -11,6 +11,7 @@ import 'tabs/employee_history_tab.dart';
 import 'tabs/employee_leave_tab.dart';
 import 'tabs/employee_profile_tab.dart';
 import 'tabs/employee_salary_tab.dart';
+import '../../../../core/providers/notification_provider.dart';
 
 class EmployeeDashboardScreen extends StatefulWidget {
   final int initialIndex;
@@ -77,6 +78,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       return const Scaffold(body: Center(child: Text('Akses Ditolak: Hanya Karyawan')));
     }
 
+    final notifProvider = context.watch<NotificationProvider>();
+    final leaveBadge = notifProvider.leaveStatusCount;
+    final salaryBadge = notifProvider.salaryCount;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       extendBody: false,
@@ -87,8 +92,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         items: [
           BottomNavItem(icon: Icons.account_balance_wallet_rounded, label: 'Beranda'),
           BottomNavItem(icon: Icons.receipt_long_rounded, label: 'Riwayat'),
-          BottomNavItem(icon: Icons.assignment_turned_in_rounded, label: 'Izin'),
-          BottomNavItem(icon: Icons.payments_rounded, label: 'Gaji'),
+          BottomNavItem(icon: Icons.assignment_turned_in_rounded, label: 'Izin', badgeCount: leaveBadge),
+          BottomNavItem(icon: Icons.payments_rounded, label: 'Gaji', badgeCount: salaryBadge),
           BottomNavItem(icon: Icons.settings_rounded, label: 'Pengaturan'),
         ],
       ),

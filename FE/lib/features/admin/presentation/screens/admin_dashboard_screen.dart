@@ -11,6 +11,7 @@ import 'tabs/admin_leave_tab.dart';
 import 'admin_payroll_screen.dart';
 import 'tabs/admin_employee_tab.dart';
 import 'tabs/admin_profile_tab.dart';
+import '../../../../core/providers/notification_provider.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final int initialIndex;
@@ -93,6 +94,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       Icons.person_rounded,
     ];
 
+    final notifProvider = context.watch<NotificationProvider>();
+    final leaveBadge = notifProvider.leaveRequestCount;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       // Hide standard appBar, custom header will be in each tab
@@ -106,7 +110,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onTap: (i) => setState(() => _currentIndex = i),
         items: [
           BottomNavItem(icon: Icons.home_rounded, label: 'Beranda'),
-          BottomNavItem(icon: Icons.assignment_rounded, label: 'Perizinan'),
+          BottomNavItem(icon: Icons.assignment_rounded, label: 'Perizinan', badgeCount: leaveBadge),
           BottomNavItem(icon: Icons.payments_rounded, label: 'Gaji'),
           BottomNavItem(icon: Icons.people_rounded, label: 'Karyawan'),
           BottomNavItem(icon: Icons.settings_rounded, label: 'Pengaturan'),

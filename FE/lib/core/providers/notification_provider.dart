@@ -10,6 +10,21 @@ class NotificationProvider with ChangeNotifier {
   int get unreadCount => _unreadCount;
   bool get isLoading => _isLoading;
 
+  // [NEW] Hitung pengajuan izin baru untuk Admin
+  int get leaveRequestCount => _notifications
+      .where((n) => !n['is_read'] && n['type'] == 'LEAVE_REQUEST')
+      .length;
+
+  // [NEW] Hitung status izin (disetujui/ditolak) untuk Karyawan
+  int get leaveStatusCount => _notifications
+      .where((n) => !n['is_read'] && (n['type'] == 'LEAVE_APPROVED' || n['type'] == 'LEAVE_REJECTED'))
+      .length;
+
+  // [NEW] Hitung notifikasi gaji baru untuk Karyawan
+  int get salaryCount => _notifications
+      .where((n) => !n['is_read'] && n['type'] == 'PAYROLL_PAID')
+      .length;
+
   Future<void> fetchNotifications() async {
     _isLoading = true;
     notifyListeners();

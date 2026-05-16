@@ -16,6 +16,7 @@ import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu'
 
 // Service Imports
 import { employeeService } from '@/libs/employeeService'
+import { leaveService } from '@/libs/leaveService'
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -47,23 +48,29 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
 
   const [role, setRole] = useState<string | null>(null)
   const [pendingCount, setPendingCount] = useState<number>(0)
+  const [pendingLeaveCount, setPendingLeaveCount] = useState<number>(0)
 
   useEffect(() => {
     setRole(localStorage.getItem('role'))
 
-    const fetchPendingCount = async () => {
+    const fetchCounts = async () => {
       try {
-        const data = await employeeService.getPendingEmployees()
-        setPendingCount(data.length)
+        // Fetch pending employees
+        const empData = await employeeService.getPendingEmployees()
+        setPendingCount(empData.length)
+
+        // Fetch pending leave requests
+        const leaveData = await leaveService.getLeaves({ status: 'PENDING' })
+        setPendingLeaveCount(leaveData.length)
       } catch (error) {
-        console.error('Error fetching pending count:', error)
+        console.error('Error fetching counts:', error)
       }
     }
 
-    fetchPendingCount()
+    fetchCounts()
     
-    // Refresh count every 30 seconds for real-time feel
-    const interval = setInterval(fetchPendingCount, 30000)
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchCounts, 30000)
     
     return () => clearInterval(interval)
   }, [])
@@ -130,7 +137,27 @@ const VerticalMenu = ({ scrollMenu }: { scrollMenu: (container: any, isPerfectSc
               <MenuItem href='/jabatan' icon={<i className='ri-briefcase-line' />}>
                 Manajemen Jabatan
               </MenuItem>
-              <MenuItem href='/cuti' icon={<i className='ri-calendar-event-line' />}>
+              <MenuItem 
+                href='/cuti' 
+                icon={<i className='ri-calendar-event-line' />}
+                suffix={pendingLeaveCount > 0 ? (
+                  <Chip 
+                    label={pendingLeaveCount} 
+                    size='small' 
+                    color='error' 
+                    sx={{ 
+                      height: 22, 
+                      width: 22, 
+                      minWidth: 22, 
+                      p: 0, 
+                      '& .MuiChip-label': { px: 0 }, 
+                      fontSize: '0.75rem', 
+                      fontWeight: 'bold',
+                      borderRadius: '50%' 
+                    }} 
+                  />
+                ) : null}
+              >
                 Cuti & Izin
               </MenuItem>
               <MenuItem href='/libur' icon={<i className='ri-calendar-todo-line' />}>
