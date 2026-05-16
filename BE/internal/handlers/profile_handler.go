@@ -25,7 +25,8 @@ func GetMyProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	
 	var user models.User
-	if err := database.DB.Preload("Company").Where("id = ?", userID).First(&user).Error; err != nil {
+	// [FIX] Tambahkan Preload("Position") agar data jabatan & gaji pokok otomatis terambil
+	if err := database.DB.Preload("Company").Preload("Position").Where("id = ?", userID).First(&user).Error; err != nil {
 		utils.Error(c, "Profil tidak ditemukan")
 		return
 	}
@@ -72,10 +73,17 @@ func GetMyProfile(c *gin.Context) {
 
 	if user.PositionID != nil {
 		resp.PositionID = *user.PositionID
-		var pos models.Position
-		if err := database.DB.Where("id = ?", *user.PositionID).First(&pos).Error; err == nil {
-			resp.PositionName = pos.Name
-			resp.Salary = pos.Salary
+		// [FIX] Gunakan data dari hasil Preload agar lebih instan dan akurat
+		resp.PositionName = user.Position.Name
+		resp.Salary = user.Position.Salary
+		
+		// Fallback jika karena suatu alasan Preload gagal tapi ID ada
+		if resp.PositionName == "" {
+			var pos models.Position
+			if err := database.DB.Where("id = ?", *user.PositionID).First(&pos).Error; err == nil {
+				resp.PositionName = pos.Name
+				resp.Salary = pos.Salary
+			}
 		}
 	}
 

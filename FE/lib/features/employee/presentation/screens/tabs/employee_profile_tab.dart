@@ -73,6 +73,7 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
     try {
       final res = await ApiClient.get('/api/profile');
       if (res.success && mounted) {
+        debugPrint('DEBUG PROFILE DATA: ${res.data}');
         setState(() => _profile = res.data as Map<String, dynamic>?);
       }
     } finally {
@@ -358,7 +359,11 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
     );
   }
 
-  String _v(String key) => _profile?[key]?.toString() ?? '-';
+  String _v(String key) {
+    final val = _profile?[key];
+    if (val == null || val.toString().trim().isEmpty) return '-';
+    return val.toString();
+  }
 
   @override
   Widget build(BuildContext context) {

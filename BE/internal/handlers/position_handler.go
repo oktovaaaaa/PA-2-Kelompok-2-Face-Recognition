@@ -138,11 +138,10 @@ func AssignPosition(c *gin.Context) {
 	}
 
 	if body.PositionID == "" {
-		employee.PositionID = nil
+		database.DB.Model(&employee).Update("position_id", nil)
 	} else {
-		employee.PositionID = &body.PositionID
+		database.DB.Model(&employee).Update("position_id", body.PositionID)
 	}
-	database.DB.Save(&employee)
 
 	// Kirim Notifikasi
 	go func() {
