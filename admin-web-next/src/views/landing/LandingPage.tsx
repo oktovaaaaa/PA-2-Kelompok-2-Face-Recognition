@@ -534,7 +534,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
         <div className='showcase-card-container reveal reveal-up'>
           <div className='showcase-collage-area reveal reveal-left delay-1'>
             <img 
-              src='/attendance_app_collage_1775491357614.png' 
+              src='/videnti5.png' 
               alt='App Collage' 
               className='collage-image'
             />
