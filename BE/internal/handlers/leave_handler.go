@@ -130,8 +130,8 @@ func ApproveLeave(c *gin.Context) {
 
 	// Kirim notifikasi ke karyawan
 	services.CreateNotification(leave.UserID, adminUser.CompanyID, "Izin Disetujui",
-		"Izin kamu telah disetujui oleh admin.", "LEAVE_APPROVED", leave.ID)
-	services.SendPushNotification(leave.UserID, "Izin Disetujui", "Izin kamu telah disetujui oleh admin.")
+		"Permohonan izin Anda telah disetujui oleh Bos.", "LEAVE_APPROVED", leave.ID)
+	services.SendPushNotification(leave.UserID, "Izin Disetujui", "Permohonan izin Anda telah disetujui oleh Bos.")
 
 	utils.Success(c, "Izin berhasil disetujui", nil)
 }
@@ -163,8 +163,8 @@ func RejectLeave(c *gin.Context) {
 
 	// Kirim notifikasi ke karyawan
 	services.CreateNotification(leave.UserID, adminUser.CompanyID, "Izin Ditolak",
-		"Izin kamu ditolak oleh admin. "+body.Note, "LEAVE_REJECTED", leave.ID)
-	services.SendPushNotification(leave.UserID, "Izin Ditolak", "Izin kamu ditolak oleh admin.")
+		"Permohonan izin Anda ditolak oleh Bos. "+body.Note, "LEAVE_REJECTED", leave.ID)
+	services.SendPushNotification(leave.UserID, "Izin Ditolak", "Permohonan izin Anda ditolak oleh Bos.")
 
 	utils.Success(c, "Izin berhasil ditolak", nil)
 }

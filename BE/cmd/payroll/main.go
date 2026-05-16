@@ -24,7 +24,12 @@ func main() {
 		&models.SalaryPayment{},
 		&models.Bonus{},
 		&models.Penalty{},
+		&models.Notification{},
 	)
+
+	// [FIX] Hapus constraint foreign key di database Payroll karena tabel Company/Position tidak ada isinya
+	database.DB.Exec("ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_company;")
+	database.DB.Exec("ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_position;")
 
 	// 4. Setup Router (Only Payroll Routes)
 	r := routes.SetupPayrollRouter()

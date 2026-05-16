@@ -82,7 +82,7 @@ func main() {
 	payProxy := proxy("http://localhost:8083")
 	r.Any("/api/employee/salaries", payProxy)
 	r.Any("/api/employee/salaries/*any", payProxy)
-	r.Any("/api/employee/bank-info", payProxy)
+	r.Any("/api/employee/bank-info", authProxy) // Changed from payProxy to authProxy
 	r.Any("/api/employee/penalties", payProxy)
 
 	r.Any("/api/admin/payroll", payProxy)

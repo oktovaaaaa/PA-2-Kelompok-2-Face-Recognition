@@ -69,6 +69,7 @@ func SetupAuthRouter() *gin.Engine {
 		protected.POST("/profile/change-password", handlers.ChangePassword)
 		protected.POST("/profile/change-pin", handlers.ChangePin)
 		protected.POST("/profile/face-registration", handlers.RegisterFace)
+		protected.PUT("/employee/bank-info", handlers.UpdateBankInfo) // Added here
 		protected.DELETE("/profile", handlers.DeleteAccount)
 
 		protected.GET("/notifications", handlers.GetNotifications)
@@ -260,6 +261,7 @@ func SetupRouter() *gin.Engine {
 		protected.POST("/profile/verify-password", handlers.VerifyPassword)
 		protected.POST("/profile/change-password", handlers.ChangePassword)
 		protected.POST("/profile/change-pin", handlers.ChangePin)
+		protected.PUT("/employee/bank-info", handlers.UpdateBankInfo) // Added here
 		protected.DELETE("/profile", handlers.DeleteAccount)
 
 		// Notifikasi (admin & karyawan)

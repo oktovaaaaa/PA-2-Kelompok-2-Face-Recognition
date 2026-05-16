@@ -30,6 +30,9 @@ func processAttendanceReminders() {
 	currentTime := now.Format("15:04")
 	today := now.Format("2006-01-02")
 
+	// [DEBUG] Log setiap menit untuk memastikan scheduler jalan dan cek waktunya
+	fmt.Printf("[Scheduler] Heartbeat: %s %s\n", today, currentTime)
+
 	var settings []models.AttendanceSettings
 	// Ambil semua pengaturan absensi perusahaan
 	if err := database.DB.Find(&settings).Error; err != nil {
@@ -38,53 +41,74 @@ func processAttendanceReminders() {
 
 	for _, s := range settings {
 		// Pengecekan Waktu
-		isCheckInTime := currentTime == s.CheckInStart
-		isCheckInTime5 := currentTime == offsetMinutes(s.CheckInStart, 5)
-		isCheckOutTime := currentTime == s.CheckOutStart
-		isCheckOutTime5 := currentTime == offsetMinutes(s.CheckOutStart, 5)
+		isCheckInStart := currentTime == s.CheckInStart
+		isCheckInLimit10 := currentTime == offsetMinutes(s.CheckInEnd, -10)
+		
+		isCheckOutStart := currentTime == s.CheckOutStart
+		isCheckOutLimit10 := currentTime == offsetMinutes(s.CheckOutEnd, -10)
 
 		// Jika tidak ada yang cocok dengan waktu sekarang, lewati perusahaan ini
-		if !isCheckInTime && !isCheckInTime5 && !isCheckOutTime && !isCheckOutTime5 {
+		if !isCheckInStart && !isCheckInLimit10 && !isCheckOutStart && !isCheckOutLimit10 {
 			continue
+		}
+
+		fmt.Printf("[Scheduler] Memproses pengingat untuk Company: %s pada jam %s\n", s.CompanyID, currentTime)
+
+		// [DEBUG] Cek semua user di company ini tanpa filter role/status untuk debug
+		var allUsers []models.User
+		database.DB.Where("company_id = ?", s.CompanyID).Find(&allUsers)
+		fmt.Printf("[Scheduler] Debug Company %s: Total %d user ditemukan di DB\n", s.CompanyID, len(allUsers))
+		for _, u := range allUsers {
+			fmt.Printf("  - User: %s, Role: %s, Status: %s\n", u.Name, u.Role, u.Status)
 		}
 
 		// Ambil semua karyawan aktif di perusahaan ini
 		var employees []models.User
 		database.DB.Where("company_id = ? AND role = ? AND status = ?", s.CompanyID, "EMPLOYEE", "ACTIVE").Find(&employees)
+		
+		fmt.Printf("[Scheduler] Ditemukan %d karyawan aktif (Role: EMPLOYEE, Status: ACTIVE) untuk company %s\n", len(employees), s.CompanyID)
 
-		// Cek apakah hari ini hari kerja/libur (pindahkan ke luar loop karyawan untuk efisiensi)
 		isWorkingDay, _ := checkWorkingStatus(s.CompanyID, today)
 		if !isWorkingDay {
+			fmt.Printf("[Scheduler] Skip: Bukan hari kerja/libur untuk company %s\n", s.CompanyID)
 			continue
 		}
 
 		for _, emp := range employees {
-			// Pengingat Masuk
-			if isCheckInTime || isCheckInTime5 {
+			// 1. Pengingat Masuk (Mulai & 10 Menit Sebelum Batas)
+			if isCheckInStart || isCheckInLimit10 {
 				var att models.Attendance
 				err := database.DB.Where("user_id = ? AND date = ?", emp.ID, today).First(&att).Error
-				// Kirim jika belum ada record absensi atau belum CheckIn
 				if err != nil || att.CheckInTime == nil {
 					title := "⏰ Waktunya Presensi Masuk"
-					msg := "Kantor sudah dimulai! Yuk segera lakukan presensi agar tetap tepat waktu."
-					if isCheckInTime5 {
-						msg = "Sudah lewat 5 menit dari jam masuk. Jangan lupa presensi ya!"
+					msg := "Jam kerja telah dimulai. Mohon segera melakukan presensi kehadiran Anda untuk memastikan ketepatan waktu."
+					
+					if isCheckInLimit10 {
+						title = "⚠️ Batas Presensi Masuk Segera Berakhir"
+						msg = "Batas waktu presensi masuk akan segera berakhir dalam 10 menit. Mohon segera menyelesaikan presensi Anda."
 					}
+					fmt.Printf("[Scheduler] Mengirim pengingat masuk ke User: %s (%s)\n", emp.Name, emp.ID)
 					SendPushNotification(emp.ID, title, msg)
+				} else {
+					fmt.Printf("[Scheduler] User %s sudah absen masuk hari ini, skip pengingat.\n", emp.Name)
 				}
 			}
 
-			// Pengingat Pulang
-			if isCheckOutTime || isCheckOutTime5 {
+			// 2. Pengingat Pulang (Mulai & 10 Menit Sebelum Batas)
+			if isCheckOutStart || isCheckOutLimit10 {
 				var att models.Attendance
 				err := database.DB.Where("user_id = ? AND date = ?", emp.ID, today).First(&att).Error
 				// Kirim jika sudah CheckIn tapi belum CheckOut
 				if err == nil && att.CheckInTime != nil && att.CheckOutTime == nil {
-					title := "🏠 Waktunya Presensi Keluar"
-					msg := "Sudah jam pulang kantor! Jangan lupa presensi keluar sebelum meninggalkan area ya."
-					if isCheckOutTime5 {
-						msg = "Kamu belum melakukan presensi keluar. Segera presensi ya agar data kehadiranmu lengkap!"
+					title := "🏠 Waktunya Presensi Pulang"
+					msg := "Jam kerja telah selesai. Mohon pastikan Anda melakukan presensi pulang sebelum meninggalkan area kerja."
+					
+					if isCheckOutLimit10 {
+						title = "🕒 10 Menit Lagi Batas Pulang Berakhir"
+						msg = "Batas waktu presensi pulang akan segera berakhir dalam 10 menit. Mohon segera menyelesaikan presensi pulang Anda."
 					}
+					
+					fmt.Printf("[Scheduler] Mengirim pengingat pulang ke User: %s (%s)\n", emp.Name, emp.ID)
 					SendPushNotification(emp.ID, title, msg)
 				}
 			}

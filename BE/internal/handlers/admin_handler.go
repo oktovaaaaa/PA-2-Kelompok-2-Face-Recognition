@@ -114,10 +114,14 @@ func ApproveEmployee(c *gin.Context) {
 	user.Status = "ACTIVE"
 	database.DB.Save(&user)
 
+	// [NEW] Sinkronisasi ke DB Attendance & Payroll agar pengingat absensi dan gaji bisa jalan
+	go database.SyncUserToAttendance(user)
+	go database.SyncUserToPayroll(user)
+
 	// Kirim Notifikasi ke Karyawan
 	services.CreateNotification(user.ID, user.CompanyID, "Akun Disetujui",
-		"Selamat! Akun Anda telah disetujui oleh admin. Anda sekarang bisa mengakses seluruh fitur aplikasi.", "EMPLOYEE_APPROVED", user.ID)
-	services.SendPushNotification(user.ID, "Akun Disetujui", "Akun Anda telah aktif. Silakan masuk kembali.")
+		"Selamat! Akun Anda telah disetujui oleh Bos. Anda sekarang dapat mengakses seluruh fitur aplikasi.", "EMPLOYEE_APPROVED", user.ID)
+	services.SendPushNotification(user.ID, "Akun Disetujui", "Akun Anda telah aktif. Mohon lakukan login kembali.")
 
 	utils.Success(c, "Karyawan berhasil diapprove", nil)
 }

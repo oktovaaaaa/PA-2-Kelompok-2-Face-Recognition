@@ -10,6 +10,7 @@ import '../../data/auth_repository.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:pinput/pinput.dart';
 import '../../../common/widgets/app_dialog.dart';
+import '../../../employee/presentation/screens/face_registration_screen.dart';
 
 class RegisterEmployeeScreen extends StatefulWidget {
   final String inviteToken;
@@ -105,6 +106,17 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (_googleIdToken == null && !_otpSent) {
+      AppDialog.showError(context, 'Silakan verifikasi email dengan kode OTP terlebih dahulu');
+      return;
+    }
+
+    if (_googleIdToken == null && _otpCode.text.length != 6) {
+      AppDialog.showError(context, 'Masukkan kode OTP 6 digit');
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       String? photoUrl;
@@ -115,31 +127,38 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
         }
       }
 
-      await _repo.registerEmployee(
-        name: _name.text.trim(),
-        email: _email.text.trim(),
-        password: _password.text,
-        pin: _pin.text,
-        phone: _phone.text.trim(),
-        birthPlace: _birthPlace.text.trim(),
-        birthDate: _birthDate.text.trim(),
-        address: _address.text.trim(),
-        bankName: _bankName.text.trim(),
-        bankAccountNumber: _bankAccountNumber.text.trim(),
-        inviteToken: widget.inviteToken,
-        photoUrl: photoUrl,
-        googleIdToken: _googleIdToken,
-        otpCode: _otpCode.text.trim(),
-      );
+      final registrationData = {
+        'name': _name.text.trim(),
+        'email': _email.text.trim(),
+        'password': _password.text,
+        'pin': _pin.text,
+        'phone': _phone.text.trim(),
+        'birthPlace': _birthPlace.text.trim(),
+        'birthDate': _birthDate.text.trim(),
+        'address': _address.text.trim(),
+        'bankName': _bankName.text.trim(),
+        'bankAccountNumber': _bankAccountNumber.text.trim(),
+        'inviteToken': widget.inviteToken,
+        'photoUrl': photoUrl,
+        'googleIdToken': _googleIdToken,
+        'otpCode': _otpCode.text.trim(),
+      };
+
       if (!mounted) return;
-      AppDialog.showSuccess(context, 'Registrasi berhasil. Akun menunggu persetujuan admin.');
-      Navigator.popUntil(context, (route) => route.isFirst);
+      setState(() => _loading = false);
+
+      // Lanjut ke tahap pendaftaran wajah (Face ID)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FaceRegistrationScreen(registrationData: registrationData),
+        ),
+      );
     } catch (e) {
       final msg = ErrorMapper.map(e);
       if (!mounted) return;
       AppDialog.showError(context, msg);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      setState(() => _loading = false);
     }
   }
 
@@ -485,7 +504,7 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
                       onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Color(0xFF2563EB), strokeWidth: 2))
-                          : const Text('Daftar Sekarang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text('Selanjutnya', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 40),

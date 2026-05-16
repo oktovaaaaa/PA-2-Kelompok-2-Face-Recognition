@@ -27,7 +27,8 @@ func RegisterEmployee(c *gin.Context) {
 
 		GoogleIDToken string
 		OTPCode       string
-		FcmToken      string `json:"fcm_token"`
+		FcmToken      string   `json:"fcm_token"`
+		FaceImages    []string `json:"face_images"` // [NEW]
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -72,7 +73,7 @@ func RegisterEmployee(c *gin.Context) {
 		}
 	}
 
-	err := services.RegisterEmployee(user, body.InviteToken)
+	err := services.RegisterEmployee(user, body.InviteToken, body.FaceImages)
 
 	if err != nil {
 

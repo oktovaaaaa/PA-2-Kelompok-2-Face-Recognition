@@ -145,7 +145,7 @@ const EmployeeApproval = () => {
             Persetujuan Karyawan
           </Typography>
           <Typography variant='body2' color='text.secondary'>
-            Daftar pendaftar baru yang memerlukan verifikasi ({employees.length} pending)
+            Daftar pendaftar baru yang memerlukan verifikasi ({employees.length} menunggu)
           </Typography>
         </Box>
       </Box>
@@ -213,7 +213,7 @@ const EmployeeApproval = () => {
                         <Typography variant='body2'>{row.phone || '-'}</Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Chip label="PENDING" color="warning" size='small' variant='outlined' />
+                      <Chip label="MENUNGGU" color="warning" size='small' variant='outlined' />
                     </TableCell>
                     <TableCell align="right">
                       <IconButton 

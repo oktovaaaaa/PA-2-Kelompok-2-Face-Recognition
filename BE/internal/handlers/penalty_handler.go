@@ -105,7 +105,7 @@ func CreatePenalty(c *gin.Context) {
 		UserID:    userID,
 		CompanyID: checkUser.CompanyID,
 		Title:     "Sanksi Baru",
-		Body:      fmt.Sprintf("Anda menerima sanksi sebesar %s untuk: %s", utils.FormatRupiah(amount), title),
+		Body:      fmt.Sprintf("Anda telah dikenakan sanksi sebesar %s atas: %s.", utils.FormatRupiah(amount), title),
 		Type:      "PENALTY_RECEIVED",
 		IsRead:    false,
 		CreatedAt: time.Now(),

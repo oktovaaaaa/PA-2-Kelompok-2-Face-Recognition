@@ -7,6 +7,7 @@ import (
 	"employee-system/internal/config"
 	"employee-system/internal/database"
 	"employee-system/internal/models"
+	"employee-system/internal/services"
 	"employee-system/routes"
 )
 
@@ -27,8 +28,18 @@ func main() {
 		&models.CompanyLocation{},
 	)
 
+	// [FIX] Hapus constraint foreign key di database Attendance karena tabel Company/Position tidak ada isinya
+	database.DB.Exec("ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_company;")
+	database.DB.Exec("ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_position;")
+
+	// [NEW] Sinkronisasi awal data user dari DB Auth (karena DB terpisah)
+	database.InitialSyncFromAuth()
+
 	// 4. Setup Router (Only Attendance Routes)
 	r := routes.SetupAttendanceRouter()
+
+	// 5. Start Background Scheduler (Reminders)
+	go services.StartScheduler()
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {

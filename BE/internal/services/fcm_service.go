@@ -87,7 +87,8 @@ func SendPushNotification(userID, title, body string) {
 		Android: &messaging.AndroidConfig{
 			Priority: "high",
 			Notification: &messaging.AndroidNotification{
-				Sound: "default",
+				Sound:     "default",
+				ChannelID: "high_importance_channel",
 			},
 		},
 	}

@@ -237,6 +237,7 @@ class AuthRepository {
     String? photoUrl,
     String? googleIdToken,
     String? otpCode,
+    List<String>? faceImages,
   }) async {
     // Get FCM Token for notifications even before login
     String? fcmToken;
@@ -261,6 +262,7 @@ class AuthRepository {
       'photoURL': photoUrl,
       'otpCode': otpCode,
       'fcm_token': fcmToken,
+      'face_images': faceImages,
       if (googleIdToken != null) 'googleIDToken': googleIdToken,
     });
 

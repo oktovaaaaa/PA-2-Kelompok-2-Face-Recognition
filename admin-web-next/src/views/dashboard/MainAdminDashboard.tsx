@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from 'react'
 
-import { useRouter } from 'next/navigation'
-
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 import Grid from '@mui/material/Grid'
@@ -14,6 +13,8 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
+import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
 
 import type { DashboardSummary, AttendanceTrend } from '@/libs/dashboardService';
 import { dashboardService } from '@/libs/dashboardService'
@@ -21,6 +22,7 @@ import InviteQRModal from './InviteQRModal'
 import type { Profile } from '@/libs/settingService';
 import { formatImageUrl, settingService } from '@/libs/settingService'
 import { formatFullDate } from '@/utils/dateFormatter'
+import { employeeService, type Employee } from '@/libs/employeeService'
 
 // Component Imports
 import AttendanceSummaryPie from './AttendanceSummaryPie'
@@ -33,21 +35,34 @@ const MainAdminDashboard = () => {
     const [profile, setProfile] = useState<Profile | null>(null)
     const [loading, setLoading] = useState(true)
     const [qrModalOpen, setQrModalOpen] = useState(false)
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const employeeId = searchParams.get('employee_id')
 
     const fetchData = async () => {
         setLoading(true)
 
         try {
             const [sumData, trendData, profData] = await Promise.all([
-                dashboardService.getSummary(),
-                dashboardService.getTrend('7days'),
+                dashboardService.getSummary(employeeId || undefined),
+                dashboardService.getTrend('7days', employeeId || undefined),
                 settingService.getProfile()
             ])
 
             setSummary(sumData)
             setTrend(trendData)
             setProfile(profData)
+
+            if (employeeId) {
+                // Fetch employee name for the filter badge
+                const allEmployees = await employeeService.getEmployees()
+                const found = allEmployees.find(e => e.id === employeeId)
+
+                if (found) setSelectedEmployee(found)
+            } else {
+                setSelectedEmployee(null)
+            }
         } catch (error) {
             console.error('Error fetching dashboard data:', error)
         } finally {
@@ -57,7 +72,11 @@ const MainAdminDashboard = () => {
 
     useEffect(() => {
         fetchData()
-    }, [])
+    }, [employeeId])
+
+    const handleClearFilter = () => {
+        router.push('/dashboard')
+    }
 
     const quickActions = [
         { icon: 'ri-calendar-check-line', label: 'Perizinan', color: 'bg-[#FEF3C7] text-[#D97706]', url: '/cuti' },
@@ -98,11 +117,26 @@ const MainAdminDashboard = () => {
                                 </Typography>
                             </Box>
                         </Box>
-                        <Box className='flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10'>
-                            <i className='ri-time-line text-blue-300' />
-                            <Typography className='text-sm font-medium uppercase'>
-                                {formatFullDate(new Date())}
-                            </Typography>
+                        <Box className='flex flex-col items-end gap-3'>
+                            {selectedEmployee && (
+                                <Chip
+                                    label={`Filter: ${selectedEmployee.name}`}
+                                    onDelete={handleClearFilter}
+                                    className="bg-blue-600 font-bold"
+                                    sx={{ 
+                                        color: 'white', 
+                                        '& .MuiChip-label': { color: 'white' },
+                                        '& .MuiChip-deleteIcon': { color: 'rgba(255, 255, 255, 0.8) !important', '&:hover': { color: 'white !important' } }
+                                    }}
+                                    deleteIcon={<i className="ri-close-circle-fill" />}
+                                />
+                            )}
+                            <Box className='flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10'>
+                                <i className='ri-time-line text-blue-300' />
+                                <Typography className='text-sm font-medium uppercase text-white'>
+                                    {formatFullDate(new Date())}
+                                </Typography>
+                            </Box>
                         </Box>
                     </CardContent>
                 </Card>
@@ -292,7 +326,7 @@ const MainAdminDashboard = () => {
 
             {/* Recent Attendance Table */}
             <Grid item xs={12}>
-                <RecentAttendanceTable />
+                <RecentAttendanceTable employeeId={employeeId} />
             </Grid>
 
             {/* QR Modal */}

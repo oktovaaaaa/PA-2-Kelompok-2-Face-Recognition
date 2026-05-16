@@ -14,7 +14,7 @@ class PremiumBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     required this.items,
-    this.activeColor = const Color(0xFF2563EB),
+    this.activeColor = const Color(0xFF3B82F6),
     this.inactiveColor = const Color(0xFF94A3B8),
   });
 
@@ -110,29 +110,36 @@ class BNBCustomPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     Path path = Path();
-    path.moveTo(0, 0); // Mulai dari pojok kiri atas bar
+    path.moveTo(0, 0);
     
-    // Lekukan (Notch) yang lebih dalam dan halus sesuai gambar
-    double notchWidth = 80;
-    double curveDepth = 45;
     double center = size.width / 2;
+    double notchWidth = 80;
+    double curveDepth = 35;
     
     path.lineTo(center - notchWidth, 0);
-    path.quadraticBezierTo(center - (notchWidth * 0.6), 0, center - (notchWidth * 0.5), curveDepth * 0.3);
+    
+    path.quadraticBezierTo(
+      center - (notchWidth * 0.6), 0,
+      center - (notchWidth * 0.4), curveDepth * 0.4,
+    );
+    
     path.arcToPoint(
-      Offset(center + (notchWidth * 0.5), curveDepth * 0.3),
-      radius: const Radius.circular(45),
+      Offset(center + (notchWidth * 0.4), curveDepth * 0.4),
+      radius: const Radius.circular(35),
       clockwise: false,
     );
-    path.quadraticBezierTo(center + (notchWidth * 0.6), 0, center + notchWidth, 0);
+    
+    path.quadraticBezierTo(
+      center + (notchWidth * 0.6), 0,
+      center + notchWidth, 0,
+    );
     
     path.lineTo(size.width, 0);
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();
 
-    // Shadow yang lebih soft
-    canvas.drawShadow(path, Colors.black.withOpacity(0.3), 15, true);
+    canvas.drawShadow(path, Colors.black.withOpacity(0.1), 12, true);
     canvas.drawPath(path, paint);
   }
 

@@ -62,9 +62,12 @@ const AttendanceSummaryPie = ({ summary, onRefresh }: Props) => {
             },
             total: {
               show: true,
-              label: isDataEmpty ? 'STATUS' : 'Karyawan',
-              color: isDataEmpty ? '#EA580C' : 'var(--mui-palette-text-secondary)',
-              formatter: () => isDataEmpty ? 'HARI LIBUR' : (summary?.total.toString() || '0')
+              label: isDataEmpty ? 'HARI LIBUR' : 'Karyawan',
+              fontSize: isDataEmpty ? '22px' : '14px',
+              fontWeight: 700,
+              color: isDataEmpty ? '#3B82F6' : 'var(--mui-palette-text-secondary)',
+              offsetY: isDataEmpty ? 8 : 0,
+              formatter: () => isDataEmpty ? '' : (summary?.total.toString() || '0')
             }
           }
         }

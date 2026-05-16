@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func RegisterEmployee(user models.User, inviteToken string) error {
+func RegisterEmployee(user models.User, inviteToken string, faceImages []string) error {
 
 	var invite models.InviteToken
 
@@ -47,11 +47,25 @@ func RegisterEmployee(user models.User, inviteToken string) error {
 	user.Status = "PENDING"
 	user.Role = "EMPLOYEE"
 
+	// [NEW] Process Face ID during registration if images are provided
+	if len(faceImages) > 0 {
+		embedding, err := ProcessFaceImages(faceImages)
+		if err != nil {
+			return errors.New("Gagal mendaftarkan wajah: " + err.Error())
+		}
+		user.FaceEmbedding = embedding
+		now := time.Now()
+		user.FaceUpdatedAt = &now
+	}
+
 	err = database.DB.Create(&user).Error
 
 	if err != nil {
 		return err
 	}
+
+	// [NEW] Sinkronisasi ke DB Attendance
+	go database.SyncUserToAttendance(user)
 
 	invite.Status = "USED"
 	database.DB.Save(&invite)
@@ -60,9 +74,9 @@ func RegisterEmployee(user models.User, inviteToken string) error {
 	var admin models.User
 	if err := database.DB.Where("company_id = ? AND role = ?", invite.CompanyID, "ADMIN").First(&admin).Error; err == nil {
 		CreateNotification(admin.ID, invite.CompanyID, "Pendaftaran Karyawan Baru", 
-			user.Name + " telah mendaftar dan menunggu persetujuan.", "EMPLOYEE_REGISTERED", user.ID)
+			user.Name + " telah mendaftar dan sedang menunggu persetujuan Anda.", "EMPLOYEE_REGISTERED", user.ID)
 		SendPushNotification(admin.ID, "Pendaftaran Karyawan Baru", 
-			user.Name + " telah mendaftar. Silakan cek di daftar karyawan pending.")
+			user.Name + " telah mendaftar. Mohon periksa daftar karyawan yang menunggu persetujuan.")
 	}
 
 	return nil

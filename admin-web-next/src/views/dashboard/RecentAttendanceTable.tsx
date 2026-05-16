@@ -22,7 +22,11 @@ import type { AttendanceLog } from '@/libs/dashboardService';
 import { dashboardService } from '@/libs/dashboardService'
 import { formatImageUrl } from '@/libs/settingService'
 
-const RecentAttendanceTable = () => {
+interface RecentAttendanceTableProps {
+    employeeId?: string | null;
+}
+
+const RecentAttendanceTable = ({ employeeId }: RecentAttendanceTableProps) => {
     const [logs, setLogs] = useState<AttendanceLog[]>([])
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(0)
@@ -31,7 +35,7 @@ const RecentAttendanceTable = () => {
     const fetchLogs = async () => {
         try {
             const today = new Date().toLocaleDateString('en-CA')
-            const data = await dashboardService.getAttendanceLogs(today)
+            const data = await dashboardService.getAttendanceLogs(today, employeeId || undefined)
             
             // Filter hanya yang sudah absen dan urutkan Ascending (Paling awal di atas)
             const filteredAndSorted = data
@@ -59,7 +63,7 @@ return 0
 
         
 return () => clearInterval(interval)
-    }, [])
+    }, [employeeId])
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage)

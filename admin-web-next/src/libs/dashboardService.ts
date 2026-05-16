@@ -49,8 +49,12 @@ export interface AttendanceLog {
 }
 
 export const dashboardService = {
-    async getSummary(): Promise<DashboardSummary> {
-        const response = await fetch(`${API_URL}/admin/dashboard/summary`, {
+    async getSummary(employeeId?: string): Promise<DashboardSummary> {
+        let url = `${API_URL}/admin/dashboard/summary`;
+
+        if (employeeId) url += `?user_id=${employeeId}`;
+
+        const response = await fetch(url, {
             method: 'GET',
             headers: getAuthHeaders(),
         });
@@ -59,11 +63,15 @@ export const dashboardService = {
 
         if (!response.ok) throw new Error(data.message || 'Gagal memuat ringkasan dashboard.');
         
-return data.data as DashboardSummary;
+        return data.data as DashboardSummary;
     },
 
-    async getTrend(filter: 'today' | '7days' | 'month' | 'year' = '7days'): Promise<AttendanceTrend> {
-        const response = await fetch(`${API_URL}/admin/dashboard/trend?filter=${filter}`, {
+    async getTrend(filter: 'today' | '7days' | 'month' | 'year' = '7days', employeeId?: string): Promise<AttendanceTrend> {
+        let url = `${API_URL}/admin/dashboard/trend?filter=${filter}`;
+
+        if (employeeId) url += `&user_id=${employeeId}`;
+
+        const response = await fetch(url, {
             method: 'GET',
             headers: getAuthHeaders(),
         });
@@ -72,7 +80,7 @@ return data.data as DashboardSummary;
 
         if (!response.ok) throw new Error(data.message || 'Gagal memuat tren kehadiran.');
         
-return data.data as AttendanceTrend;
+        return data.data as AttendanceTrend;
     },
 
     async generateInviteToken(): Promise<{ token: string }> {
@@ -88,9 +96,12 @@ return data.data as AttendanceTrend;
 return data.data as { token: string };
     },
 
-    async getAttendanceLogs(date?: string): Promise<AttendanceLog[]> {
+    async getAttendanceLogs(date?: string, employeeId?: string): Promise<AttendanceLog[]> {
         // Use start_date and end_date for consistency with the backend AdminGetAttendanceHistory
-        const params = date ? `?start_date=${date}&end_date=${date}&filter=today` : '';
+        let params = date ? `?start_date=${date}&end_date=${date}&filter=today` : '';
+        if (employeeId) {
+            params += params ? `&user_id=${employeeId}` : `?user_id=${employeeId}`;
+        }
 
         const response = await fetch(`${API_URL}/admin/attendance${params}`, {
             method: 'GET',

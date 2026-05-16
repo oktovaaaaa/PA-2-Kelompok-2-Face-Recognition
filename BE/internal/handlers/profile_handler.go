@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -155,6 +156,33 @@ func UpdateFcmToken(c *gin.Context) {
 	}
 
 	database.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("fcm_token", body.FcmToken)
+	
+	// Fetch full user record to avoid overwriting fields with empty values in DBs
+	var fullUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&fullUser).Error; err == nil {
+		go database.SyncUserToAttendance(fullUser)
+		go database.SyncUserToPayroll(fullUser)
+	} else {
+		// FALLBACK: If user is missing from pa2_auth (e.g., stale mobile login), directly update fcm_token in pa2_attendance & pa2_payroll
+		attDsn := fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+			os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+			"pa2_attendance", os.Getenv("DB_PORT"),
+		)
+		if attDB, err := gorm.Open(postgres.Open(attDsn), &gorm.Config{}); err == nil {
+			attDB.Model(&models.User{}).Where("id = ?", user.ID).Update("fcm_token", body.FcmToken)
+		}
+
+		payDsn := fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+			os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+			"pa2_payroll", os.Getenv("DB_PORT"),
+		)
+		if payDB, err := gorm.Open(postgres.Open(payDsn), &gorm.Config{}); err == nil {
+			payDB.Model(&models.User{}).Where("id = ?", user.ID).Update("fcm_token", body.FcmToken)
+		}
+	}
+
 	utils.Success(c, "FCM token berhasil disimpan", nil)
 }
 
@@ -248,7 +276,14 @@ func VerifyPassword(c *gin.Context) {
 		return
 	}
 
-	if !utils.CheckPassword(user.Password, body.Password) {
+	// Ambil data lengkap user dari DB untuk mendapatkan hash password
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "Akun tidak ditemukan")
+		return
+	}
+
+	if !utils.CheckPassword(dbUser.Password, body.Password) {
 		utils.Error(c, "Password yang Anda masukkan salah")
 		return
 	}
@@ -520,84 +555,14 @@ func RegisterFace(c *gin.Context) {
 		}
 	}
 
-	// Simpan semua gambar ke file temporary
-	var tempFiles []string
-	for i, b64 := range in.Images {
-		tempFile, err := os.CreateTemp("", fmt.Sprintf("face_reg_%d_*.jpg", i))
-		if err != nil {
-			continue
-		}
-		imgData, _ := base64.StdEncoding.DecodeString(b64)
-		tempFile.Write(imgData)
-		tempFile.Close()
-		tempFiles = append(tempFiles, tempFile.Name())
-	}
-	defer func() {
-		for _, f := range tempFiles {
-			os.Remove(f)
-		}
-	}()
-
-	fmt.Printf("--> Memproses registrasi wajah untuk: %s dengan %d gambar (Batch Mode)\n", dbUser.Name, len(tempFiles))
-
-	// Jalankan Python untuk semua gambar sekaligus
-	args := append([]string{"process_face.py"}, tempFiles...)
-	cmd := exec.Command("python", args...)
-	output, _ := cmd.CombinedOutput()
-	// Filter output menggunakan Tag JSON_START dan JSON_END
-	outStr := string(output)
-	var jsonStr string
-	
-	startTag := "JSON_START"
-	endTag := "JSON_END"
-	
-	startIdx := strings.Index(outStr, startTag)
-	endIdx := strings.LastIndex(outStr, endTag)
-	
-	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
-		jsonStr = outStr[startIdx+len(startTag) : endIdx]
-	} else {
-		utils.Error(c, "Data AI tidak ditemukan dalam output. Output asli: "+outStr)
+	// [NEW] Use face service for processing
+	embedding, err := services.ProcessFaceImages(in.Images)
+	if err != nil {
+		utils.Error(c, err.Error())
 		return
 	}
 
-	var allResults []interface{}
-	if err := json.Unmarshal([]byte(jsonStr), &allResults); err != nil {
-		utils.Error(c, "Gagal mengurai data AI: "+err.Error())
-		return
-	}
-
-	var validEmbeddings [][]float32
-	for _, res := range allResults {
-		// Cek apakah hasil adalah array float (embedding) atau error object
-		if emb, ok := res.([]interface{}); ok {
-			var floatEmb []float32
-			for _, v := range emb {
-				floatEmb = append(floatEmb, float32(v.(float64)))
-			}
-			validEmbeddings = append(validEmbeddings, floatEmb)
-		}
-	}
-
-	if len(validEmbeddings) == 0 {
-		utils.Error(c, "Tidak ada wajah valid yang terdeteksi dari gambar yang dikirim")
-		return
-	}
-
-	// Hitung Rata-rata (Mean Embedding)
-	embSize := len(validEmbeddings[0])
-	meanEmb := make([]float32, embSize)
-	for _, emb := range validEmbeddings {
-		for i := 0; i < embSize; i++ {
-			meanEmb[i] += emb[i]
-		}
-	}
-	for i := 0; i < embSize; i++ {
-		meanEmb[i] /= float32(len(validEmbeddings))
-	}
-
-	embS, _ := json.Marshal(meanEmb)
-	dbUser.FaceEmbedding = string(embS)
+	dbUser.FaceEmbedding = embedding
 	now := time.Now()
 	dbUser.FaceUpdatedAt = &now
 
@@ -606,9 +571,37 @@ func RegisterFace(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "Registrasi wajah berhasil", gin.H{
-		"images_processed": len(validEmbeddings),
-	})
+	utils.Success(c, "Registrasi wajah berhasil", nil)
+}
+
+// UpdateBankInfo — khusus update data bank (karyawan sendiri)
+func UpdateBankInfo(c *gin.Context) {
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+
+	var body struct {
+		BankName          string `json:"bank_name"`
+		BankAccountNumber string `json:"bank_account_number"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		utils.Error(c, "Data tidak valid")
+		return
+	}
+
+	if body.BankName == "" || body.BankAccountNumber == "" {
+		utils.Error(c, "Nama Bank dan Nomor Rekening wajib diisi")
+		return
+	}
+
+	if err := database.DB.Model(&models.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
+		"bank_name":           body.BankName,
+		"bank_account_number": body.BankAccountNumber,
+	}).Error; err != nil {
+		utils.Error(c, "Gagal memperbarui informasi bank")
+		return
+	}
+
+	utils.Success(c, "Informasi bank berhasil diperbarui", nil)
 }
 
 // getEmbedding digunakan untuk verifikasi wajah tunggal (saat absen)

@@ -1130,30 +1130,61 @@ func AdminGetDashboardSummary(c *gin.Context) {
 
 	var present, late, leave, sick, working, lateEarlyLeave, earlyLeave int64
 
-	// 1. Hitung yang sudah SELESAI (sudah check-out)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "PRESENT").Count(&present)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "LATE").Count(&late)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "EARLY_LEAVE").Count(&earlyLeave)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "LATE_EARLY_LEAVE").Count(&lateEarlyLeave)
-
-	// 2. Hitung yang SEDANG BEKERJA (sudah check-in tapi belum check-out)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND (status = ? OR status = ?) AND check_out_time IS NULL", admin.CompanyID, today, "PRESENT", "LATE").Count(&working)
-
-	// 3. Izin & Sakit
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "LEAVE").Count(&leave)
-	database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "SICK").Count(&sick)
-
 	// 4. Total Karyawan Aktif (Ambil dari Auth Service via Internal API)
 	var totalEmployees int64
-	var empResult struct {
-		Count int64 `json:"count"`
-	}
-	authCountURL := fmt.Sprintf("http://localhost:8081/api/internal/users/count?company_id=%s&status=ACTIVE&role=EMPLOYEE", admin.CompanyID)
-	if err := utils.CallInternalAPI(authCountURL, &empResult); err == nil {
-		totalEmployees = empResult.Count
+	userID := c.Query("user_id")
+
+	if userID != "" {
+		// Jika filter per karyawan, totalEmployees adalah 1 (jika dia aktif & di perusahaan ini)
+		var emp models.User
+		authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID)
+		if err := utils.CallInternalAPI(authURL, &emp); err == nil && emp.CompanyID == admin.CompanyID && emp.Status == "ACTIVE" && emp.Role == "EMPLOYEE" {
+			totalEmployees = 1
+		} else {
+			totalEmployees = 0
+		}
 	} else {
-		fmt.Printf("[Attendance] Gagal mengambil jumlah karyawan dari Auth Service: %v\n", err)
+		var empResult struct {
+			Count int64 `json:"count"`
+		}
+		authCountURL := fmt.Sprintf("http://localhost:8081/api/internal/users/count?company_id=%s&status=ACTIVE&role=EMPLOYEE", admin.CompanyID)
+		if err := utils.CallInternalAPI(authCountURL, &empResult); err == nil {
+			totalEmployees = empResult.Count
+		} else {
+			fmt.Printf("[Attendance] Gagal mengambil jumlah karyawan dari Auth Service: %v\n", err)
+		}
 	}
+
+	// 1. Hitung yang sudah SELESAI (sudah check-out)
+	presentQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "PRESENT")
+	lateQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "LATE")
+	earlyLeaveQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "EARLY_LEAVE")
+	lateEarlyLeaveQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NOT NULL", admin.CompanyID, today, "LATE_EARLY_LEAVE")
+
+	// 2. Hitung yang SEDANG BEKERJA (sudah check-in tapi belum check-out)
+	workingQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND (status = ? OR status = ?) AND check_out_time IS NULL", admin.CompanyID, today, "PRESENT", "LATE")
+
+	// 3. Izin & Sakit
+	leaveQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "LEAVE")
+	sickQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ?", admin.CompanyID, today, "SICK")
+
+	if userID != "" {
+		presentQ = presentQ.Where("user_id = ?", userID)
+		lateQ = lateQ.Where("user_id = ?", userID)
+		earlyLeaveQ = earlyLeaveQ.Where("user_id = ?", userID)
+		lateEarlyLeaveQ = lateEarlyLeaveQ.Where("user_id = ?", userID)
+		workingQ = workingQ.Where("user_id = ?", userID)
+		leaveQ = leaveQ.Where("user_id = ?", userID)
+		sickQ = sickQ.Where("user_id = ?", userID)
+	}
+
+	presentQ.Count(&present)
+	lateQ.Count(&late)
+	earlyLeaveQ.Count(&earlyLeave)
+	lateEarlyLeaveQ.Count(&lateEarlyLeave)
+	workingQ.Count(&working)
+	leaveQ.Count(&leave)
+	sickQ.Count(&sick)
 
 	// 5. Logika Alpha vs Belum Absen vs Pulang di Jam Kerja
 	var absentCount, notYetCount, earlyLeaveCount, lateEarlyLeaveCount, displayWorking int64
@@ -1174,7 +1205,11 @@ func AdminGetDashboardSummary(c *gin.Context) {
 		}
 		// Dinamis: Yang masih 'working' dianggap Pulang di Jam Kerja (karena jam operasional sudah habis)
 		var workingLate int64
-		database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NULL", admin.CompanyID, today, "LATE").Count(&workingLate)
+		workingLateQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date = ? AND status = ? AND check_out_time IS NULL", admin.CompanyID, today, "LATE")
+		if userID != "" {
+			workingLateQ = workingLateQ.Where("user_id = ?", userID)
+		}
+		workingLateQ.Count(&workingLate)
 		
 		earlyLeaveCount = earlyLeave + (working - workingLate)
 		lateEarlyLeaveCount = lateEarlyLeave + workingLate
@@ -1313,6 +1348,7 @@ func AdminGetDetailedDashboardSummary(c *gin.Context) {
 	filter := c.Query("filter")
 	monthS := c.Query("month")
 	yearS := c.Query("year")
+	userID := c.Query("user_id")
 
 	now := time.Now()
 	loc := now.Location()
@@ -1357,7 +1393,9 @@ func AdminGetDetailedDashboardSummary(c *gin.Context) {
 	var employees []models.User
 	for _, emp := range allEmployees {
 		if emp.Role == "EMPLOYEE" && emp.Status == "ACTIVE" {
-			employees = append(employees, emp)
+			if userID == "" || emp.ID == userID {
+				employees = append(employees, emp)
+			}
 		}
 	}
 	totalEmp := len(employees)
@@ -1369,7 +1407,11 @@ func AdminGetDetailedDashboardSummary(c *gin.Context) {
 
 	// 4. Ambil Records & Mapping
 	var records []models.Attendance
-	database.DB.Where("company_id = ? AND date >= ? AND date <= ?", adminUser.CompanyID, start, end).Find(&records)
+	recordsQ := database.DB.Where("company_id = ? AND date >= ? AND date <= ?", adminUser.CompanyID, start, end)
+	if userID != "" {
+		recordsQ = recordsQ.Where("user_id = ?", userID)
+	}
+	recordsQ.Find(&records)
 
 	recordMap := make(map[string]map[string]models.Attendance)
 	for _, r := range records {
@@ -1481,6 +1523,7 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 	filter := c.DefaultQuery("filter", "week") // week, month, year
 	month := c.Query("month")
 	year := c.Query("year")
+	userID := c.Query("user_id")
 
 	var labels []string
 	var presentData, lateData, absentData, leaveSickData, earlyLeaveData, lateEarlyLeaveData []float64
@@ -1498,7 +1541,9 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 	var employees []models.User
 	for _, emp := range allEmployees {
 		if emp.Role == "EMPLOYEE" && emp.Status == "ACTIVE" {
-			employees = append(employees, emp)
+			if userID == "" || emp.ID == userID {
+				employees = append(employees, emp)
+			}
 		}
 	}
 	totalEmp := len(employees)
@@ -1522,21 +1567,46 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 			pattern := fmt.Sprintf("%s-%02d%%", year, m)
 
 			var p, l, ls, el, lel int64
-			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT'", adminUser.CompanyID, pattern).Count(&p)
-			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE'", adminUser.CompanyID, pattern).Count(&l)
-			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND (status = 'LEAVE' OR status = 'SICK')", adminUser.CompanyID, pattern).Count(&ls)
-			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'EARLY_LEAVE'", adminUser.CompanyID, pattern).Count(&el)
-			database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE_EARLY_LEAVE'", adminUser.CompanyID, pattern).Count(&lel)
+			pQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT'", adminUser.CompanyID, pattern)
+			lQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE'", adminUser.CompanyID, pattern)
+			lsQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND (status = 'LEAVE' OR status = 'SICK')", adminUser.CompanyID, pattern)
+			elQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'EARLY_LEAVE'", adminUser.CompanyID, pattern)
+			lelQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE_EARLY_LEAVE'", adminUser.CompanyID, pattern)
+
+			if userID != "" {
+				pQ = pQ.Where("user_id = ?", userID)
+				lQ = lQ.Where("user_id = ?", userID)
+				lsQ = lsQ.Where("user_id = ?", userID)
+				elQ = elQ.Where("user_id = ?", userID)
+				lelQ = lelQ.Where("user_id = ?", userID)
+			}
+
+			pQ.Count(&p)
+			lQ.Count(&l)
+			lsQ.Count(&ls)
+			elQ.Count(&el)
+			lelQ.Count(&lel)
 
 			// DETEKSI DINAMIS (Lupa Check-out atau Pulang Awal)
 			var pToEl, lToLel int64
+			pToElQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT' AND check_out_time IS NULL")
+			lToLelQ := database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE' AND check_out_time IS NULL")
+			
 			if now.After(checkOutEndT) {
-				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT' AND check_out_time IS NULL AND date <= ?", adminUser.CompanyID, pattern, today).Count(&pToEl)
-				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE' AND check_out_time IS NULL AND date <= ?", adminUser.CompanyID, pattern, today).Count(&lToLel)
+				pToElQ = pToElQ.Where("date <= ?", today)
+				lToLelQ = lToLelQ.Where("date <= ?", today)
 			} else {
-				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'PRESENT' AND check_out_time IS NULL AND date < ?", adminUser.CompanyID, pattern, today).Count(&pToEl)
-				database.DB.Model(&models.Attendance{}).Where("company_id = ? AND date LIKE ? AND status = 'LATE' AND check_out_time IS NULL AND date < ?", adminUser.CompanyID, pattern, today).Count(&lToLel)
+				pToElQ = pToElQ.Where("date < ?", today)
+				lToLelQ = lToLelQ.Where("date < ?", today)
 			}
+
+			if userID != "" {
+				pToElQ = pToElQ.Where("user_id = ?", userID)
+				lToLelQ = lToLelQ.Where("user_id = ?", userID)
+			}
+
+			pToElQ.Count(&pToEl)
+			lToLelQ.Count(&lToLel)
 			p -= pToEl
 			el += pToEl
 			l -= lToLel

@@ -210,9 +210,9 @@ func Login(c *gin.Context) {
 func VerifyLoginOTP(c *gin.Context) {
 
 	var body struct {
-		Email    string `json:"email"`
-		Code     string `json:"code"`
-		DeviceID string `json:"device_id"`
+		Email      string `json:"email"`
+		Code       string `json:"code"`
+		DeviceID   string `json:"device_id"`
 		DeviceName string `json:"device_name"`
 	}
 
@@ -271,18 +271,33 @@ func VerifyLoginOTP(c *gin.Context) {
 
 	// Record Session ONLY for ADMIN or SUPER_ADMIN
 	if user.Role == "ADMIN" || user.Role == "SUPER_ADMIN" {
-		session := models.Session{
-			ID:           uuid.New().String(),
-			UserID:       user.ID,
-			Token:        token,
-			DeviceID:     body.DeviceID,
-			DeviceName:   body.DeviceName,
-			IsLocked:     false,
-			LastActiveAt: time.Now(),
-			ExpiresAt:    time.Now().Add(24 * time.Hour), // 24 hours
-			CreatedAt:    time.Now(),
+		var session models.Session
+		exists := false
+		if body.DeviceID != "" {
+			if err := database.DB.Where("user_id = ? AND device_id = ?", user.ID, body.DeviceID).First(&session).Error; err == nil {
+				exists = true
+			}
 		}
-		database.DB.Create(&session)
+
+		if exists {
+			session.Token = token
+			session.LastActiveAt = time.Now()
+			session.ExpiresAt = time.Now().Add(24 * time.Hour)
+			database.DB.Save(&session)
+		} else {
+			session = models.Session{
+				ID:           uuid.New().String(),
+				UserID:       user.ID,
+				Token:        token,
+				DeviceID:     body.DeviceID,
+				DeviceName:   body.DeviceName,
+				IsLocked:     false,
+				LastActiveAt: time.Now(),
+				ExpiresAt:    time.Now().Add(24 * time.Hour),
+				CreatedAt:    time.Now(),
+			}
+			database.DB.Create(&session)
+		}
 	}
 
 	utils.Success(c, "Login berhasil", gin.H{
@@ -365,9 +380,9 @@ func GoogleLogin(c *gin.Context) {
 func LoginPin(c *gin.Context) {
 
 	var body struct {
-		UserID   string `json:"userID"`
-		Pin      string `json:"pin"`
-		DeviceID string `json:"device_id"`
+		UserID     string `json:"userID"`
+		Pin        string `json:"pin"`
+		DeviceID   string `json:"device_id"`
 		DeviceName string `json:"device_name"`
 	}
 
@@ -411,18 +426,33 @@ func LoginPin(c *gin.Context) {
 
 	// Record Session ONLY for ADMIN or SUPER_ADMIN
 	if user.Role == "ADMIN" || user.Role == "SUPER_ADMIN" {
-		session := models.Session{
-			ID:           uuid.New().String(),
-			UserID:       user.ID,
-			Token:        token,
-			DeviceID:     body.DeviceID,
-			DeviceName:   body.DeviceName,
-			IsLocked:     false,
-			LastActiveAt: time.Now(),
-			ExpiresAt:    time.Now().Add(24 * time.Hour), // 24 hours
-			CreatedAt:    time.Now(),
+		var session models.Session
+		exists := false
+		if body.DeviceID != "" {
+			if err := database.DB.Where("user_id = ? AND device_id = ?", user.ID, body.DeviceID).First(&session).Error; err == nil {
+				exists = true
+			}
 		}
-		database.DB.Create(&session)
+
+		if exists {
+			session.Token = token
+			session.LastActiveAt = time.Now()
+			session.ExpiresAt = time.Now().Add(24 * time.Hour)
+			database.DB.Save(&session)
+		} else {
+			session = models.Session{
+				ID:           uuid.New().String(),
+				UserID:       user.ID,
+				Token:        token,
+				DeviceID:     body.DeviceID,
+				DeviceName:   body.DeviceName,
+				IsLocked:     false,
+				LastActiveAt: time.Now(),
+				ExpiresAt:    time.Now().Add(24 * time.Hour),
+				CreatedAt:    time.Now(),
+			}
+			database.DB.Create(&session)
+		}
 	}
 
 	utils.Success(c, "Login berhasil", gin.H{

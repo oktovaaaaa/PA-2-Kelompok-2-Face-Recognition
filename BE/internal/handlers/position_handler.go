@@ -147,14 +147,14 @@ func AssignPosition(c *gin.Context) {
 	// Kirim Notifikasi
 	go func() {
 		title := "Perubahan Jabatan"
-		bodyText := "Jabatan Anda telah diperbarui oleh Admin."
+		bodyText := "Posisi jabatan Anda telah diperbarui oleh Bos."
 		if body.PositionID != "" {
 			var pos models.Position
 			if err := database.DB.Where("id = ?", body.PositionID).First(&pos).Error; err == nil {
-				bodyText = fmt.Sprintf("Jabatan Anda telah diperbarui menjadi %s.", pos.Name)
+				bodyText = fmt.Sprintf("Posisi jabatan Anda telah diperbarui menjadi %s.", pos.Name)
 			}
 		} else {
-			bodyText = "Jabatan Anda telah dilepas oleh Admin."
+			bodyText = "Posisi jabatan Anda telah diberhentikan oleh Bos."
 		}
 
 		// Simpan Notifikasi ke DB

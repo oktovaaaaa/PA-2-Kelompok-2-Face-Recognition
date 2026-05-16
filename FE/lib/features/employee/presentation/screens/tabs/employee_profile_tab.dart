@@ -632,7 +632,7 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
               children: [
                 Icon(Icons.face_retouching_natural_rounded, color: Color(0xFF2563EB), size: 24),
                 SizedBox(width: 16),
-                Text('Presensi Face ID', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A))),
+                Text('Presensi menggunakan Wajah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A))),
               ],
             ),
           ),
@@ -651,11 +651,11 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
               ),
             ),
             title: Text(
-              isRegistered ? 'Face ID Terdaftar' : 'Face ID Belum Terdaftar',
+              isRegistered ? 'Wajah Terdaftar' : 'Wajah Belum Terdaftar',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             subtitle: Text(
-              isRegistered ? 'Terakhir diperbarui: $lastUpdated' : 'Daftarkan wajah untuk fitur absensi AI',
+              isRegistered ? 'Terakhir diperbarui: $lastUpdated' : 'Daftarkan wajah anda untuk fitur absensi',
               style: const TextStyle(fontSize: 12),
             ),
           ),
@@ -693,7 +693,7 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                   }
                 },
                 icon: const Icon(Icons.camera_front_rounded, size: 18),
-                label: Text(isRegistered ? 'Perbarui Face ID' : 'Daftar Face ID Sekarang'),
+                label: Text(isRegistered ? 'Perbarui Wajah' : 'Daftar Wajah Sekarang'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isRegistered ? const Color(0xFF1E3A8A) : const Color(0xFF2563EB),
                   foregroundColor: Colors.white,

@@ -291,39 +291,12 @@ func AdminPaySalary(c *gin.Context) {
 
 	monthName := getMonthNameIndo(salary.Month)
 	services.CreateNotification(salary.UserID, user.CompanyID, "Gaji Dibayarkan",
-		fmt.Sprintf("Gaji kamu untuk bulan %s %d telah dibayarkan sebesar %s.", monthName, salary.Year, utils.FormatRupiah(payAmount)),
+		fmt.Sprintf("Gaji Anda untuk bulan %s %d telah dibayarkan sebesar %s.", monthName, salary.Year, utils.FormatRupiah(payAmount)),
 		"PAYROLL_PAID", salary.ID)
 	services.SendPushNotification(salary.UserID, "Gaji Dibayarkan",
-		fmt.Sprintf("Gaji bulan %s kamu telah dibayarkan sebesar %s. Silakan cek detailnya!", monthName, utils.FormatRupiah(payAmount)))
+		fmt.Sprintf("Gaji bulan %s Anda telah dibayarkan sebesar %s. Mohon periksa rincian pembayaran pada aplikasi.", monthName, utils.FormatRupiah(payAmount)))
 
 	utils.Success(c, "Pembayaran berhasil dicatat", salary)
-}
-
-// UpdateBankInfo - Employee sets their own bank info
-func UpdateBankInfo(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	user := userCtx.(models.User)
-	userID := user.ID
-
-	var input struct {
-		BankName          string `json:"bank_name" binding:"required"`
-		BankAccountNumber string `json:"bank_account_number" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		utils.Error(c, "Input tidak valid")
-		return
-	}
-
-	if err := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(models.User{
-		BankName:          input.BankName,
-		BankAccountNumber: input.BankAccountNumber,
-	}).Error; err != nil {
-		utils.Error(c, "Gagal memperbarui info bank")
-		return
-	}
-
-	utils.Success(c, "Info bank berhasil diperbarui", nil)
 }
 
 // Logic to ensure salaries are generated for specific user

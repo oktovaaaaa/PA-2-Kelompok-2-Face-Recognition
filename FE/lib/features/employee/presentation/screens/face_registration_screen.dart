@@ -8,11 +8,13 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../common/widgets/app_dialog.dart';
 import '../../../../face_service.dart';
+import '../../../auth/data/auth_repository.dart';
 
 enum FaceAction { neutral, lookLeft, lookRight, lookUp, lookDown, blink, mouthOpen, done }
 
 class FaceRegistrationScreen extends StatefulWidget {
-  const FaceRegistrationScreen({super.key});
+  final Map<String, dynamic>? registrationData;
+  const FaceRegistrationScreen({super.key, this.registrationData});
 
   @override
   State<FaceRegistrationScreen> createState() => _FaceRegistrationScreenState();
@@ -176,19 +178,46 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
         if (b64 != null) base64Images.add(b64);
       }
 
-      final res = await ApiClient.post('/api/profile/face-registration', {
-        "images": base64Images,
-      });
+      if (widget.registrationData != null) {
+        // Mode REGISTRASI AWAL
+        final repo = AuthRepository();
+        await repo.registerEmployee(
+          name: widget.registrationData!['name'],
+          email: widget.registrationData!['email'],
+          password: widget.registrationData!['password'],
+          pin: widget.registrationData!['pin'],
+          phone: widget.registrationData!['phone'],
+          birthPlace: widget.registrationData!['birthPlace'],
+          birthDate: widget.registrationData!['birthDate'],
+          address: widget.registrationData!['address'],
+          inviteToken: widget.registrationData!['inviteToken'],
+          bankName: widget.registrationData!['bankName'],
+          bankAccountNumber: widget.registrationData!['bankAccountNumber'],
+          photoUrl: widget.registrationData!['photoUrl'],
+          googleIdToken: widget.registrationData!['googleIdToken'],
+          otpCode: widget.registrationData!['otpCode'],
+          faceImages: base64Images,
+        );
 
-      if (!mounted) return;
-      setState(() => _isBusy = false); // Matikan loading dulu
-
-      if (res.success) {
-        // Tampilkan sukses dan tunggu user tekan OK
-        await AppDialog.showSuccess(context, "Face ID berhasil didaftarkan!");
-        if (mounted) Navigator.pop(context, true);
+        if (!mounted) return;
+        setState(() => _isBusy = false);
+        await AppDialog.showSuccess(context, "Registrasi berhasil! Akun Anda sedang menunggu persetujuan admin. Anda akan menerima notifikasi setelah disetujui.");
+        if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
       } else {
-        AppDialog.showError(context, res.message ?? "Gagal mendaftarkan wajah");
+        // Mode UPDATE via Profile Settings
+        final res = await ApiClient.post('/api/profile/face-registration', {
+          "images": base64Images,
+        });
+
+        if (!mounted) return;
+        setState(() => _isBusy = false);
+
+        if (res.success) {
+          await AppDialog.showSuccess(context, "Face ID berhasil diperbarui!");
+          if (mounted) Navigator.pop(context, true);
+        } else {
+          AppDialog.showError(context, res.message ?? "Gagal mendaftarkan wajah");
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -230,7 +259,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
             ElevatedButton(
               onPressed: _saveFace,
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
-              child: const Text("SIMPAN FACE ID", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              child: const Text("SIMPAN WAJAH", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             )
           ],
         ),

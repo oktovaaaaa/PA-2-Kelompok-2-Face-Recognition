@@ -47,7 +47,14 @@ export const authService = {
       body: JSON.stringify({ 
         email, 
         code, 
-        device_id: 'web-session-' + Math.random().toString(36).substring(7),
+        device_id: (() => {
+          let id = localStorage.getItem('device_id');
+          if (!id) {
+            id = 'web-' + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('device_id', id);
+          }
+          return id;
+        })(),
         device_name: getBrowserInfo()
       }),
     });
