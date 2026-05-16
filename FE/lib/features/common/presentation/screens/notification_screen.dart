@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../auth/presentation/screens/pending_employees_screen.dart';
 import '../../../admin/presentation/screens/admin_payroll_screen.dart';
 import '../../../employee/presentation/screens/employee_dashboard_screen.dart';
+import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../../../../core/providers/auth_provider.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -183,8 +184,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
           case 'BONUS_RECEIVED':
           case 'PENALTY_RECEIVED':
             final role = context.read<AuthProvider>().currentUser?['role'];
-            if (role == 'ADMIN') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPayrollScreen()));
+            if (role == 'ADMIN' || role == 'OWNER' || role == 'SUPER_ADMIN') {
+              // Navigate to Admin Dashboard at Payroll Tab (Index 2)
+              Navigator.pushAndRemoveUntil(
+                context, 
+                MaterialPageRoute(builder: (_) => const AdminDashboardScreen(initialIndex: 2)),
+                (route) => false
+              );
             } else {
               // Navigate to Employee Dashboard at Salary Tab (Index 3)
               Navigator.pushAndRemoveUntil(
@@ -198,10 +204,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
           case 'LEAVE_APPROVED':
           case 'LEAVE_REJECTED':
             final role = context.read<AuthProvider>().currentUser?['role'];
-            if (role == 'ADMIN') {
-              // Admin leaves are managed on web, but if they are on mobile, just pop
-              Navigator.pop(context);
+            if (role == 'ADMIN' || role == 'OWNER' || role == 'SUPER_ADMIN') {
+              // Navigate to Admin Dashboard at Leave Tab (Index 1)
+              Navigator.pushAndRemoveUntil(
+                context, 
+                MaterialPageRoute(builder: (_) => const AdminDashboardScreen(initialIndex: 1)),
+                (route) => false
+              );
             } else {
+              // Navigate to Employee Dashboard at Leave Tab (Index 2)
               Navigator.pushAndRemoveUntil(
                 context, 
                 MaterialPageRoute(builder: (_) => const EmployeeDashboardScreen(initialIndex: 2)),

@@ -39,6 +39,7 @@ func SetupAuthRouter() *gin.Engine {
 		api.GET("/internal/users/single", handlers.GetInternalUserByID)
 		api.GET("/internal/users/count", handlers.GetInternalUserCount)
 		api.GET("/internal/admins", handlers.GetInternalAdmins)
+		api.POST("/internal/notifications", handlers.CreateInternalNotification)
 	}
 
 	// Auth routes (public)
@@ -163,7 +164,7 @@ func SetupAttendanceRouter() *gin.Engine {
 	}
 
 	employee := api.Group("/employee")
-	employee.Use(middleware.AuthMiddleware())
+	employee.Use(middleware.AuthMiddleware(), middleware.EmployeeOnlyMiddleware())
 	{
 		employee.POST("/attendance/checkin", handlers.CheckIn)
 		employee.POST("/attendance/checkout", handlers.CheckOut)
@@ -208,7 +209,7 @@ func SetupPayrollRouter() *gin.Engine {
 	}
 
 	employee := api.Group("/employee")
-	employee.Use(middleware.AuthMiddleware())
+	employee.Use(middleware.AuthMiddleware(), middleware.EmployeeOnlyMiddleware())
 	{
 		employee.GET("/salaries/years", handlers.GetSalaryYears)
 		employee.GET("/salaries", handlers.GetMySalaries)
@@ -358,7 +359,7 @@ func SetupRouter() *gin.Engine {
 
 	// Protected Employee Routes
 	employee := api.Group("/employee")
-	employee.Use(middleware.AuthMiddleware())
+	employee.Use(middleware.AuthMiddleware(), middleware.EmployeeOnlyMiddleware())
 	{
 		// Absensi
 		employee.POST("/attendance/checkin", handlers.CheckIn)

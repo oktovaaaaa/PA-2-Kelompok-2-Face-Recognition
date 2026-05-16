@@ -20,33 +20,10 @@ class FaceService {
   }
 
   Future<String?> getFaceBase64(String path) async {
-    final inputImage = InputImage.fromFilePath(path);
-    final faces = await detector.processImage(inputImage);
     final bytes = await File(path).readAsBytes();
-    
-    // Jika deteksi wajah gagal di foto yang baru diambil, kirim gambar asli sebagai fallback
-    if (faces.isEmpty) {
-      return base64Encode(bytes);
-    }
-
-    img.Image? raw = img.decodeImage(bytes);
-    if (raw == null) return base64Encode(bytes);
-
-    Face f = faces.first;
-    try {
-      img.Image cropped = img.copyCrop(
-        raw,
-        x: f.boundingBox.left.toInt(),
-        y: f.boundingBox.top.toInt(),
-        width: f.boundingBox.width.toInt(),
-        height: f.boundingBox.height.toInt(),
-      );
-      img.Image resized = img.copyResize(cropped, width: 112, height: 112);
-      return base64Encode(img.encodeJpg(resized));
-    } catch (e) {
-      // Jika crop gagal (misal koordinat out of bounds), kirim gambar asli
-      return base64Encode(bytes);
-    }
+    // Kirim gambar asli (utuh) ke server agar AI di server yang melakukan cropping
+    // Ini jauh lebih akurat daripada cropping di mobile yang sering gagal dideteksi ulang oleh server
+    return base64Encode(bytes);
   }
 
   InputImage getInputImageFromCameraImage(CameraImage image, CameraDescription camera) {

@@ -97,3 +97,23 @@ func SuperAdminMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func EmployeeOnlyMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, exists := c.Get("user")
+		if !exists {
+			utils.Error(c, "Sesi tidak ditemukan, silakan login kembali")
+			c.Abort()
+			return
+		}
+
+		u := user.(models.User)
+		if u.Role != "EMPLOYEE" {
+			utils.Error(c, "Akses ditolak: Hanya Karyawan yang diperbolehkan")
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

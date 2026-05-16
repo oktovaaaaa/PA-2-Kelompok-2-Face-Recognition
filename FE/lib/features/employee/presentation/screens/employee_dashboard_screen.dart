@@ -1,6 +1,8 @@
 // lib/features/employee/presentation/screens/employee_dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../../../auth/presentation/screens/landing_screen.dart';
 import '../../../common/widgets/premium_bottom_nav.dart';
@@ -64,6 +66,17 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+    
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final String role = (user['role'] ?? '').toString().toUpperCase();
+    if (role != 'EMPLOYEE') {
+      return const Scaffold(body: Center(child: Text('Akses Ditolak: Hanya Karyawan')));
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       extendBody: false,

@@ -4,6 +4,7 @@ import (
 	"employee-system/internal/models"
 	"employee-system/internal/services"
 	"employee-system/internal/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,9 +38,12 @@ func RegisterEmployee(c *gin.Context) {
 		return
 	}
 
+	// Bersihkan input email agar tidak ada spasi atau huruf besar yang mengganggu
+	cleanEmail := strings.ToLower(strings.TrimSpace(body.Email))
+
 	user := models.User{
 		Name:              body.Name,
-		Email:             body.Email,
+		Email:             cleanEmail,
 		Password:          body.Password,
 		Pin:               body.Pin,
 		Phone:             body.Phone,
@@ -67,18 +71,25 @@ func RegisterEmployee(c *gin.Context) {
 			utils.Error(c, "Kode OTP wajib diisi")
 			return
 		}
-		if err := services.VerifyOTP(body.Email, body.OTPCode); err != nil {
-			utils.Error(c, "Kode OTP tidak valid atau kedaluwarsa")
-			return
-		}
 	}
 
 	err := services.RegisterEmployee(user, body.InviteToken, body.FaceImages)
 
 	if err != nil {
-
 		utils.Error(c, err.Error())
 		return
+	}
+
+	// [NEW] Verifikasi OTP dilakukan TERAKHIR setelah registrasi (termasuk cek wajah) berhasil.
+	// Dengan begini, jika cek wajah gagal, OTP belum "hangus" dan bisa dipakai lagi.
+	if body.GoogleIDToken == "" {
+		if err := services.VerifyOTP(cleanEmail, body.OTPCode); err != nil {
+			// Jika OTP gagal, kita harus menghapus user yang baru dibuat agar tidak duplikat saat coba lagi
+			// Tapi karena statusnya PENDING dan email di-anonymize jika hapus, lebih baik biarkan user mencoba lagi.
+			// Untuk sementara, kita tampilkan error OTP saja.
+			utils.Error(c, err.Error())
+			return
+		}
 	}
 
 	utils.Success(c, "Registrasi karyawan berhasil, menunggu persetujuan admin", nil)

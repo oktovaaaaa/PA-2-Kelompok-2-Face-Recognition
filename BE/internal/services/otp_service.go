@@ -7,6 +7,7 @@ import (
 	"employee-system/internal/models"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,11 +41,13 @@ func VerifyOTP(email string, code string) error {
 
 	var otp models.OTP
 
+	cleanEmail := strings.ToLower(strings.TrimSpace(email))
+
 	err := database.DB.Where(
 		"LOWER(email) = LOWER(?) AND code = ? AND used = false",
-		email,
+		cleanEmail,
 		code,
-	).First(&otp).Error
+	).Order("created_at desc").First(&otp).Error
 
 	if err != nil {
 		return fmt.Errorf("Kode OTP tidak valid")

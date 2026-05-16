@@ -1,6 +1,8 @@
 // lib/features/admin/presentation/screens/admin_dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../../../auth/presentation/screens/landing_screen.dart';
 import '../../../common/widgets/premium_bottom_nav.dart';
@@ -11,19 +13,21 @@ import 'tabs/admin_employee_tab.dart';
 import 'tabs/admin_profile_tab.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final int initialIndex;
+  const AdminDashboardScreen({super.key, this.initialIndex = 0});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   late final List<Widget> _tabs;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
     _tabs = [
       AdminHomeTab(onNavigate: (i) => setState(() => _currentIndex = i)),
       const AdminLeaveTab(),
@@ -70,6 +74,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+    
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final String role = (user['role'] ?? '').toString().toUpperCase();
+    if (role != 'ADMIN' && role != 'OWNER' && role != 'SUPER_ADMIN') {
+      return const Scaffold(body: Center(child: Text('Akses Ditolak: Hanya Admin')));
+    }
+
     final icons = [
       Icons.home_rounded,
       Icons.assignment_rounded,

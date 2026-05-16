@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:vibration/vibration.dart';
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/utils/date_formatter.dart';
 import '../../../../../core/utils/currency_formatter.dart';
@@ -42,6 +43,8 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   String _locationStatus = 'Mencari...';
   Map<String, dynamic>? _nearestLoc;
   StreamSubscription<Position>? _positionStream;
+  
+  final GlobalKey<ShakeWidgetState> _shakeKey = GlobalKey<ShakeWidgetState>();
 
   @override
   void initState() {
@@ -185,6 +188,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     if (_actionLoading) return;
     
     if (!_isInRadius && action != 'check_out') {
+      _triggerFailure();
       AppDialog.showError(context, 'Anda berada di luar radius kantor (${_locationStatus})');
       return;
     }
@@ -208,6 +212,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
           AppDialog.showSuccess(context, action == 'check_in' ? 'Check-in Berhasil' : 'Check-out Berhasil');
           _load();
         } else {
+          _triggerFailure();
           AppDialog.showError(context, res.message ?? 'Gagal melakukan absensi');
         }
       }
@@ -261,295 +266,315 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     final coStart = settings?['check_out_start'] ?? '00:00';
     final coEnd = settings?['check_out_end'] ?? '00:00';
 
+    // Check if session is closed
+    bool isCheckOutClosed = false;
+    try {
+      final now = DateTime.now();
+      final todayStr = now.toString().substring(0, 10);
+      // Handle both HH:mm and HH.mm formats
+      final normalizedCoEnd = coEnd.replaceAll('.', ':');
+      final coEndT = DateTime.parse('${todayStr} ${normalizedCoEnd.length == 5 ? normalizedCoEnd : '00:00'}:00');
+      if (now.isAfter(coEndT)) {
+        isCheckOutClosed = true;
+      }
+    } catch (_) {}
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
-        body: RefreshIndicator(
-          color: const Color(0xFF2563EB),
-          onRefresh: _load,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              // Header
-              Stack(
-                children: [
-                  Container(
-                    height: 140,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-                      gradient: LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        body: ShakeWidget(
+          key: _shakeKey,
+          shakeCount: 2,
+          shakeOffset: 5,
+          shakeDuration: const Duration(milliseconds: 300),
+          child: RefreshIndicator(
+            color: const Color(0xFF2563EB),
+            onRefresh: _load,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                // Header
+                Stack(
+                  children: [
+                    Container(
+                      height: 140,
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+                        gradient: LinearGradient(colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      ),
                     ),
-                  ),
-                  Column(
-                    children: [
-                      const SizedBox(height: 50),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      children: [
+                        const SizedBox(height: 50),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Hi, ${_getShortName(_profileData?['name'] ?? 'Karyawan')}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  const SizedBox(height: 4),
+                                  Text(AppDateFormatter.formatFullDate(_todayData?['date'] ?? DateTime.now().toString()), style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7))),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Consumer<NotificationProvider>(
+                                    builder: (context, notifProvider, child) {
+                                      final count = notifProvider.unreadCount;
+                                      return Stack(clipBehavior: Clip.none, children: [
+                                        IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())), icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28)),
+                                        if (count > 0) Positioned(right: 8, top: 8, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle), constraints: const BoxConstraints(minWidth: 18, minHeight: 18), child: Text(count.toString(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center))),
+                                      ]);
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => widget.onNavigate(4), 
+                                    child: CircleAvatar(
+                                      radius: 22, 
+                                      backgroundColor: Colors.white24, 
+                                      backgroundImage: (_profileData?['photo_url'] != null && _profileData!['photo_url'].toString().isNotEmpty) 
+                                          ? NetworkImage(formatImageUrl(_profileData!['photo_url'])) 
+                                          : null, 
+                                      child: (_profileData?['photo_url'] == null || _profileData!['photo_url'].toString().isEmpty) 
+                                          ? Text(
+                                              _getInitials(_profileData?['name'] ?? ''),
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                            ) 
+                                          : null
+                                    )
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                // Status Card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2563EB), Color(0xFF1E3A8A), Color(0xFF0F172A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))],
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Image.asset('assets/images/videnti.png', width: 70, fit: BoxFit.contain),
+                        ),
+                        Positioned.fill(child: CustomPaint(painter: CircularPatternPainter())),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Hi, ${_getShortName(_profileData?['name'] ?? 'Karyawan')}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                                const SizedBox(height: 4),
-                                Text(AppDateFormatter.formatFullDate(_todayData?['date'] ?? DateTime.now().toString()), style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7))),
-                              ],
-                            ),
                             Row(
                               children: [
-                                Consumer<NotificationProvider>(
-                                  builder: (context, notifProvider, child) {
-                                    final count = notifProvider.unreadCount;
-                                    return Stack(clipBehavior: Clip.none, children: [
-                                      IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())), icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28)),
-                                      if (count > 0) Positioned(right: 8, top: 8, child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle), constraints: const BoxConstraints(minWidth: 18, minHeight: 18), child: Text(count.toString(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center))),
-                                    ]);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () => widget.onNavigate(4), 
-                                  child: CircleAvatar(
-                                    radius: 22, 
-                                    backgroundColor: Colors.white24, 
-                                    backgroundImage: (_profileData?['photo_url'] != null && _profileData!['photo_url'].toString().isNotEmpty) 
-                                        ? NetworkImage(formatImageUrl(_profileData!['photo_url'])) 
-                                        : null, 
-                                    child: (_profileData?['photo_url'] == null || _profileData!['photo_url'].toString().isEmpty) 
-                                        ? Text(
-                                            _getInitials(_profileData?['name'] ?? ''),
-                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                          ) 
-                                        : null
-                                  )
+                                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.work_outline, color: Colors.white, size: 20)),
+                                const SizedBox(width: 12),
+                                const Text('Status Hari Ini', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              () {
+                                if (isHoliday) return 'Hari Libur';
+                                if (isDoneForDay) return 'Sudah Pulang';
+                                if (isCheckOutClosed && hasCheckedIn && !hasCheckedOut) return 'Waktu Pulang Lewat';
+                                if (hasCheckedIn) return 'Sedang Bekerja';
+                                return 'Belum Absen';
+                              }(),
+                              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 1),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                _buildCardDetail('Jam Masuk', checkInTime),
+                                const SizedBox(width: 24),
+                                _buildCardDetail('Jam Pulang', checkOutTime),
+                                if (dendaToday > 0) ...[
+                                  const SizedBox(width: 24),
+                                  _buildCardDetail('Denda', 'Rp ${CurrencyInputFormatter.formatNumber(dendaToday)}', color: Colors.redAccent),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            const Divider(color: Colors.white24, height: 1),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Jam Saat Ini', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                                    const SizedBox(height: 4),
+                                    Text(_currentTime, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                                  ],
                                 ),
                               ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Location Details Card
+                if (_nearestLoc != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))]),
+                      child: Row(
+                        children: [
+                          Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: (_isInRadius ? Colors.green : Colors.grey).withOpacity(0.1), borderRadius: BorderRadius.circular(16)), child: Icon(Icons.location_on_rounded, color: _isInRadius ? Colors.green : Colors.grey, size: 28)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_nearestLoc!['name'] ?? 'Lokasi Kantor', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                                const SizedBox(height: 4),
+                                Text('Jarak: ${_distance != null ? '${_distance!.toStringAsFixed(0)} m' : '-'}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _isInRadius ? Colors.green : Colors.red)),
+                                const SizedBox(height: 2),
+                                Text('Radius aman: ${(_nearestLoc!['radius'] ?? 100).toStringAsFixed(0)} m', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                              ],
+                            ),
+                          ),
+                          if (_isInRadius) Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle), child: const Icon(Icons.check, color: Color(0xFF166534), size: 20)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Quick Actions
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildQuickAction(icon: Icons.login_rounded, label: 'Masuk', color: const Color(0xFF22C55E), disabled: !isCheckInOpen || hasCheckedIn || isCheckOutClosed, onTap: () => _handleAction('check_in')),
+                      _buildQuickAction(icon: Icons.logout_rounded, label: 'Pulang', color: const Color(0xFFF59E0B), disabled: !hasCheckedIn || hasCheckedOut || isCheckOutClosed, onTap: () => _handleAction('check_out')),
+                      _buildQuickAction(icon: Icons.assignment_outlined, label: 'Izin', color: const Color(0xFF3B82F6), disabled: isDoneForDay, onTap: () => widget.onNavigate(2)),
+                      _buildQuickAction(icon: Icons.history_rounded, label: 'Riwayat', color: const Color(0xFF8B5CF6), disabled: false, onTap: () => widget.onNavigate(1)),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Ketentuan Operasional Kantor
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Ketentuan Operasional Kantor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))]),
+                        child: Column(
+                          children: [
+                            _buildModernRuleRow(
+                              icon: Icons.login_outlined,
+                              label: 'Jam Masuk',
+                              value: '$ciStart - $ciEnd',
+                              iconColor: const Color(0xFF2563EB),
+                              bgColor: const Color(0xFFEFF6FF),
+                            ),
+                            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+                            _buildModernRuleRow(
+                              icon: Icons.logout_outlined,
+                              label: 'Jam Pulang',
+                              value: '$coStart - $coEnd',
+                              iconColor: const Color(0xFFF59E0B),
+                              bgColor: const Color(0xFFFFFBEB),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
 
-              const SizedBox(height: 10),
+                const SizedBox(height: 24),
 
-              // Status Card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF1E3A8A), Color(0xFF0F172A)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(32),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))],
-                  ),
-                  child: Stack(
+                // Ketentuan Denda Kantor
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Image.asset('assets/images/videnti.png', width: 70, fit: BoxFit.contain),
-                      ),
-                      Positioned.fill(child: CustomPaint(painter: CircularPatternPainter())),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.work_outline, color: Colors.white, size: 20)),
-                              const SizedBox(width: 12),
-                              const Text('Status Hari Ini', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            () {
-                              if (isHoliday) return 'Hari Libur';
-                              if (isDoneForDay) return 'Sudah Pulang';
-                              if (hasCheckedIn) return 'Sedang Bekerja';
-                              return 'Belum Absen';
-                            }(),
-                            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 1),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              _buildCardDetail('Jam Masuk', checkInTime),
-                              const SizedBox(width: 24),
-                              _buildCardDetail('Jam Pulang', checkOutTime),
-                              if (dendaToday > 0) ...[
-                                const SizedBox(width: 24),
-                                _buildCardDetail('Denda', 'Rp ${CurrencyInputFormatter.formatNumber(dendaToday)}', color: Colors.redAccent),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          const Divider(color: Colors.white24, height: 1),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Jam Saat Ini', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text(_currentTime, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
+                      const Text('Ketentuan Denda Kantor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFFFEE2E2))),
+                        child: Column(
+                          children: [
+                            _buildModernRuleRow(
+                              icon: Icons.timer_outlined,
+                              label: 'Terlambat Masuk',
+                              value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['late_fine'] ?? rules?['late_penalty'] ?? 100000).toInt())}',
+                              iconColor: const Color(0xFFDC2626),
+                              bgColor: Colors.white,
+                              isDenda: true,
+                            ),
+                            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFFEE2E2))),
+                            _buildModernRuleRow(
+                              icon: Icons.person_off_outlined,
+                              label: 'Alpha (Tanpa Keterangan)',
+                              value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['absent_fine'] ?? rules?['alpha_penalty'] ?? 200000).toInt())}',
+                              iconColor: const Color(0xFFDC2626),
+                              bgColor: Colors.white,
+                              isDenda: true,
+                            ),
+                            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFFEE2E2))),
+                            _buildModernRuleRow(
+                              icon: Icons.running_with_errors_outlined,
+                              label: 'Pulang Mendahului',
+                              value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['early_leave_fine'] ?? rules?['early_leave_penalty'] ?? 50000).toInt())}',
+                              iconColor: const Color(0xFFDC2626),
+                              bgColor: Colors.white,
+                              isDenda: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 16),
-
-              // Location Details Card
-              if (_nearestLoc != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))]),
-                    child: Row(
-                      children: [
-                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: (_isInRadius ? Colors.green : Colors.grey).withOpacity(0.1), borderRadius: BorderRadius.circular(16)), child: Icon(Icons.location_on_rounded, color: _isInRadius ? Colors.green : Colors.grey, size: 28)),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(_nearestLoc!['name'] ?? 'Lokasi Kantor', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                              const SizedBox(height: 4),
-                              Text('Jarak: ${_distance != null ? '${_distance!.toStringAsFixed(0)} m' : '-'}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _isInRadius ? Colors.green : Colors.red)),
-                              const SizedBox(height: 2),
-                              Text('Radius aman: ${(_nearestLoc!['radius'] ?? 100).toStringAsFixed(0)} m', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                            ],
-                          ),
-                        ),
-                        if (_isInRadius) Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle), child: const Icon(Icons.check, color: Color(0xFF166534), size: 20)),
-                      ],
-                    ),
-                  ),
-                ),
-
-              const SizedBox(height: 24),
-
-              // Quick Actions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildQuickAction(icon: Icons.login_rounded, label: 'Masuk', color: const Color(0xFF22C55E), disabled: !isCheckInOpen || hasCheckedIn, onTap: () => _handleAction('check_in')),
-                    _buildQuickAction(icon: Icons.logout_rounded, label: 'Pulang', color: const Color(0xFFF59E0B), disabled: !hasCheckedIn || hasCheckedOut, onTap: () => _handleAction('check_out')),
-                    _buildQuickAction(icon: Icons.assignment_outlined, label: 'Izin', color: const Color(0xFF3B82F6), disabled: isDoneForDay, onTap: () => widget.onNavigate(2)),
-                    _buildQuickAction(icon: Icons.history_rounded, label: 'Riwayat', color: const Color(0xFF8B5CF6), disabled: false, onTap: () => widget.onNavigate(1)),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Ketentuan Operasional Kantor
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Ketentuan Operasional Kantor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))]),
-                      child: Column(
-                        children: [
-                          _buildModernRuleRow(
-                            icon: Icons.login_outlined,
-                            label: 'Jam Masuk',
-                            value: '$ciStart - $ciEnd',
-                            iconColor: const Color(0xFF2563EB),
-                            bgColor: const Color(0xFFEFF6FF),
-                          ),
-                          const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-                          _buildModernRuleRow(
-                            icon: Icons.logout_outlined,
-                            label: 'Jam Pulang',
-                            value: '$coStart - $coEnd',
-                            iconColor: const Color(0xFFF59E0B),
-                            bgColor: const Color(0xFFFFFBEB),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Ketentuan Denda Kantor
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Ketentuan Denda Kantor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFFFEE2E2))),
-                      child: Column(
-                        children: [
-                          _buildModernRuleRow(
-                            icon: Icons.timer_outlined,
-                            label: 'Terlambat Masuk',
-                            value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['late_fine'] ?? rules?['late_penalty'] ?? 100000).toInt())}',
-                            iconColor: const Color(0xFFDC2626),
-                            bgColor: Colors.white,
-                            isDenda: true,
-                          ),
-                          const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFFEE2E2))),
-                          _buildModernRuleRow(
-                            icon: Icons.person_off_outlined,
-                            label: 'Alpha (Tanpa Keterangan)',
-                            value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['absent_fine'] ?? rules?['alpha_penalty'] ?? 200000).toInt())}',
-                            iconColor: const Color(0xFFDC2626),
-                            bgColor: Colors.white,
-                            isDenda: true,
-                          ),
-                          const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFFEE2E2))),
-                          _buildModernRuleRow(
-                            icon: Icons.running_with_errors_outlined,
-                            label: 'Pulang Mendahului',
-                            value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['early_leave_fine'] ?? rules?['early_leave_penalty'] ?? 50000).toInt())}',
-                            iconColor: const Color(0xFFDC2626),
-                            bgColor: Colors.white,
-                            isDenda: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 100),
-            ],
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
@@ -613,14 +638,104 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     );
   }
 
+  void _triggerFailure() {
+    _shakeKey.currentState?.shake();
+    Vibration.hasVibrator().then((has) {
+      if (has == true) {
+        // Mengembalikan getaran mantap (Double Pulse)
+        Vibration.vibrate(pattern: [0, 100, 50, 100], intensities: [0, 255, 0, 255]);
+      } else {
+        HapticFeedback.heavyImpact();
+      }
+    });
+  }
+
   Widget _buildQuickAction({required IconData icon, required String label, required Color color, required bool disabled, required VoidCallback onTap}) {
     return GestureDetector(
-      onTap: disabled || _actionLoading ? null : onTap,
+      onTap: () {
+        if (_actionLoading) return;
+        if (disabled) {
+          _triggerFailure();
+          // Optional: Show specific reason if needed
+          return;
+        }
+        onTap();
+      },
       child: Column(children: [
-        Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: disabled ? Colors.grey.shade100 : color.withOpacity(0.1), shape: BoxShape.circle, border: Border.all(color: disabled ? Colors.grey.shade200 : color.withOpacity(0.2), width: 1.5)), child: Icon(icon, color: disabled ? Colors.grey.shade400 : color, size: 28)),
+        Container(
+          padding: const EdgeInsets.all(16), 
+          decoration: BoxDecoration(
+            color: disabled ? Colors.grey.shade100 : color.withOpacity(0.1), 
+            shape: BoxShape.circle, 
+            border: Border.all(color: disabled ? Colors.grey.shade200 : color.withOpacity(0.2), width: 1.5)
+          ), 
+          child: Icon(icon, color: disabled ? Colors.grey.shade400 : color, size: 28)
+        ),
         const SizedBox(height: 8),
         Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: disabled ? Colors.grey.shade400 : const Color(0xFF64748B))),
       ]),
+    );
+  }
+}
+
+class ShakeWidget extends StatefulWidget {
+  final Widget child;
+  final double shakeOffset;
+  final int shakeCount;
+  final Duration shakeDuration;
+
+  const ShakeWidget({
+    super.key,
+    required this.child,
+    this.shakeOffset = 10,
+    this.shakeCount = 3,
+    this.shakeDuration = const Duration(milliseconds: 500),
+  });
+
+  @override
+  ShakeWidgetState createState() => ShakeWidgetState();
+}
+
+class ShakeWidgetState extends State<ShakeWidget> with SingleTickerProviderStateMixin {
+  late AnimationController animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    animationController = AnimationController(vsync: this, duration: widget.shakeDuration);
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
+  }
+
+  void shake() {
+    animationController.forward(from: 0.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Animation<double> offsetAnimation = Tween(begin: 0.0, end: widget.shakeOffset)
+        .chain(CurveTween(curve: Curves.elasticIn))
+        .animate(animationController)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          animationController.reverse();
+        }
+      });
+
+    return AnimatedBuilder(
+      animation: offsetAnimation,
+      child: widget.child,
+      builder: (context, child) {
+        final double offset = math.sin(animationController.value * math.pi * widget.shakeCount) * widget.shakeOffset;
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: child,
+        );
+      },
     );
   }
 }

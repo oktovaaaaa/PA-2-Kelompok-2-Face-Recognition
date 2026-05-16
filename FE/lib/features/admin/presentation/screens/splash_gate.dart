@@ -53,9 +53,16 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
     final role = await SessionStorage.getRole();
 
     if (token != null && token.isNotEmpty) {
+      final userId = await SessionStorage.getUserId();
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Provider.of<AuthProvider>(context, listen: false).setAuthenticated(true);
+          if (mounted) {
+            final auth = Provider.of<AuthProvider>(context, listen: false);
+            auth.login({
+              'id': userId,
+              'role': role?.toUpperCase(),
+            });
+          }
         });
       }
       if (role == 'ADMIN' || role == 'admin') {

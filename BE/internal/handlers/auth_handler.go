@@ -581,3 +581,37 @@ func GetInternalUserCount(c *gin.Context) {
 
 	c.JSON(200, gin.H{"count": count})
 }
+// CreateInternalNotification - Endpoint internal untuk membuat notifikasi dari service lain
+func CreateInternalNotification(c *gin.Context) {
+	var body struct {
+		UserID    string `json:"user_id"`
+		CompanyID string `json:"company_id"`
+		Title     string `json:"title"`
+		Body      string `json:"body"`
+		Type      string `json:"type"`
+		RefID     string `json:"ref_id"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": "invalid body"})
+		return
+	}
+
+	notif := models.Notification{
+		ID:        uuid.New().String(),
+		UserID:    body.UserID,
+		CompanyID: body.CompanyID,
+		Title:     body.Title,
+		Body:      body.Body,
+		Type:      body.Type,
+		RefID:     body.RefID,
+		IsRead:    false,
+		CreatedAt: time.Now(),
+	}
+
+	if err := database.DB.Create(&notif).Error; err != nil {
+		c.JSON(500, gin.H{"error": "failed to create notification"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "notification created"})
+}

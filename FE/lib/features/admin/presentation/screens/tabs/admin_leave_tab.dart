@@ -64,14 +64,62 @@ class _AdminLeaveTabState extends State<AdminLeaveTab> {
 
   Future<void> _processLeave(String id, String action) async {
     final noteCtrl = TextEditingController();
-    final confirmed = await AppDialog.showConfirm(
-      context,
-      title: action == 'approve' ? 'Setujui Izin' : 'Tolak Izin',
-      message: action == 'approve'
-          ? 'Apakah Anda yakin ingin menyetujui izin ini?'
-          : 'Apakah Anda yakin ingin menolak izin ini?',
-      confirmText: action == 'approve' ? 'Setujui' : 'Tolak',
-      confirmColor: action == 'approve' ? Colors.green : Colors.red,
+    final actionTitle = action == 'approve' ? 'Setujui Izin' : 'Tolak Izin';
+    final actionLabel = action == 'approve' ? 'Setujui' : 'Tolak';
+    final actionColor = action == 'approve' ? Colors.green : Colors.red;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(actionTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Apakah Anda yakin ingin ${action == 'approve' ? 'menyetujui' : 'menolak'} izin ini?',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            const Text('Catatan/Alasan (Opsional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: noteCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Tulis alasan di sini...',
+                hintStyle: const TextStyle(fontSize: 13),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: actionColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(actionLabel),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true) return;

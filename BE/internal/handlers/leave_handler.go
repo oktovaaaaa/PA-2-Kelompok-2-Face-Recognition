@@ -129,9 +129,14 @@ func ApproveLeave(c *gin.Context) {
 	}
 
 	// Kirim notifikasi ke karyawan
+	msg := "Permohonan izin Anda telah disetujui oleh Bos."
+	if body.Note != "" {
+		msg = fmt.Sprintf("Permohonan izin Anda telah disetujui oleh Bos. Catatan: %s", body.Note)
+	}
+
 	services.CreateNotification(leave.UserID, adminUser.CompanyID, "Izin Disetujui",
-		"Permohonan izin Anda telah disetujui oleh Bos.", "LEAVE_APPROVED", leave.ID)
-	services.SendPushNotification(leave.UserID, "Izin Disetujui", "Permohonan izin Anda telah disetujui oleh Bos.")
+		msg, "LEAVE_APPROVED", leave.ID)
+	services.SendPushNotification(leave.UserID, "Izin Disetujui", msg)
 
 	utils.Success(c, "Izin berhasil disetujui", nil)
 }
@@ -162,9 +167,14 @@ func RejectLeave(c *gin.Context) {
 	database.DB.Save(&leave)
 
 	// Kirim notifikasi ke karyawan
+	msg := "Permohonan izin Anda ditolak oleh Bos."
+	if body.Note != "" {
+		msg = fmt.Sprintf("Permohonan izin Anda ditolak oleh Bos. Alasan: %s", body.Note)
+	}
+
 	services.CreateNotification(leave.UserID, adminUser.CompanyID, "Izin Ditolak",
-		"Permohonan izin Anda ditolak oleh Bos. "+body.Note, "LEAVE_REJECTED", leave.ID)
-	services.SendPushNotification(leave.UserID, "Izin Ditolak", "Permohonan izin Anda ditolak oleh Bos.")
+		msg, "LEAVE_REJECTED", leave.ID)
+	services.SendPushNotification(leave.UserID, "Izin Ditolak", msg)
 
 	utils.Success(c, "Izin berhasil ditolak", nil)
 }
@@ -308,15 +318,23 @@ func EmployeeCreateLeave(c *gin.Context) {
 		return
 	}
 
+	// [FIX] Ambil data user lengkap dari DB lokal untuk mendapatkan Nama
+	var fullEmp models.User
+	if err := database.DB.Where("id = ?", emp.ID).First(&fullEmp).Error; err != nil {
+		// Jika tidak ada di DB lokal (Attendance), pakai ID saja sebagai fallback
+		fullEmp = emp
+		fullEmp.Name = "User " + emp.ID
+	}
+
 	// 2. Cari admin perusahaan ini untuk kirim notifikasi (via Auth Service)
 	var admins []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/admins?company_id=%s", emp.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &admins); err == nil {
 		for _, admin := range admins {
-			services.CreateNotification(admin.ID, emp.CompanyID, "Pengajuan Izin Baru",
-				emp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
+			services.CreateNotification(admin.ID, fullEmp.CompanyID, "Pengajuan Izin Baru",
+				fullEmp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
 			services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",
-				emp.Name+" mengajukan "+body.Type+": "+body.Title)
+				fullEmp.Name+" mengajukan "+body.Type+": "+body.Title)
 		}
 	}
 

@@ -54,6 +54,10 @@ func RegisterAdmin(user models.User, company models.Company) error {
 		return err
 	}
 
+	// [NEW] Sinkronisasi ke DB lain agar admin bisa menerima notifikasi dari service lain
+	go database.SyncUserToAttendance(user)
+	go database.SyncUserToPayroll(user)
+
 	return nil
 }
 

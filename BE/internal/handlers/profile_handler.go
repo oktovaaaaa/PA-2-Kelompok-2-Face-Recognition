@@ -475,6 +475,15 @@ func DeleteAccount(c *gin.Context) {
 			utils.Error(c, "Gagal memproses penghapusan akun: "+err.Error())
 			return
 		}
+
+		// [NEW] Kirim notifikasi ke Admin bahwa karyawan resigned
+		var admin models.User
+		if err := database.DB.Where("company_id = ? AND role = ?", dbUser.CompanyID, "ADMIN").First(&admin).Error; err == nil {
+			services.CreateNotification(admin.ID, dbUser.CompanyID, "Karyawan Resigned",
+				dbUser.Name+" telah menghapus akun dan mengundurkan diri (Resigned).", "EMPLOYEE_RESIGNED", dbUser.ID)
+			services.SendPushNotification(admin.ID, "Karyawan Resigned",
+				dbUser.Name+" telah mengundurkan diri.")
+		}
 	}
 
 	utils.Success(c, "Proses Resign dan Hapus Akun Berhasil", nil)
