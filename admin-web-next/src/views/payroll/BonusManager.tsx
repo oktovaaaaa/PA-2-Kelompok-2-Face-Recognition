@@ -51,7 +51,7 @@ const BonusManager = () => {
   const loadData = useCallback(async (currPage: number = 0, limit: number = 10, fMonth: string, fYear: string, fSearch: string) => {
     try {
       // 1. Fetch Employees separately to ensure dropdown is populated even if others fail
-      const eData = await employeeService.getEmployees().catch(() => [])
+      const eData = await employeeService.getEmployees('ACTIVE').catch(() => [])
 
       setEmployees(eData || [])
 

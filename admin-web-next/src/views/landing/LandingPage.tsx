@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 import Link from '@components/Link'
 import { useRouter } from 'next/navigation'
@@ -37,6 +37,24 @@ const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [windowWidth, setWindowWidth] = useState(0)
   const { showNotification } = useNotification()
+
+  const mockupRef = useRef<HTMLDivElement>(null)
+  const [isMockupActive, setIsMockupActive] = useState(false)
+  const [samsungActiveTab, setSamsungActiveTab] = useState('statistik')
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mockupRef.current && !mockupRef.current.contains(event.target as Node)) {
+        setIsMockupActive(false)
+      }
+    }
+    if (isMockupActive) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isMockupActive])
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
 
@@ -272,7 +290,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       revealElements.forEach(el => observer.unobserve(el));
       observer.disconnect();
     };
-  }, [showContactForm]); // Re-run when switching between footer views
+  }, [showContactForm, showTestimonialModal, activeFeatureIndex, isLoggedIn, isMockupActive, isScrolled, isMenuOpen, testimonials]); // Re-run on any state changes to prevent React DOM clashing
 
   return (
     <div className='landing-container'>
@@ -350,11 +368,10 @@ Saya ingin menghubungi Anda dengan detail berikut:
       {/* Hero Section */}
       <section className='hero' id='home'>
         <div className='hero-content reveal reveal-up'>
-          <p className='hero-subtitle'>Sistem Absensi Cerdas</p>
-          <h1 className='hero-title'>Sistem Absensi Terbaik untuk Anda.</h1>
+          <p className='hero-subtitle'>Sistem Absensi Multi-Platform & Manajemen Perusahaan Tersentralisasi</p>
+          <h1 className='hero-title'>Sistem Absensi Mobile & Dashboard Web <span style={{ color: '#f97316' }}>Tersentralisasi.</span></h1>
           <p className='hero-description'>
-            VIDENTI adalah sistem absensi modern berbasis Face Recognition dan Geolocation yang cepat, akurat, dan aman. 
-            Kelola data kehadiran karyawan Anda dengan efisiensi tinggi tanpa ribet.
+            Karyawan melakukan absensi berbasis Face Recognition & Geolocation secara praktis melalui aplikasi mobile. Administrator dapat mengelola data kehadiran, sistem penggajian otomatis, sanksi, serta bonus karyawan secara fleksibel melalui aplikasi mobile maupun dashboard web tersentralisasi.
           </p>
           <div className='hero-cta'>
             <Link href='/login' className='btn-primary'>Mulai Sekarang</Link>
@@ -396,29 +413,40 @@ Saya ingin menghubungi Anda dengan detail berikut:
             <div className='about-features-list'>
               <div className='about-feature-item reveal reveal-up delay-1'>
                 <div className='item-icon-box purple-bg'>
-                  <img src='https://img.icons8.com/color/48/conference-call.png' alt='Partner' />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
                 </div>
                 <div className='item-text'>
-                  <h4>Mitra Terpercaya</h4>
-                  <p>Mitra terpercaya bagi ratusan perusahaan besar di Indonesia.</p>
+                  <h4>Geolokasi</h4>
+                  <p>Absensi hanya dapat dilakukan pada lokasi yang telah ditentukan secara presisi.</p>
                 </div>
               </div>
               <div className='about-feature-item reveal reveal-up delay-2'>
-                <div className='item-icon-box outline-bg'>
-                  <img src='https://img.icons8.com/color/48/fast-forward.png' alt='Fast' />
+                <div className='item-icon-box purple-bg'>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
                 </div>
                 <div className='item-text'>
-                  <h4>Platform Cepat</h4>
-                  <p>Platform super cepat dengan infrastruktur cloud modern.</p>
+                  <h4>Monitoring 24 Jam</h4>
+                  <p>Memantau seluruh aktivitas kehadiran karyawan secara real-time selama 24 jam.</p>
                 </div>
               </div>
               <div className='about-feature-item reveal reveal-up delay-3'>
-                <div className='item-icon-box outline-bg'>
-                  <img src='https://img.icons8.com/color/48/guarantee.png' alt='Reliability' />
+                <div className='item-icon-box purple-bg'>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                  </svg>
                 </div>
                 <div className='item-text'>
-                  <h4>Keandalan Teruji</h4>
-                  <p>Keandalan yang telah teruji dalam menangani ribuan data setiap hari.</p>
+                  <h4>Face ID Recognition</h4>
+                  <p>Menggunakan teknologi pengenalan wajah tercanggih untuk verifikasi saat absensi.</p>
                 </div>
               </div>
             </div>
@@ -440,7 +468,7 @@ Saya ingin menghubungi Anda dengan detail berikut:
       {/* Features Section (Layanan Unggulan Kami) */}
       <section className='features-container' id='features'>
         <div className='section-header'>
-          <h2>Layanan <span>Unggulan Kami.</span></h2>
+          <h2>Layanan <span>Unggulan</span> Kami.</h2>
         </div>
         
         <div className='carousel-wrapper'>
@@ -490,8 +518,31 @@ Saya ingin menghubungi Anda dengan detail berikut:
           </svg>
         </div>
 
-        {/* Phone Mockup (Subject) */}
-        <img src={RIBBON_PERSON_IMAGE} className='ribbon-person' alt='Ribbon User' />
+        {/* CSS Samsung S22 Ultra Phone Mockup in Ribbon */}
+        <div className='ribbon-samsung-phone'>
+          <div className='samsung-phone-body'>
+            {/* Top punch-hole camera */}
+            <div className='samsung-camera'></div>
+
+            {/* Android Status Bar */}
+            <div className='android-status-bar'>
+              <div className='status-left'>
+                <span>11:40</span>
+                <span style={{ fontSize: '0.65rem', marginLeft: '3px' }}>G</span>
+              </div>
+              <div className='status-right'>
+                <span>📶</span>
+                <span>📶</span>
+                <span>🔋 88%</span>
+              </div>
+            </div>
+
+            {/* Screen Content */}
+            <div className='samsung-screen-scroll'>
+              <img src='/videntiprofile3.png' className='samsung-screen-image' alt='Laporan & Statistik' />
+            </div>
+          </div>
+        </div>
 
         {/* Right Side Content */}
         <div className='ribbon-side-content right'>
@@ -515,15 +566,26 @@ Saya ingin menghubungi Anda dengan detail berikut:
         <div className='epic-blend-top'></div>
         
         <div className='epic-content reveal reveal-up'>
-          <h2>Fitur Canggih,<br />Terintegrasi Sempurna</h2>
+          <h2>Dashboard Web <span style={{ color: '#f97316' }}>Tersentralisasi</span></h2>
           <p>
-            VIDENTI mengintegrasikan absensi, laporan, dan pengelolaan karyawan<br />
-            dalam satu platform — cepat, aman, dan mudah digunakan.
+            Satu platform terintegrasi untuk mengelola absensi, payroll otomatis, denda sanksi, hingga bonus karyawan secara real-time.
           </p>
         </div>
         
-        <div className='epic-image-container reveal reveal-scale delay-2'>
-          <img src='/videnti_epic_mockups.png' alt='VIDENTI Mockup Collection' className='epic-image' />
+        <div 
+          ref={mockupRef}
+          className={`epic-image-container ${isMockupActive ? 'active' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMockupActive(!isMockupActive);
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          <img 
+            src='/videnti_epic_mockups.png' 
+            alt='VIDENTI Mockup Collection' 
+            className={`epic-image ${isMockupActive ? 'clicked-active' : ''}`} 
+          />
         </div>
 
         <div className='epic-blend-bottom'></div>
@@ -540,11 +602,11 @@ Saya ingin menghubungi Anda dengan detail berikut:
             />
           </div>
           <div className='showcase-overlay-box reveal reveal-right delay-2'>
-            <h2 className='showcase-title'>Bukan Sekedar Absensi Biasa.</h2>
+            <h2 className='showcase-title'>Aplikasi Mobile Interaktif Bos & Karyawan</h2>
             <div className='divider-yellow'></div>
             <p className='showcase-desc'>
-              VIDENTI dirancang untuk memberikan pengalaman terbaik bagi admin maupun karyawan. 
-              Dengan integrasi cloud, data Anda selalu aman dan dapat diakses dari mana saja tanpa kendala.
+              <strong>Karyawan</strong> dapat melakukan absensi Face Recognition & Geolokasi yang super presisi, serta memantau slip gaji langsung dalam genggaman. 
+              Sementara <strong>Bos (Admin)</strong> dapat memantau produktivitas tim, mengelola payroll otomatis, memberikan sanksi, serta menyetujui bonus secara fleksibel melalui antarmuka mobile yang sangat modern dan dinamis.
             </p>
             <Link href='/login' className='btn-showcase'>Mulai Sekarang</Link>
           </div>
@@ -576,8 +638,6 @@ return tripled.map((testi, idx) => {
 
                   return (
                     <div key={idx} className='testimonial-card'>
-                      <div className='testi-quote'>“</div>
-                      <p className='testi-desc'>{testi.description}</p>
                       <div className='testi-user'>
                         <img 
                           src={avatarSrc} 
@@ -591,6 +651,7 @@ return tripled.map((testi, idx) => {
                           </div>
                         </div>
                       </div>
+                      <p className='testi-desc'>{testi.description}</p>
                     </div>
                   );
                 });
@@ -616,8 +677,6 @@ return tripled.map((testi, idx) => {
 
                   return (
                     <div key={idx} className='testimonial-card'>
-                      <div className='testi-quote'>“</div>
-                      <p className='testi-desc'>{testi.description}</p>
                       <div className='testi-user'>
                         <img 
                           src={avatarSrc} 
@@ -631,6 +690,7 @@ return tripled.map((testi, idx) => {
                           </div>
                         </div>
                       </div>
+                      <p className='testi-desc'>{testi.description}</p>
                     </div>
                   );
                 });
@@ -692,6 +752,8 @@ return tripled.map((testi, idx) => {
           </div>
         )}
       </section>
+
+
 
       {/* New Astra-Style Footer Section */}
       <section className='astra-footer' id='contact'>
