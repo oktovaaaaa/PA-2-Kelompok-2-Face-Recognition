@@ -40,7 +40,14 @@ const LandingPage = () => {
 
   const mockupRef = useRef<HTMLDivElement>(null)
   const [isMockupActive, setIsMockupActive] = useState(false)
-  const [samsungActiveTab, setSamsungActiveTab] = useState('statistik')
+  const [ribbonImageIndex, setRibbonImageIndex] = useState(1)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRibbonImageIndex(prev => (prev === 12 ? 1 : prev + 1))
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -524,22 +531,14 @@ Saya ingin menghubungi Anda dengan detail berikut:
             {/* Top punch-hole camera */}
             <div className='samsung-camera'></div>
 
-            {/* Android Status Bar */}
-            <div className='android-status-bar'>
-              <div className='status-left'>
-                <span>11:40</span>
-                <span style={{ fontSize: '0.65rem', marginLeft: '3px' }}>G</span>
-              </div>
-              <div className='status-right'>
-                <span>📶</span>
-                <span>📶</span>
-                <span>🔋 88%</span>
-              </div>
-            </div>
-
-            {/* Screen Content */}
-            <div className='samsung-screen-scroll'>
-              <img src='/videntiprofile3.png' className='samsung-screen-image' alt='Laporan & Statistik' />
+            {/* Screen Content - Rotating Slideshow videnti1 to videnti12 */}
+            <div className='samsung-screen-container'>
+              <img 
+                src={`/images/mockup/videnti${ribbonImageIndex}.jpeg`} 
+                className='samsung-screen-image' 
+                alt={`Videnti Slide ${ribbonImageIndex}`} 
+                key={ribbonImageIndex} 
+              />
             </div>
           </div>
         </div>
