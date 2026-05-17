@@ -41,13 +41,15 @@ const LandingPage = () => {
   const mockupRef = useRef<HTMLDivElement>(null)
   const [isMockupActive, setIsMockupActive] = useState(false)
   const [ribbonImageIndex, setRibbonImageIndex] = useState(1)
+  const [prevImageIndex, setPrevImageIndex] = useState(1)
 
   useEffect(() => {
     const interval = setInterval(() => {
+      setPrevImageIndex(ribbonImageIndex)
       setRibbonImageIndex(prev => (prev === 12 ? 1 : prev + 1))
-    }, 4000)
+    }, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [ribbonImageIndex])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -531,11 +533,18 @@ Saya ingin menghubungi Anda dengan detail berikut:
             {/* Top punch-hole camera */}
             <div className='samsung-camera'></div>
 
-            {/* Screen Content - Rotating Slideshow videnti1 to videnti12 */}
+            {/* Screen Content - Cross-fade dissolve between videnti1 to videnti12 */}
             <div className='samsung-screen-container'>
+              {/* Background Layer: Static Previous Image */}
+              <img 
+                src={`/images/mockup/videnti${prevImageIndex}.jpeg`} 
+                className='samsung-screen-image-bg' 
+                alt="Previous Slide" 
+              />
+              {/* Foreground Layer: Fade-In Current Image */}
               <img 
                 src={`/images/mockup/videnti${ribbonImageIndex}.jpeg`} 
-                className='samsung-screen-image' 
+                className='samsung-screen-image-fg' 
                 alt={`Videnti Slide ${ribbonImageIndex}`} 
                 key={ribbonImageIndex} 
               />

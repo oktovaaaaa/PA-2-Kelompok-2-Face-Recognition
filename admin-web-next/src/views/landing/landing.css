@@ -373,7 +373,7 @@
 /* Background Watermark Text - Starbucks Style */
 .ribbon-bg-text {
   position: absolute;
-  top: -2%;
+  top: -15%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: clamp(5rem, 15vw, 13rem);
@@ -2062,33 +2062,44 @@
   gap: 0.5rem;
 }
 
-/* Screen Container - Full screen display */
+/* Screen Container - Full screen display with butter-smooth crossfade */
 .samsung-screen-container {
   width: 100%;
   height: 100%;
   overflow: hidden;
   position: relative;
-  background: #000;
+  background: #090e1a;
 }
 
-.samsung-screen-image {
+.samsung-screen-image-bg {
+  position: absolute;
+  top: -10px; /* Geser ke atas sedikit saja untuk menyembunyikan status bar bawaan screenshot */
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% + 10px);
   object-fit: cover;
   display: block;
-  animation: phoneScreenFadeIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  z-index: 1;
 }
 
-@keyframes phoneScreenFadeIn {
+.samsung-screen-image-fg {
+  position: absolute;
+  top: -10px; /* Geser ke atas sedikit saja untuk menyembunyikan status bar bawaan screenshot */
+  left: 0;
+  width: 100%;
+  height: calc(100% + 10px);
+  object-fit: cover;
+  display: block;
+  z-index: 2;
+  animation: phoneCrossFade 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes phoneCrossFade {
   from {
-    opacity: 0.4;
-    transform: scale(1.03);
-    filter: blur(2px);
+    opacity: 0;
   }
   to {
     opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
   }
 }
 
