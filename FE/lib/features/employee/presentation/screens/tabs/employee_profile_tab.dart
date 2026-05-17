@@ -1172,6 +1172,7 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
     // STEP 3: Ketik SAYA YAKIN
     final phraseCtrl = TextEditingController();
     bool deleteLoading = false;
+    String? phraseError;
 
     await showModalBottomSheet(
       context: context,
@@ -1228,8 +1229,28 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
               AppTextField(
                 controller: phraseCtrl, 
                 label: 'Ketik frasa di atas', 
-                prefixIcon: Icons.text_fields_rounded
+                prefixIcon: Icons.text_fields_rounded,
+                onChanged: (val) {
+                  if (phraseError != null) {
+                    setModalState(() => phraseError = null);
+                  }
+                },
               ),
+              if (phraseError != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded, color: Colors.red, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        phraseError!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -1243,7 +1264,14 @@ class _EmployeeProfileTabState extends State<EmployeeProfileTab> {
                   onPressed: deleteLoading ? null : () async {
                     final expectedPhrase = 'SAYA YAKIN MENGHAPUS AKUN ${(_profile?['name'] ?? '').toString().toUpperCase()}';
                     if (phraseCtrl.text.trim() != expectedPhrase) {
-                      AppDialog.showError(context, 'Frasa konfirmasi harus persis: $expectedPhrase');
+                      setModalState(() {
+                        phraseError = 'Frasa konfirmasi tidak sesuai. Harap ketik ulang dengan benar.';
+                      });
+                      AppDialog.showError(
+                        context, 
+                        'Frasa konfirmasi harus persis: $expectedPhrase',
+                        useRoot: false,
+                      );
                       return;
                     }
                     setModalState(() => deleteLoading = true);

@@ -54,8 +54,9 @@ func RegisterEmployee(user models.User, inviteToken string, faceImages []string)
 			return errors.New("Gagal mendaftarkan wajah: " + err.Error())
 		}
 		user.FaceEmbedding = embedding
-		now := time.Now()
-		user.FaceUpdatedAt = &now
+		// Simpan wajah saat registrasi, tetapi biarkan FaceUpdatedAt nil 
+		// agar tidak memicu cooldown 30 hari untuk pembaruan pertama kali di profil.
+		user.FaceUpdatedAt = nil
 	}
 
 	err = database.DB.Create(&user).Error

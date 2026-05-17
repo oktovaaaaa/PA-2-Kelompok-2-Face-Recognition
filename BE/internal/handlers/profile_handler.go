@@ -68,7 +68,18 @@ func GetMyProfile(c *gin.Context) {
 		BankName:                  user.BankName,
 		BankAccountNumber:         user.BankAccountNumber,
 		FaceEmbeddingRegistered:   user.FaceEmbedding != "",
-		FaceUpdatedAt:             user.FaceUpdatedAt,
+		FaceUpdatedAt: func() *time.Time {
+			if user.FaceUpdatedAt == nil {
+				return nil
+			}
+			// Jika waktu update wajah terpaut sangat dekat (< 15 detik) dari pembuatan akun (CreatedAt),
+			// itu adalah pendaftaran wajah awal bawaan registrasi, bukan pembaruan/reset wajah manual.
+			// Kita return nil agar client/UI menampilkan status awal (-) dan tidak memicu cooldown.
+			if user.FaceUpdatedAt.Sub(user.CreatedAt) < 15*time.Second {
+				return nil
+			}
+			return user.FaceUpdatedAt
+		}(),
 	}
 
 	if user.PositionID != nil {
@@ -516,13 +527,16 @@ func UpdateFaceEmbedding(c *gin.Context) {
 		return
 	}
 
-	// Cek Cooldown 30 Hari
+	// Cek Cooldown 30 Hari (abaikan jika ini adalah pendaftaran wajah awal bawaan registrasi)
 	if dbUser.FaceUpdatedAt != nil {
-		daysPassed := int(time.Since(*dbUser.FaceUpdatedAt).Hours() / 24)
-		if daysPassed < 30 {
-			remaining := 30 - daysPassed
-			utils.Error(c, fmt.Sprintf("Anda baru saja mengganti Face ID. Silakan tunggu %d hari lagi.", remaining))
-			return
+		isInitialRegistration := dbUser.FaceUpdatedAt.Sub(dbUser.CreatedAt) < 15*time.Second
+		if !isInitialRegistration {
+			daysPassed := int(time.Since(*dbUser.FaceUpdatedAt).Hours() / 24)
+			if daysPassed < 30 {
+				remaining := 30 - daysPassed
+				utils.Error(c, fmt.Sprintf("Anda baru saja mengganti Face ID. Silakan tunggu %d hari lagi.", remaining))
+				return
+			}
 		}
 	}
 
@@ -534,6 +548,10 @@ func UpdateFaceEmbedding(c *gin.Context) {
 		utils.Error(c, "Gagal menyimpan data wajah")
 		return
 	}
+
+	// Sinkronisasi data user terupdate ke database mikroservis lainnya (Attendance & Payroll)
+	go database.SyncUserToAttendance(dbUser)
+	go database.SyncUserToPayroll(dbUser)
 
 	utils.Success(c, "Face ID berhasil didaftarkan", nil)
 }
@@ -562,13 +580,16 @@ func RegisterFace(c *gin.Context) {
 		return
 	}
 
-	// Cek Cooldown 30 Hari
+	// Cek Cooldown 30 Hari (abaikan jika ini adalah pendaftaran wajah awal bawaan registrasi)
 	if dbUser.FaceUpdatedAt != nil {
-		daysPassed := int(time.Since(*dbUser.FaceUpdatedAt).Hours() / 24)
-		if daysPassed < 30 {
-			remaining := 30 - daysPassed
-			utils.Error(c, fmt.Sprintf("Anda baru saja mengganti Face ID. Silakan tunggu %d hari lagi.", remaining))
-			return
+		isInitialRegistration := dbUser.FaceUpdatedAt.Sub(dbUser.CreatedAt) < 15*time.Second
+		if !isInitialRegistration {
+			daysPassed := int(time.Since(*dbUser.FaceUpdatedAt).Hours() / 24)
+			if daysPassed < 30 {
+				remaining := 30 - daysPassed
+				utils.Error(c, fmt.Sprintf("Anda baru saja mengganti Face ID. Silakan tunggu %d hari lagi.", remaining))
+				return
+			}
 		}
 	}
 
@@ -587,6 +608,10 @@ func RegisterFace(c *gin.Context) {
 		utils.Error(c, "Gagal menyimpan data wajah")
 		return
 	}
+
+	// Sinkronisasi data user terupdate ke database mikroservis lainnya (Attendance & Payroll)
+	go database.SyncUserToAttendance(dbUser)
+	go database.SyncUserToPayroll(dbUser)
 
 	utils.Success(c, "Registrasi wajah berhasil", nil)
 }

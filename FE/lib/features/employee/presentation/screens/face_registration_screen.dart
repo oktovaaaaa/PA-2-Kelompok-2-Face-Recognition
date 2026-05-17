@@ -240,6 +240,28 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
       body: Stack(
         children: [
           _buildScannerUI(),
+          Positioned(
+            top: 48,
+            left: 24,
+            child: SafeArea(
+              bottom: false,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Color(0xFF1E3A8A),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
           if (_isBusy) Container(color: Colors.white.withOpacity(0.6), child: const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))),
         ],
       ),

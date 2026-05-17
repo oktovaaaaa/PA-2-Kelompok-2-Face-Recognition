@@ -298,7 +298,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                 Stack(
                   children: [
                     Container(
-                      height: 140,
+                      height: 160,
                       width: double.infinity,
                       decoration: const BoxDecoration(
                         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -313,14 +313,23 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Hi, ${_getShortName(_profileData?['name'] ?? 'Karyawan')}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                                  const SizedBox(height: 4),
-                                  Text(AppDateFormatter.formatFullDate(_todayData?['date'] ?? DateTime.now().toString()), style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7))),
-                                ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Hi, ${_getShortName(_profileData?['name'] ?? 'Karyawan')}',
+                                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      AppDateFormatter.formatFullDate(_todayData?['date'] ?? DateTime.now().toString()),
+                                      style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7)),
+                                    ),
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 12),
                               Row(
                                 children: [
                                   Consumer<NotificationProvider>(
