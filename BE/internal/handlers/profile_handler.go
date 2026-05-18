@@ -418,62 +418,117 @@ func DeleteAccount(c *gin.Context) {
 		// Admin: Hapus TOTAL semua data instansi (Cascade Delete manual)
 		companyID := dbUser.CompanyID
 
-		err := database.DB.Transaction(func(tx *gorm.DB) error {
-			// 1. Hapus data transaksional yang terikat UserID (Absensi, Denda, Gaji, Bonus, dll)
-			userIDsSubQuery := tx.Model(&models.User{}).Select("id").Where("company_id = ?", companyID)
+		// 1. Ambil list UserID yang berada di bawah CompanyID ini dari Auth DB
+		var userIDs []string
+		if err := database.DB.Model(&models.User{}).Where("company_id = ?", companyID).Pluck("id", &userIDs).Error; err != nil {
+			utils.Error(c, "Gagal mengambil data karyawan instansi: "+err.Error())
+			return
+		}
 
-			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Attendance{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus attendances: %w", err)
-			}
-			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Penalty{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus penalties: %w", err)
-			}
-			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.LeaveRequest{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus leave_requests: %w", err)
-			}
-			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Salary{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus salaries: %w", err)
-			}
-			if err := tx.Where("user_id IN (?)", userIDsSubQuery).Delete(&models.Bonus{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus bonuses: %w", err)
-			}
+		// 2. Koneksi ke database Payroll (pa2_payroll) untuk penghapusan data payroll
+		dsnPay := fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+			os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+			"pa2_payroll", os.Getenv("DB_PORT"),
+		)
+		payDB, errPay := gorm.Open(postgres.Open(dsnPay), &gorm.Config{})
+		if errPay != nil {
+			utils.Error(c, "Gagal koneksi ke database payroll untuk penghapusan: "+errPay.Error())
+			return
+		}
 
-			// 2. Hapus semua User (Admin & semua Karyawannya)
-			// Menggunakan Unscoped() agar data benar-benar terhapus fisik (Hard Delete)
-			if err := tx.Where("company_id = ?", companyID).Unscoped().Delete(&models.User{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus users: %w", err)
+		errPayTx := payDB.Transaction(func(txPay *gorm.DB) error {
+			if len(userIDs) > 0 {
+				if err := txPay.Where("user_id IN (?)", userIDs).Delete(&models.Salary{}).Error; err != nil {
+					return fmt.Errorf("gagal menghapus salaries: %w", err)
+				}
+				// Hapus salary payments jika ada
+				if err := txPay.Exec("DELETE FROM salary_payments WHERE salary_id IN (SELECT id FROM salaries WHERE user_id IN (?))", userIDs).Error; err != nil {
+					// Abaikan jika tabel tidak ada
+				}
+				if err := txPay.Where("user_id IN (?)", userIDs).Delete(&models.Bonus{}).Error; err != nil {
+					return fmt.Errorf("gagal menghapus bonuses: %w", err)
+				}
+				if err := txPay.Where("user_id IN (?)", userIDs).Delete(&models.Penalty{}).Error; err != nil {
+					return fmt.Errorf("gagal menghapus penalties: %w", err)
+				}
 			}
+			if err := txPay.Where("company_id = ?", companyID).Unscoped().Delete(&models.User{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus users di payroll: %w", err)
+			}
+			return nil
+		})
+		if errPayTx != nil {
+			utils.Error(c, "Gagal menghapus data di database payroll: "+errPayTx.Error())
+			return
+		}
 
-			// 3. Hapus data master yang terikat CompanyID (Lokasi, Pengaturan, Hari Libur, dll)
-			if err := tx.Where("company_id = ?", companyID).Delete(&models.Notification{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus notifications: %w", err)
+		// 3. Koneksi ke database Attendance (pa2_attendance) untuk penghapusan data absensi
+		dsnAtt := fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+			os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+			"pa2_attendance", os.Getenv("DB_PORT"),
+		)
+		attDB, errAtt := gorm.Open(postgres.Open(dsnAtt), &gorm.Config{})
+		if errAtt != nil {
+			utils.Error(c, "Gagal koneksi ke database absensi untuk penghapusan: "+errAtt.Error())
+			return
+		}
+
+		errAttTx := attDB.Transaction(func(txAtt *gorm.DB) error {
+			if len(userIDs) > 0 {
+				if err := txAtt.Where("user_id IN (?)", userIDs).Delete(&models.Attendance{}).Error; err != nil {
+					return fmt.Errorf("gagal menghapus attendances: %w", err)
+				}
+				if err := txAtt.Where("user_id IN (?)", userIDs).Delete(&models.LeaveRequest{}).Error; err != nil {
+					return fmt.Errorf("gagal menghapus leave_requests: %w", err)
+				}
 			}
-			if err := tx.Where("company_id = ?", companyID).Delete(&models.AttendanceSettings{}).Error; err != nil {
+			if err := txAtt.Where("company_id = ?", companyID).Delete(&models.AttendanceSettings{}).Error; err != nil {
 				return fmt.Errorf("gagal menghapus attendance_settings: %w", err)
 			}
-			if err := tx.Where("company_id = ?", companyID).Delete(&models.CompanyLocation{}).Error; err != nil {
+			if err := txAtt.Where("company_id = ?", companyID).Delete(&models.CompanyLocation{}).Error; err != nil {
 				return fmt.Errorf("gagal menghapus company_locations: %w", err)
 			}
-			if err := tx.Where("company_id = ?", companyID).Delete(&models.Holiday{}).Error; err != nil {
+			if err := txAtt.Where("company_id = ?", companyID).Delete(&models.Holiday{}).Error; err != nil {
 				return fmt.Errorf("gagal menghapus holidays: %w", err)
 			}
-			if err := tx.Where("company_id = ?", companyID).Delete(&models.InviteToken{}).Error; err != nil {
-				return fmt.Errorf("gagal menghapus invite_tokens: %w", err)
+			if err := txAtt.Where("company_id = ?", companyID).Unscoped().Delete(&models.User{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus users di attendance: %w", err)
+			}
+			return nil
+		})
+		if errAttTx != nil {
+			utils.Error(c, "Gagal menghapus data di database absensi: "+errAttTx.Error())
+			return
+		}
+
+		// 4. Terakhir, hapus data di database Auth utama (pa2_auth)
+		errAuthTx := database.DB.Transaction(func(tx *gorm.DB) error {
+			// Hapus semua User (Admin & semua Karyawannya) dari auth dulu karena positions & companies direferensikan oleh users
+			if err := tx.Where("company_id = ?", companyID).Unscoped().Delete(&models.User{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus users: %w", err)
 			}
 			if err := tx.Where("company_id = ?", companyID).Delete(&models.Position{}).Error; err != nil {
 				return fmt.Errorf("gagal menghapus positions: %w", err)
 			}
-
-			// 4. Terakhir, hapus data Company itu sendiri (Hard Delete)
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.InviteToken{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus invite_tokens: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.CompanyLocation{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus company_locations: %w", err)
+			}
+			if err := tx.Where("company_id = ?", companyID).Delete(&models.Notification{}).Error; err != nil {
+				return fmt.Errorf("gagal menghapus notifications: %w", err)
+			}
+			// Hapus Company itu sendiri (Hard Delete)
 			if err := tx.Where("id = ?", companyID).Unscoped().Delete(&models.Company{}).Error; err != nil {
 				return fmt.Errorf("gagal menghapus company: %w", err)
 			}
-
 			return nil
 		})
-
-		if err != nil {
-			utils.Error(c, "Gagal menghapus total data instansi: "+err.Error())
+		if errAuthTx != nil {
+			utils.Error(c, "Gagal menghapus data di database auth: "+errAuthTx.Error())
 			return
 		}
 	} else {
@@ -494,6 +549,10 @@ func DeleteAccount(c *gin.Context) {
 			utils.Error(c, "Gagal memproses penghapusan akun: "+err.Error())
 			return
 		}
+
+		// Sync resigned status to other microservices databases
+		go database.SyncUserToAttendance(dbUser)
+		go database.SyncUserToPayroll(dbUser)
 
 		// [NEW] Kirim notifikasi ke Admin bahwa karyawan resigned
 		var admin models.User
