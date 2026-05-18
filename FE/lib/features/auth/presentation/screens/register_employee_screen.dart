@@ -246,7 +246,7 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
                             const SizedBox(width: 12),
                             Image.network(
                               'https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png',
-                              width: 24, height: 24,
+                              width: 32, height: 32,
                             ),
                           ],
                         ),

@@ -318,7 +318,11 @@ return () => clearInterval(interval)
                 className='w-full py-4 bg-white border-2 border-[#E2E8F0] rounded-full text-[14px] font-bold text-[#0F172A] transition-all hover:bg-[#f8fafc] hover:border-[#cbd5e1] flex items-center justify-center gap-3 disabled:opacity-70'
                 disabled={loading}
               >
-                <i className='bx bxl-google text-[24px] text-[#DB4437]' />
+                <img 
+                  src='https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png' 
+                  alt='Google' 
+                  className='w-[24px] h-[24px] object-contain' 
+                />
                 Masuk dengan Google
               </button>
             </div>

@@ -499,11 +499,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(4),
         child: Image.network(
           'https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png',
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => Icon(icon, color: color, size: 24),
+          errorBuilder: (_, __, ___) => Icon(icon, color: color, size: 38),
         ),
       ),
     );
