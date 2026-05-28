@@ -266,7 +266,7 @@ func CheckIn(c *gin.Context) {
 	}
 
 	upsertCheckIn(emp.ID, emp.CompanyID, today, now, status, deduction, req.Latitude, req.Longitude, validLoc.ID, minDistance)
-	utils.Success(c, "Check-in berhasil", gin.H{
+	utils.Success(c, "Absensi masuk berhasil", gin.H{
 		"check_in_time": now.Format("15:04:05"),
 		"date":          today,
 		"location":      validLoc.Name,
@@ -454,7 +454,7 @@ func CheckOut(c *gin.Context) {
 
 	database.DB.Save(&att)
 
-	utils.Success(c, "Check-out berhasil", gin.H{
+	utils.Success(c, "Absensi pulang berhasil", gin.H{
 		"check_out_time": now.Format("15:04:05"),
 		"date":           today,
 		"location":       validLoc.Name,

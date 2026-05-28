@@ -209,7 +209,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
 
       if (mounted) {
         if (res.success) {
-          AppDialog.showSuccess(context, action == 'check_in' ? 'Check-in Berhasil' : 'Check-out Berhasil');
+          AppDialog.showSuccess(context, action == 'check_in' ? 'Absensi Masuk Berhasil' : 'Absensi Pulang Berhasil');
           _load();
         } else {
           _triggerFailure();

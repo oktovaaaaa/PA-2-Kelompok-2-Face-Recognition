@@ -16,7 +16,7 @@ func main() {
 
 	config.LoadEnv()
 
-	database.ConnectDatabase()
+	database.ConnectDatabase("Main-Server")
 	services.StartScheduler()
 
 	r := routes.SetupRouter()
