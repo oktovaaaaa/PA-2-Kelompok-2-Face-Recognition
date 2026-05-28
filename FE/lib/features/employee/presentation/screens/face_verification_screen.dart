@@ -39,7 +39,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
       FaceAction.mouthOpen
     ];
     list.shuffle();
-    _actions = [...list.take(3), FaceAction.neutral, FaceAction.done];
+    _actions = [...list.take(2), FaceAction.neutral, FaceAction.done];
     _setup();
   }
 
@@ -73,7 +73,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
     }
   }
 
-  void _startLiveDetection() {
+  void _startLiveDetection() { //deteksi wjah menggunakan google ml kit
     _ctrl.startImageStream((image) async {
       if (_isProcessing || _cooldown || _actions[_currentStepIndex] == FaceAction.done) return;
       _isProcessing = true;
@@ -95,24 +95,23 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
     final currentAction = _actions[_currentStepIndex];
     bool success = false;
     
-    // Debug Log untuk membantu analisa
     debugPrint("Face Angles -> Y: ${face.headEulerAngleY?.toStringAsFixed(2)}, X: ${face.headEulerAngleX?.toStringAsFixed(2)}");
 
-    switch (currentAction) {
+    switch (currentAction) { // cek sudut atau gerakan kepala
       case FaceAction.neutral: 
         if (face.headEulerAngleY!.abs() < 10 && face.headEulerAngleX!.abs() < 10) success = true; 
         break;
       case FaceAction.lookLeft: 
-        if (face.headEulerAngleY! > 30) success = true; 
+        if (face.headEulerAngleY! > 25) success = true; // Inverted for mirrored front camera
         break;
       case FaceAction.lookRight: 
-        if (face.headEulerAngleY! < -30) success = true; 
+        if (face.headEulerAngleY! < -25) success = true; // Inverted for mirrored front camera
         break;
       case FaceAction.lookUp: 
-        if (face.headEulerAngleX! > 20) success = true; 
+        if (face.headEulerAngleX! > 18) success = true; 
         break;
       case FaceAction.lookDown: 
-        if (face.headEulerAngleX! < -20) success = true; 
+        if (face.headEulerAngleX! < -18) success = true; 
         break;
       case FaceAction.blink: 
         if ((face.leftEyeOpenProbability ?? 1.0) < 0.1) success = true; 

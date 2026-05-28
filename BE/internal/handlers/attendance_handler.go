@@ -169,7 +169,7 @@ func CheckIn(c *gin.Context) {
 
 	// Hitung Cosine Similarity
 	if len(liveEmb) != len(registeredEmb) {
-		utils.Error(c, "Format data wajah tidak cocok")
+		utils.Error(c, "Format data wajah tidak cocok. Silakan daftarkan ulang wajah Anda di menu Profil.")
 		return
 	}
 
@@ -183,7 +183,7 @@ func CheckIn(c *gin.Context) {
 
 	fmt.Printf("--> Verifikasi wajah untuk %s: Similarity = %.4f\n", emp.Name, similarity)
 
-	if similarity < 0.75 { // Threshold 0.75 untuk MobileFaceNet
+	if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
 		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
 		return
 	}
@@ -334,7 +334,7 @@ func CheckOut(c *gin.Context) {
 
 	// Hitung Cosine Similarity
 	if len(liveEmb) != len(registeredEmb) {
-		utils.Error(c, "Format data wajah tidak cocok")
+		utils.Error(c, "Format data wajah tidak cocok. Silakan daftarkan ulang wajah Anda di menu Profil.")
 		return
 	}
 
@@ -348,7 +348,7 @@ func CheckOut(c *gin.Context) {
 
 	fmt.Printf("--> Verifikasi wajah (Check-out) untuk %s: Similarity = %.4f\n", emp.Name, similarity)
 
-	if similarity < 0.75 { // Threshold 0.75
+	if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
 		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
 		return
 	}

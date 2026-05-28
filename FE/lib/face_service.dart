@@ -21,8 +21,7 @@ class FaceService {
 
   Future<String?> getFaceBase64(String path) async {
     final bytes = await File(path).readAsBytes();
-    // Kirim gambar asli (utuh) ke server agar AI di server yang melakukan cropping
-    // Ini jauh lebih akurat daripada cropping di mobile yang sering gagal dideteksi ulang oleh server
+    // kirim gambar asli  ke server agar  di server yang melakukan cropping
     return base64Encode(bytes);
   }
 

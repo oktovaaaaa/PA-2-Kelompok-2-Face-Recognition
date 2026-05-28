@@ -109,10 +109,10 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
 
     switch (currentAction) {
       case FaceAction.neutral: if (face.headEulerAngleY!.abs() < 10 && face.headEulerAngleX!.abs() < 10) success = true; break;
-      case FaceAction.lookLeft: if (face.headEulerAngleY! > 30) success = true; break;
-      case FaceAction.lookRight: if (face.headEulerAngleY! < -30) success = true; break;
-      case FaceAction.lookUp: if (face.headEulerAngleX! > 20) success = true; break;
-      case FaceAction.lookDown: if (face.headEulerAngleX! < -20) success = true; break;
+      case FaceAction.lookLeft: if (face.headEulerAngleY! > 25) success = true; break; // Inverted for mirrored front camera
+      case FaceAction.lookRight: if (face.headEulerAngleY! < -25) success = true; break; // Inverted for mirrored front camera
+      case FaceAction.lookUp: if (face.headEulerAngleX! > 18) success = true; break;
+      case FaceAction.lookDown: if (face.headEulerAngleX! < -18) success = true; break;
       case FaceAction.blink: if ((face.leftEyeOpenProbability ?? 1.0) < 0.1) success = true; break;
       case FaceAction.mouthOpen:
         final mb = face.landmarks[FaceLandmarkType.bottomMouth];
@@ -126,7 +126,9 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
     }
     if (success) {
       setState(() => _cooldown = true);
-      await _takeSilentSnapshot();
+      if (currentAction != FaceAction.blink && currentAction != FaceAction.mouthOpen) {
+        await _takeSilentSnapshot();
+      }
       if (!mounted) return;
       setState(() {
         _currentStepIndex++;

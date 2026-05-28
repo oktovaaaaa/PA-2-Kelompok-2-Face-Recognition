@@ -210,7 +210,7 @@ func main() {
 		score := dot / (float32(math.Sqrt(float64(n1))) * float32(math.Sqrt(float64(n2))))
 		fmt.Printf("--> Verifikasi %s: Skor Kemiripan = %.4f\n", in.Name, score)
 
-		if score > 0.65 {
+		if score > 0.6 {
 			c.JSON(200, gin.H{"status": "Sukses", "score": score})
 		} else {
 			c.JSON(401, gin.H{"status": "Gagal", "score": score})
