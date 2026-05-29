@@ -2,7 +2,7 @@ import sys, json, os, numpy as np, cv2
 import logging
 logging.basicConfig(level=logging.ERROR)
 
-# Suppress unnecessary warnings
+
 import warnings
 warnings.filterwarnings("ignore")
 
