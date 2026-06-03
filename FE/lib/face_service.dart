@@ -12,8 +12,8 @@ class FaceService {
   Future<void> init() async {
     detector = FaceDetector(
       options: FaceDetectorOptions(
-        enableClassification: true, 
-        enableLandmarks: true, // AKTIFKAN LANDMARK UNTUK MULUT
+        enableClassification: true,
+        enableLandmarks: true, // aktifkan landmark  menggunakan library ml kit
         performanceMode: FaceDetectorMode.fast,
       ),
     );
@@ -25,7 +25,10 @@ class FaceService {
     return base64Encode(bytes);
   }
 
-  InputImage getInputImageFromCameraImage(CameraImage image, CameraDescription camera) {
+  InputImage getInputImageFromCameraImage(
+    CameraImage image,
+    CameraDescription camera,
+  ) {
     final sensorOrientation = camera.sensorOrientation;
     InputImageRotation? rotation;
     if (Platform.isIOS) {
@@ -37,7 +40,9 @@ class FaceService {
     }
     rotation ??= InputImageRotation.rotation0deg;
 
-    final format = InputImageFormatValue.fromRawValue(image.format.raw) ?? InputImageFormat.nv21;
+    final format =
+        InputImageFormatValue.fromRawValue(image.format.raw) ??
+        InputImageFormat.nv21;
     final plane = image.planes.first;
 
     return InputImage.fromBytes(
