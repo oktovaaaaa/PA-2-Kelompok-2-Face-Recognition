@@ -76,6 +76,18 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
 
   String? _required(String? v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null;
 
+  String? _validatePassword(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Kata sandi wajib diisi';
+    if (v.length < 8) return 'Kata sandi minimal 8 karakter';
+    if (!v.contains(RegExp(r'[A-Z]'))) return 'Harus mengandung minimal 1 huruf besar';
+    if (!v.contains(RegExp(r'[a-z]'))) return 'Harus mengandung minimal 1 huruf kecil';
+    if (!v.contains(RegExp(r'[0-9]'))) return 'Harus mengandung minimal 1 angka';
+    if (!v.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_+\-=\[\]\\/~`]'))) {
+      return 'Harus mengandung minimal 1 simbol';
+    }
+    return null;
+  }
+
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (pickedFile != null) {
@@ -311,40 +323,31 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
                         const SizedBox(height: 24),
                         AppTextField(controller: _name, label: 'Nama Lengkap', validator: _required, prefixIcon: Icons.person_outline_rounded),
                         const SizedBox(height: 16),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: AppTextField(
-                                controller: _email,
-                                label: 'Alamat Email',
-                                keyboardType: TextInputType.emailAddress,
-                                validator: _required,
-                                prefixIcon: Icons.email_outlined,
-                                enabled: _googleIdToken == null,
-                              ),
-                            ),
-                            if (_googleIdToken == null) ...[
-                              const SizedBox(width: 8),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: SizedBox(
-                                  height: 56,
-                                  child: TextButton(
-                                    onPressed: _otpLoading || _loading ? null : _requestOtp,
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                    child: _otpLoading
-                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                        : Text(_otpSent ? 'Kirim Ulang' : 'Kirim OTP', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
+                        AppTextField(
+                          controller: _email,
+                          label: 'Alamat Email',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: _required,
+                          prefixIcon: Icons.email_outlined,
+                          enabled: _googleIdToken == null,
                         ),
+                        if (_googleIdToken == null) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: TextButton(
+                              onPressed: _otpLoading || _loading ? null : _requestOtp,
+                              style: TextButton.styleFrom(
+                                backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: _otpLoading
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                  : Text(_otpSent ? 'Kirim Ulang OTP' : 'Kirim OTP ke Email', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                            ),
+                          ),
+                        ],
                         if (_googleIdToken == null && _otpSent) ...[
                           const SizedBox(height: 20),
                           const Text('Masukkan Kode OTP', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
@@ -384,7 +387,7 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
                           ),
                         ],
                         const SizedBox(height: 16),
-                        AppTextField(controller: _password, label: 'Kata Sandi', obscure: true, validator: _required, prefixIcon: Icons.lock_outline_rounded),
+                        AppTextField(controller: _password, label: 'Kata Sandi', obscure: true, validator: _validatePassword, prefixIcon: Icons.lock_outline_rounded),
                         const SizedBox(height: 16),
                         const Text('PIN Keamanan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
                         const SizedBox(height: 12),
@@ -425,37 +428,31 @@ class _RegisterEmployeeScreenState extends State<RegisterEmployeeScreen> {
                         const SizedBox(height: 16),
                         AppTextField(controller: _phone, label: 'Nomor Telepon', keyboardType: TextInputType.phone, validator: _required, prefixIcon: Icons.phone_android_rounded),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(child: AppTextField(controller: _birthPlace, label: 'Tempat Lahir', validator: _required, prefixIcon: Icons.location_city_outlined)),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: AppTextField(
-                                controller: _birthDate,
-                                label: 'Tgl Lahir',
-                                readOnly: true,
-                                prefixIcon: Icons.calendar_today_rounded,
-                                onTap: () async {
-                                  final initial = DateTime.tryParse(_birthDate.text) ?? DateTime(2000, 1, 1);
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: initial,
-                                    firstDate: DateTime(1950),
-                                    lastDate: DateTime.now(),
-                                    builder: (context, child) {
-                                      return Theme(data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF2563EB))), child: child!);
-                                    },
-                                  );
-                                  if (picked != null) {
-                                    setState(() {
-                                      _birthDate.text = picked.toString().substring(0, 10);
-                                    });
-                                  }
-                                },
-                                validator: _required,
-                              ),
-                            ),
-                          ],
+                        AppTextField(controller: _birthPlace, label: 'Tempat Lahir', validator: _required, prefixIcon: Icons.location_city_outlined),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _birthDate,
+                          label: 'Tanggal Lahir',
+                          readOnly: true,
+                          prefixIcon: Icons.calendar_today_rounded,
+                          onTap: () async {
+                            final initial = DateTime.tryParse(_birthDate.text) ?? DateTime(2000, 1, 1);
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: initial,
+                              firstDate: DateTime(1950),
+                              lastDate: DateTime.now(),
+                              builder: (context, child) {
+                                return Theme(data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF2563EB))), child: child!);
+                              },
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _birthDate.text = picked.toString().substring(0, 10);
+                              });
+                            }
+                          },
+                          validator: _required,
                         ),
                         const SizedBox(height: 16),
                         AppTextField(controller: _address, label: 'Alamat', validator: _required, prefixIcon: Icons.home_outlined),

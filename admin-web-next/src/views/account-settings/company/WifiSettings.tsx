@@ -170,7 +170,7 @@ const WifiSettings = () => {
       <Grid item xs={12} id="wifi-editor">
         <Card variant="outlined">
           <CardHeader
-            title={isEditing ? 'Ubah Jaringan Wi-Fi Kantor' : 'Tambah Wi-Fi Resmi Baru'}
+            title={isEditing ? 'Ubah Jaringan Wi-Fi Kantor' : 'Tambah Wi-Fi Resmi'}
             titleTypographyProps={{ variant: 'h6', fontWeight: '700' }}
             avatar={<i className='ri-wifi-line' style={{ fontSize: '1.5rem', color: '#2563EB' }} />}
             subheader="Daftarkan detail Wi-Fi resmi yang dapat digunakan karyawan untuk absensi"

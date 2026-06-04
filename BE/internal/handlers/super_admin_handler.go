@@ -27,7 +27,7 @@ func GetSuperAdminStats(c *gin.Context) {
 
 	// Recent Users
 	var recentUsers []models.User
-	database.DB.Preload("Company").Where("role != ?", "SUPER_ADMIN").Order("created_at desc").Limit(5).Find(&recentUsers)
+	database.DB.Preload("Company").Where("status = ? AND role != ?", "ACTIVE", "SUPER_ADMIN").Order("created_at desc").Limit(5).Find(&recentUsers)
 
 	// Sync coordinates for Recent Users' Companies
 	for i, user := range recentUsers {
@@ -49,12 +49,12 @@ func GetSuperAdminStats(c *gin.Context) {
 	database.DB.Model(&models.User{}).Where("status = ? AND role != ?", "ACTIVE", "SUPER_ADMIN").Count(&stats.TotalActiveEmployees)
 	database.DB.Model(&models.Company{}).Where("name != ?", "SYSTEM ADMINISTRATION").Count(&stats.TotalCompanies)
 
-	// Role distribution
+	// Role distribution (Only active users)
 	var roleResults []struct {
 		Role  string
 		Count int64
 	}
-	database.DB.Model(&models.User{}).Where("role != ?", "SUPER_ADMIN").Select("role, count(*) as count").Group("role").Scan(&roleResults)
+	database.DB.Model(&models.User{}).Where("status = ? AND role != ?", "ACTIVE", "SUPER_ADMIN").Select("role, count(*) as count").Group("role").Scan(&roleResults)
 	roleStats := make(map[string]int64)
 	for _, r := range roleResults {
 		roleStats[r.Role] = r.Count
@@ -84,7 +84,7 @@ func GetRegistrationTrend(c *gin.Context) {
 	query := `
 		SELECT EXTRACT(MONTH FROM created_at) as month, count(*) as count
 		FROM users
-		WHERE EXTRACT(YEAR FROM created_at) = ? AND role != 'SUPER_ADMIN'
+		WHERE EXTRACT(YEAR FROM created_at) = ? AND status = 'ACTIVE' AND role != 'SUPER_ADMIN'
 		GROUP BY month
 		ORDER BY month
 	`
