@@ -161,6 +161,12 @@ func SetupAttendanceRouter() *gin.Engine {
 		admin.POST("/locations", handlers.CreateCompanyLocation)
 		admin.PUT("/locations/:id", handlers.UpdateCompanyLocation)
 		admin.DELETE("/locations/:id", handlers.DeleteCompanyLocation)
+
+		// Wi-Fi Perusahaan
+		admin.GET("/wifis", handlers.GetCompanyWifis)
+		admin.POST("/wifis", handlers.CreateCompanyWifi)
+		admin.PUT("/wifis/:id", handlers.UpdateCompanyWifi)
+		admin.DELETE("/wifis/:id", handlers.DeleteCompanyWifi)
 	}
 
 	employee := api.Group("/employee")
@@ -171,6 +177,7 @@ func SetupAttendanceRouter() *gin.Engine {
 		employee.GET("/attendance/today", handlers.GetTodayAttendance)
 		employee.GET("/attendance/history", handlers.GetMyAttendanceHistory)
 		employee.GET("/locations", handlers.GetActiveCompanyLocations)
+		employee.GET("/wifis", handlers.GetActiveCompanyWifis)
 		employee.POST("/leaves", handlers.EmployeeCreateLeave)
 		employee.GET("/leaves", handlers.EmployeeGetLeaves)
 		employee.PUT("/leaves/:id", handlers.EmployeeUpdateLeave)
@@ -355,6 +362,12 @@ func SetupRouter() *gin.Engine {
 		admin.POST("/locations", handlers.CreateCompanyLocation)
 		admin.PUT("/locations/:id", handlers.UpdateCompanyLocation)
 		admin.DELETE("/locations/:id", handlers.DeleteCompanyLocation)
+
+		// Wi-Fi Perusahaan
+		admin.GET("/wifis", handlers.GetCompanyWifis)
+		admin.POST("/wifis", handlers.CreateCompanyWifi)
+		admin.PUT("/wifis/:id", handlers.UpdateCompanyWifi)
+		admin.DELETE("/wifis/:id", handlers.DeleteCompanyWifi)
 	}
 
 	// Protected Employee Routes
@@ -367,6 +380,7 @@ func SetupRouter() *gin.Engine {
 		employee.GET("/attendance/today", handlers.GetTodayAttendance)
 		employee.GET("/attendance/history", handlers.GetMyAttendanceHistory)
 		employee.GET("/locations", handlers.GetActiveCompanyLocations)
+		employee.GET("/wifis", handlers.GetActiveCompanyWifis)
 
 		// Pengajuan izin / sakit
 		employee.POST("/leaves", handlers.EmployeeCreateLeave)

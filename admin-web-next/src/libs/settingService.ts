@@ -79,6 +79,17 @@ export interface CompanyLocation {
     updated_at?: string;
 }
 
+export interface CompanyWifi {
+    id: string;
+    company_id: string;
+    location_id?: string;
+    name: string; // SSID
+    bssid: string; // MAC Address
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface ManualPenalty {
     id: string;
     user_id: string;
@@ -465,6 +476,61 @@ return resData.data as CompanyLocation;
         if (!response.ok) throw new Error(data.message || 'Gagal menghapus lokasi.');
         
 return data;
+    },
+
+    // 11. Wi-Fi Methods
+    async getWifis() {
+        const response = await fetch(`${API_URL}/admin/wifis`, {
+            method: 'GET',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Gagal memuat daftar Wi-Fi.');
+        
+        return data.data as CompanyWifi[];
+    },
+
+    async createWifi(data: Omit<CompanyWifi, 'id' | 'company_id'>) {
+        const response = await fetch(`${API_URL}/admin/wifis`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(data),
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) throw new Error(resData.message || 'Gagal menambah Wi-Fi.');
+        
+        return resData.data as CompanyWifi;
+    },
+
+    async updateWifi(id: string, data: Partial<CompanyWifi>) {
+        const response = await fetch(`${API_URL}/admin/wifis/${id}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(data),
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) throw new Error(resData.message || 'Gagal memperbarui Wi-Fi.');
+        
+        return resData.data as CompanyWifi;
+    },
+
+    async deleteWifi(id: string) {
+        const response = await fetch(`${API_URL}/admin/wifis/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Gagal menghapus Wi-Fi.');
+        
+        return data;
     },
 
     // 10. Session Methods

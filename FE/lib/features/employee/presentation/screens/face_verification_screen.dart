@@ -29,17 +29,28 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
   @override
   void initState() {
     super.initState();
-    // 4 Random gestures + Neutral at the end
+    // KODE LAMA (Dikomentari):
+    // // 4 Random gestures + Neutral at the end
+    // final list = [
+    //   FaceAction.lookLeft, 
+    //   FaceAction.lookRight, 
+    //   FaceAction.lookUp, 
+    //   FaceAction.lookDown, 
+    //   FaceAction.blink, 
+    //   FaceAction.mouthOpen
+    // ];
+    // list.shuffle();
+    // _actions = [...list.take(2), FaceAction.neutral, FaceAction.done];
+
+    // KODE BARU: 3 Random gestures (tanpa blink & mouthOpen) + Neutral di akhir
     final list = [
       FaceAction.lookLeft, 
       FaceAction.lookRight, 
       FaceAction.lookUp, 
-      FaceAction.lookDown, 
-      FaceAction.blink, 
-      FaceAction.mouthOpen
+      FaceAction.lookDown
     ];
     list.shuffle();
-    _actions = [...list.take(2), FaceAction.neutral, FaceAction.done];
+    _actions = [...list.take(3), FaceAction.neutral, FaceAction.done];
     _setup();
   }
 

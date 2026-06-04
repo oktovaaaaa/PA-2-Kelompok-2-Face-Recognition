@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:vibration/vibration.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/utils/date_formatter.dart';
 import '../../../../../core/utils/currency_formatter.dart';
@@ -33,6 +34,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   Map<String, dynamic>? _todayData;
   Map<String, dynamic>? _profileData;
   List<dynamic> _locations = [];
+  List<dynamic> _wifis = [];
   bool _loading = true;
   bool _actionLoading = false;
   String _currentTime = '--:--:--';
@@ -45,6 +47,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   StreamSubscription<Position>? _positionStream;
   
   final GlobalKey<ShakeWidgetState> _shakeKey = GlobalKey<ShakeWidgetState>();
+  final NetworkInfo _networkInfo = NetworkInfo();
 
   @override
   void initState() {
@@ -164,6 +167,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
         ApiClient.get('/api/employee/attendance/today'),
         ApiClient.get('/api/profile'),
         ApiClient.get('/api/employee/locations'),
+        ApiClient.get('/api/employee/wifis'),
       ]);
 
       if (mounted) {
@@ -171,6 +175,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
           if (results[0].success) _todayData = results[0].data as Map<String, dynamic>?;
           if (results[1].success) _profileData = results[1].data as Map<String, dynamic>?;
           if (results[2].success) _locations = results[2].data as List<dynamic>? ?? [];
+          if (results[3].success) _wifis = results[3].data as List<dynamic>? ?? [];
           _loading = false;
         });
         
@@ -187,6 +192,53 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   Future<void> _handleAction(String action) async {
     if (_actionLoading) return;
     
+    // 1. Validasi Wi-Fi di Frontend Sebelum Buka Kamera
+    if (_wifis.isNotEmpty) {
+      String? currentBssid;
+      String? currentSsid;
+      try {
+        currentBssid = await _networkInfo.getWifiBSSID();
+        currentSsid = await _networkInfo.getWifiName();
+      } catch (e) {
+        debugPrint('Gagal membaca Wi-Fi info: $e');
+      }
+
+      bool wifiMatch = false;
+      final normalizedCurrentBssid = (currentBssid ?? '').trim().toLowerCase();
+
+      // Helper untuk mengambil 4 segmen pertama MAC Address/BSSID (misal: aa:bb:cc:dd)
+      String getBssidPrefix(String mac) {
+        final clean = mac.trim().toLowerCase().replaceAll('-', ':');
+        final parts = clean.split(':');
+        if (parts.length >= 4) {
+          return parts.sublist(0, 4).join(':');
+        }
+        return clean;
+      }
+
+      final currentBssidPrefix = getBssidPrefix(normalizedCurrentBssid);
+
+      for (var w in _wifis) {
+        final dbBssid = (w['bssid'] as String? ?? '').trim().toLowerCase();
+        final dbBssidPrefix = getBssidPrefix(dbBssid);
+        
+        if (currentBssidPrefix == dbBssidPrefix && dbBssidPrefix.isNotEmpty) {
+          wifiMatch = true;
+          break;
+        }
+      }
+
+      if (!wifiMatch) {
+        _triggerFailure();
+        AppDialog.showError(
+          context, 
+          'Absensi Ditolak!\n\nAnda tidak terhubung ke Wi-Fi resmi kantor.'
+        );
+        return;
+      }
+    }
+
+    // 2. Validasi Geofencing GPS (Hanya untuk check-in)
     if (!_isInRadius && action != 'check_out') {
       _triggerFailure();
       AppDialog.showError(context, 'Anda berada di luar radius kantor (${_locationStatus})');
@@ -201,10 +253,21 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       final endpoint = action == 'check_in' ? 'checkin' : 'checkout';
       final pos = await Geolocator.getCurrentPosition();
       
+      String? bssid;
+      String? ssid;
+      try {
+        bssid = await _networkInfo.getWifiBSSID();
+        ssid = await _networkInfo.getWifiName();
+      } catch (e) {
+        debugPrint('Gagal membaca Wi-Fi info: $e');
+      }
+
       final res = await ApiClient.post('/api/employee/attendance/$endpoint', {
         'face_image': faceB64,
         'latitude': pos.latitude,
         'longitude': pos.longitude,
+        'bssid': bssid,
+        'ssid': ssid,
       });
 
       if (mounted) {

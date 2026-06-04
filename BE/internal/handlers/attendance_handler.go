@@ -23,6 +23,16 @@ import (
 
 // LateTier representasi denda keterlambatan berjenjang (sudah didefinisikan di payroll_handler.go)
 
+// getBSSIDPrefix mengambil 4 segmen pertama dari MAC Address/BSSID (misal: aa:bb:cc:dd)
+func getBSSIDPrefix(mac string) string {
+	clean := strings.ReplaceAll(strings.TrimSpace(strings.ToLower(mac)), "-", ":")
+	parts := strings.Split(clean, ":")
+	if len(parts) >= 4 {
+		return strings.Join(parts[:4], ":")
+	}
+	return clean
+}
+
 // calculateLatePenalty menghitung denda berdasarkan durasi keterlambatan dan tiers
 func calculateLatePenalty(now, checkInEnd time.Time, basePenalty float64, tiersJSON string) float64 {
 	lateDuration := now.Sub(checkInEnd)
@@ -136,6 +146,8 @@ func CheckIn(c *gin.Context) {
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
 		FaceImage string  `json:"face_image"`
+		BSSID     string  `json:"bssid"`
+		SSID      string  `json:"ssid"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		utils.Error(c, "Koordinat lokasi dan foto wajah diperlukan")
@@ -186,6 +198,26 @@ func CheckIn(c *gin.Context) {
 	if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
 		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
 		return
+	}
+
+	// Cek Validasi Wi-Fi
+	var wifis []models.CompanyWifi
+	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&wifis)
+	if len(wifis) > 0 {
+		wifiMatch := false
+		reqPrefix := getBSSIDPrefix(req.BSSID)
+		for _, w := range wifis {
+			dbPrefix := getBSSIDPrefix(w.BSSID)
+			if reqPrefix == dbPrefix && dbPrefix != "" {
+				wifiMatch = true
+				break
+			}
+		}
+		fmt.Printf("--> Validasi Wi-Fi (Check-in) untuk %s: Request BSSID = '%s', Prefix = '%s', Match = %v\n", emp.Name, req.BSSID, reqPrefix, wifiMatch)
+		if !wifiMatch {
+			utils.Error(c, "Absensi ditolak! Anda tidak terhubung ke Wi-Fi resmi instansi.")
+			return
+		}
 	}
 
 	// Cek Geofencing
@@ -301,6 +333,8 @@ func CheckOut(c *gin.Context) {
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
 		FaceImage string  `json:"face_image"`
+		BSSID     string  `json:"bssid"`
+		SSID      string  `json:"ssid"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		utils.Error(c, "Koordinat lokasi dan foto wajah diperlukan")
@@ -351,6 +385,26 @@ func CheckOut(c *gin.Context) {
 	if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
 		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
 		return
+	}
+
+	// Cek Validasi Wi-Fi
+	var wifis []models.CompanyWifi
+	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&wifis)
+	if len(wifis) > 0 {
+		wifiMatch := false
+		reqPrefix := getBSSIDPrefix(req.BSSID)
+		for _, w := range wifis {
+			dbPrefix := getBSSIDPrefix(w.BSSID)
+			if reqPrefix == dbPrefix && dbPrefix != "" {
+				wifiMatch = true
+				break
+			}
+		}
+		fmt.Printf("--> Validasi Wi-Fi (Check-out) untuk %s: Request BSSID = '%s', Prefix = '%s', Match = %v\n", emp.Name, req.BSSID, reqPrefix, wifiMatch)
+		if !wifiMatch {
+			utils.Error(c, "Absensi ditolak! Anda tidak terhubung ke Wi-Fi resmi instansi.")
+			return
+		}
 	}
 
 	// Cek Geofencing

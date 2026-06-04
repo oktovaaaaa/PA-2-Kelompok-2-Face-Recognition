@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import '../location_management_screen.dart';
+import '../wifi_management_screen.dart';
 import '../../../../common/presentation/screens/device_management_screen.dart';
 import '../../../../common/widgets/premium_bottom_nav.dart';
 import '../holiday_management_screen.dart';
@@ -809,6 +810,19 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
                     rows: [
                       _infoRow('Status', 'Kelola titik geofencing kantor'),
                       _infoRow('Peta', 'Pilih koordinat & radius'),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildDataCard(
+                    title: 'Jaringan Wi-Fi',
+                    icon: Icons.wifi_rounded,
+                    color: const Color(0xFF2563EB),
+                    onEdit: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminWifiManagementScreen()));
+                    },
+                    rows: [
+                      _infoRow('Status', 'Kelola Wi-Fi resmi kantor'),
+                      _infoRow('Jaringan', 'Deteksi BSSID/SSID router'),
                     ],
                   ),
                   const SizedBox(height: 20),

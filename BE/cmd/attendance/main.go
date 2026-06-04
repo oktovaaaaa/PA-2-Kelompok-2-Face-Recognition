@@ -26,6 +26,7 @@ func main() {
 		&models.LeaveRequest{},
 		&models.Holiday{},
 		&models.CompanyLocation{},
+		&models.CompanyWifi{},
 	)
 
 	// [FIX] Hapus constraint foreign key di database Attendance karena tabel Company/Position tidak ada isinya

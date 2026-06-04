@@ -16,6 +16,7 @@ import type { Company } from '@/libs/settingService';
 import { settingService } from '@/libs/settingService'
 import { useNotification } from '@/contexts/NotificationContext'
 import LocationSettings from './LocationSettings'
+import WifiSettings from './WifiSettings'
 
 const CompanyTab = () => {
   const [formData, setFormData] = useState<Company | null>(null)
@@ -125,6 +126,10 @@ const CompanyTab = () => {
 
       <Box sx={{ mt: 8 }}>
         <LocationSettings />
+      </Box>
+
+      <Box sx={{ mt: 8 }}>
+        <WifiSettings />
       </Box>
     </Box>
   )

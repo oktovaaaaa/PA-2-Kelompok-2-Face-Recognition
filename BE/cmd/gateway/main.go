@@ -63,6 +63,7 @@ func main() {
 	r.Any("/api/employee/leaves", attProxy)
 	r.Any("/api/employee/leaves/*any", attProxy)
 	r.Any("/api/employee/locations", attProxy)
+	r.Any("/api/employee/wifis", attProxy)
 
 	// Admin Attendance Features
 	r.Any("/api/admin/attendance", attProxy)
@@ -71,6 +72,8 @@ func main() {
 	r.Any("/api/admin/leaves/*any", attProxy)
 	r.Any("/api/admin/locations", attProxy)
 	r.Any("/api/admin/locations/*any", attProxy)
+	r.Any("/api/admin/wifis", attProxy)
+	r.Any("/api/admin/wifis/*any", attProxy)
 	r.Any("/api/admin/holidays", attProxy)
 	r.Any("/api/admin/holidays/*any", attProxy)
 	r.Any("/api/admin/attendance-settings", attProxy)
