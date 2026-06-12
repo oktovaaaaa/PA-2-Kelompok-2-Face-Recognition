@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: videnti_db
+    restart: always
+    network_mode: host
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+  auth-service:
+    build: .
+    command: ./auth
+    container_name: videnti_auth
+    restart: always
+    network_mode: host
+    depends_on:
+      - postgres
+
+  attendance-service:
+    build: .
+    command: ./attendance
+    container_name: videnti_attendance
+    restart: always
+    network_mode: host
+    depends_on:
+      - postgres
+    volumes:
+      - uploads_data:/app/uploads
+
+  payroll-service:
+    build: .
+    command: ./payroll
+    container_name: videnti_payroll
+    restart: always
+    network_mode: host
+    depends_on:
+      - postgres
+
+  gateway-service:
+    build: .
+    command: ./gateway
+    container_name: videnti_gateway
+    restart: always
+    network_mode: host
+    depends_on:
+      - auth-service
+      - attendance-service
+      - payroll-service
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  postgres_data:
+  uploads_data:

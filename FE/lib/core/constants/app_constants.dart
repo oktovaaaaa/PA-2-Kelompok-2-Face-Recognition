@@ -6,10 +6,10 @@ class AppConstants {
   // static const String baseUrl = 'http://localhost:8080';
 
   // HP fisik (koneksi Wi-Fi yang sama):
-  // static const String baseUrl = 'http://172.27.66.161:8080';
+  static const String baseUrl = 'http://172.27.66.12:8080';
 
-  // HP fisik: ganti dengan IP laptop kamu (IP saat ini: 172.20.10.3)
-  static const String baseUrl = 'http://localhost:8080';
+  // HP fisik: ganti dengan IP laptop kamu (IP saat ini: 172.27.66.12)
+  // static const String baseUrl = 'http://localhost:8080';
 
   static const String appName = 'Employee System';
-} 
+}

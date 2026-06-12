@@ -97,6 +97,7 @@ func SendOTP(c *gin.Context) {
 	var body struct {
 		Email        string `json:"email"`
 		IsAdminPanel bool   `json:"isAdminPanel"`
+		Type         string `json:"type"` // "LOGIN" or "REGISTER"
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -104,17 +105,38 @@ func SendOTP(c *gin.Context) {
 		return
 	}
 
-	// Jika dipanggil dari Admin Panel, cek proteksi
-	if body.IsAdminPanel {
-		var user models.User
-		if err := database.DB.Where("email = ?", body.Email).First(&user).Error; err == nil {
-			// User ada, cek role-nya. Jika Karyawan, blokir dari Admin Panel.
+	var user models.User
+	userExists := true
+	if err := database.DB.Where("email = ?", body.Email).First(&user).Error; err != nil {
+		userExists = false
+	}
+
+	if body.Type == "LOGIN" {
+		if !userExists {
+			utils.Error(c, "Akun tidak terdaftar")
+			return
+		}
+		if body.IsAdminPanel {
 			if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
 				utils.Error(c, "Akses Ditolak: Akun Anda tidak memiliki hak akses administrator.")
 				return
 			}
 		}
-		// Jika user tidak ditemukan, biarkan lanjut (mungkin sedang proses Register)
+	} else if body.Type == "REGISTER" {
+		if userExists {
+			utils.Error(c, "Email sudah terdaftar")
+			return
+		}
+	} else {
+		// Backward compatibility
+		if body.IsAdminPanel {
+			if userExists {
+				if user.Role != "ADMIN" && user.Role != "SUPER_ADMIN" && user.Role != "OWNER" {
+					utils.Error(c, "Akses Ditolak: Akun Anda tidak memiliki hak akses administrator.")
+					return
+				}
+			}
+		}
 	}
 
 	code, err := services.GenerateOTP(body.Email)

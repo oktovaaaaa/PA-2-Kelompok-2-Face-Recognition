@@ -23,11 +23,11 @@ export const authService = {
   },
 
   // Send OTP (General)
-  async sendOTP(email: string, isAdminPanel: boolean = false) {
+  async sendOTP(email: string, isAdminPanel: boolean = false, type: 'LOGIN' | 'REGISTER' = 'REGISTER') {
     const response = await fetch(`${API_URL}/auth/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, isAdminPanel }),
+      body: JSON.stringify({ email, isAdminPanel, type }),
     });
 
     const data = await response.json();

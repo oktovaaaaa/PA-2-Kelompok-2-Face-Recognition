@@ -22,3 +22,12 @@ service-account.json
 
 # Uploads
 uploads/
+
+# Python virtual environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Temporary files
+tmp/

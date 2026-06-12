@@ -439,12 +439,12 @@ func DeleteAccount(c *gin.Context) {
 
 		errPayTx := payDB.Transaction(func(txPay *gorm.DB) error {
 			if len(userIDs) > 0 {
-				if err := txPay.Where("user_id IN (?)", userIDs).Delete(&models.Salary{}).Error; err != nil {
-					return fmt.Errorf("gagal menghapus salaries: %w", err)
-				}
-				// Hapus salary payments jika ada
+				// Hapus salary payments jika ada (harus dijalankan pertama karena constraint foreign key)
 				if err := txPay.Exec("DELETE FROM salary_payments WHERE salary_id IN (SELECT id FROM salaries WHERE user_id IN (?))", userIDs).Error; err != nil {
 					// Abaikan jika tabel tidak ada
+				}
+				if err := txPay.Where("user_id IN (?)", userIDs).Delete(&models.Salary{}).Error; err != nil {
+					return fmt.Errorf("gagal menghapus salaries: %w", err)
 				}
 				if err := txPay.Where("user_id IN (?)", userIDs).Delete(&models.Bonus{}).Error; err != nil {
 					return fmt.Errorf("gagal menghapus bonuses: %w", err)

@@ -80,7 +80,7 @@ return
     setLoading(true)
 
     try {
-      await authService.sendOTP(formData.email, true)
+      await authService.sendOTP(formData.email, true, 'REGISTER')
       handleShowNotification('Kode verifikasi telah dikirim ke email Anda', 'success')
       setStep('otp')
       setResendTimer(30)
@@ -129,7 +129,7 @@ return
     setIsResending(true)
 
     try {
-      await authService.sendOTP(formData.email, true)
+      await authService.sendOTP(formData.email, true, 'REGISTER')
       handleShowNotification('Kode verifikasi baru telah dikirim', 'success')
       setResendTimer(30)
     } catch (error: any) {

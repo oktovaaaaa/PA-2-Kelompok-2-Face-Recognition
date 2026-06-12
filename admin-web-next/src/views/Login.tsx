@@ -81,7 +81,7 @@ return () => clearInterval(interval)
         
         if (userData && userData.email) {
           // Trigger backend OTP send for this email
-          await authService.sendOTP(userData.email, true)
+          await authService.sendOTP(userData.email, true, 'LOGIN')
           
           setEmail(userData.email)
           handleShowNotification('Akun Google diverifikasi. Kode OTP telah dikirim ke email Anda.', 'success')
@@ -172,7 +172,7 @@ return () => clearInterval(interval)
     setIsResending(true)
 
     try {
-      await authService.sendOTP(email, true)
+      await authService.sendOTP(email, true, 'LOGIN')
       handleShowNotification('Kode OTP baru telah dikirim ke email Anda', 'success')
       setResendTimer(30)
     } catch (error: any) {
