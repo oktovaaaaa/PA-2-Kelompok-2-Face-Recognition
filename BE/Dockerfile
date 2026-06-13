@@ -4,10 +4,10 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o gateway cmd/gateway/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o auth cmd/auth/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o attendance cmd/attendance/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o payroll cmd/payroll/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o gateway cmd/gateway/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o auth cmd/auth/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o attendance cmd/attendance/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o payroll cmd/payroll/main.go
 
 # Build Python runtime
 FROM python:3.10-slim
