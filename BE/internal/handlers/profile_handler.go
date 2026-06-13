@@ -3,6 +3,7 @@
 package handlers
 
 import (
+	"bytes"
 	"employee-system/internal/database"
 	"employee-system/internal/models"
 	"employee-system/internal/services"
@@ -10,8 +11,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 	"os"
-	"os/exec"
 
 	"strings"
 	"time"
@@ -707,41 +710,47 @@ func UpdateBankInfo(c *gin.Context) {
 
 // getEmbedding digunakan untuk verifikasi wajah tunggal (saat absen)
 func getEmbedding(base64Image string) ([]float32, error) {
-	tempFile, err := os.CreateTemp("", "face_verify_*.jpg")
-	if err != nil {
-		return nil, err
-	}
-	defer os.Remove(tempFile.Name())
-
 	imgData, err := base64.StdEncoding.DecodeString(base64Image)
 	if err != nil {
 		return nil, err
 	}
-	tempFile.Write(imgData)
-	tempFile.Close()
 
-	// Panggil Python untuk 1 gambar
-	cmd := exec.Command("python", "process_face.py", tempFile.Name())
-	output, _ := cmd.CombinedOutput()
-	
-	// Filter output menggunakan Tag
-	outStr := string(output)
-	var jsonStr string
-	startTag := "JSON_START"
-	endTag := "JSON_END"
-	
-	startIdx := strings.Index(outStr, startTag)
-	endIdx := strings.LastIndex(outStr, endTag)
-	
-	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
-		jsonStr = outStr[startIdx+len(startTag) : endIdx]
-	} else {
-		return nil, fmt.Errorf("AI Error: Tag tidak ditemukan | %s", outStr)
+	// Buat buffer untuk multipart form data
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
+	fw, err := w.CreateFormFile("files", "face_verify.jpg")
+	if err != nil {
+		return nil, fmt.Errorf("gagal membuat form file: %w", err)
+	}
+	if _, err := io.Copy(fw, bytes.NewReader(imgData)); err != nil {
+		return nil, fmt.Errorf("gagal menulis data gambar ke form: %w", err)
+	}
+	w.Close()
+
+	// Kirim request ke Python API
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("POST", "http://localhost:5000/extract-embeddings", &b)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membuat request HTTP ke AI engine: %w", err)
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("gagal menghubungi AI Engine: %w. Pastikan Python service sudah berjalan.", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("AI Engine mengembalikan status error: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
+	// Parse respon JSON
 	var results []interface{}
-	if err := json.Unmarshal([]byte(jsonStr), &results); err != nil {
-		return nil, fmt.Errorf("Format AI Error: %v", err)
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+		return nil, fmt.Errorf("gagal mengurai respon dari AI Engine: %w", err)
 	}
 
 	if len(results) == 0 {
@@ -760,7 +769,7 @@ func getEmbedding(base64Image string) ([]float32, error) {
 	// Jika Python mengembalikan error object di elemen pertama
 	if errMap, ok := results[0].(map[string]interface{}); ok {
 		if errMsg, exists := errMap["error"]; exists {
-			return nil, fmt.Errorf("%v", errMsg)
+			return nil, fmt.Errorf("AI Error: %v", errMsg)
 		}
 	}
 

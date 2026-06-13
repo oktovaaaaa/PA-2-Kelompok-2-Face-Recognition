@@ -1,12 +1,14 @@
 package services
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"time"
 )
 
 // ProcessFaceImages takes base64 images and returns the mean embedding as a JSON string
@@ -15,60 +17,49 @@ func ProcessFaceImages(images []string) (string, error) {
 		return "", fmt.Errorf("tidak ada gambar untuk diproses")
 	}
 
-	// Simpan semua gambar ke file temporary
-	var tempFiles []string
+	// Buat buffer untuk multipart form data
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
 	for i, b64 := range images {
-		tempFile, err := os.CreateTemp("", fmt.Sprintf("face_reg_%d_*.jpg", i))
-		if err != nil {
-			continue
-		}
 		imgData, err := base64.StdEncoding.DecodeString(b64)
 		if err != nil {
-			os.Remove(tempFile.Name())
-			continue
+			return "", fmt.Errorf("gagal mendekode base64 gambar ke-%d: %w", i, err)
 		}
-		tempFile.Write(imgData)
-		tempFile.Close()
-		tempFiles = append(tempFiles, tempFile.Name())
-	}
-	defer func() {
-		for _, f := range tempFiles {
-			os.Remove(f)
+
+		fw, err := w.CreateFormFile("files", fmt.Sprintf("face_%d.jpg", i))
+		if err != nil {
+			return "", fmt.Errorf("gagal membuat form file untuk gambar ke-%d: %w", i, err)
 		}
-	}()
-
-	if len(tempFiles) == 0 {
-		return "", fmt.Errorf("gagal menyimpan gambar ke file temporary")
+		if _, err := io.Copy(fw, bytes.NewReader(imgData)); err != nil {
+			return "", fmt.Errorf("gagal menulis data gambar ke-%d ke form: %w", i, err)
+		}
 	}
+	w.Close()
 
-	// Jalankan Python untuk semua gambar sekaligus
-	args := append([]string{"process_face.py"}, tempFiles...)
-	cmd := exec.Command("python", args...)
-	output, err := cmd.CombinedOutput()
-	
-	outStr := string(output)
-
+	// Kirim POST request ke Python API
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("POST", "http://localhost:5000/extract-embeddings", &b)
 	if err != nil {
-		return "", fmt.Errorf("Gagal menjalankan AI Engine: %v | Output: %s", err, outStr)
+		return "", fmt.Errorf("gagal membuat request HTTP ke AI engine: %w", err)
 	}
-	
-	var jsonStr string
-	
-	startTag := "JSON_START"
-	endTag := "JSON_END"
-	
-	startIdx := strings.Index(outStr, startTag)
-	endIdx := strings.LastIndex(outStr, endTag)
-	
-	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
-		jsonStr = outStr[startIdx+len(startTag) : endIdx]
-	} else {
-		return "", fmt.Errorf("AI Error: Data tidak ditemukan dalam output. Pastikan semua library python (tensorflow, opencv, numpy) sudah terinstall. | Output: %s", outStr)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("gagal menghubungi AI Engine: %w. Pastikan Python service sudah berjalan.", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("AI Engine mengembalikan status error: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
+	// Parse respon JSON
 	var allResults []interface{}
-	if err := json.Unmarshal([]byte(jsonStr), &allResults); err != nil {
-		return "", fmt.Errorf("gagal mengurai data AI: %w", err)
+	if err := json.NewDecoder(resp.Body).Decode(&allResults); err != nil {
+		return "", fmt.Errorf("gagal mengurai respon dari AI Engine: %w", err)
 	}
 
 	var validEmbeddings [][]float32
@@ -83,6 +74,14 @@ func ProcessFaceImages(images []string) (string, error) {
 	}
 
 	if len(validEmbeddings) == 0 {
+		// Cek jika ada error di elemen pertama
+		if len(allResults) > 0 {
+			if errMap, ok := allResults[0].(map[string]interface{}); ok {
+				if errMsg, exists := errMap["error"]; exists {
+					return "", fmt.Errorf("AI Error: %v", errMsg)
+				}
+			}
+		}
 		return "", fmt.Errorf("tidak ada wajah valid yang terdeteksi")
 	}
 
@@ -101,3 +100,4 @@ func ProcessFaceImages(images []string) (string, error) {
 	embS, _ := json.Marshal(meanEmb)
 	return string(embS), nil
 }
+
