@@ -1,5 +1,3 @@
-// internal/models/company_location.go
-
 package models
 
 import (
@@ -10,6 +8,7 @@ import (
 type CompanyLocation struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
 	CompanyID string    `gorm:"index" json:"company_id"`
+	Company   Company   `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"company,omitempty"`
 	Name      string    `json:"name"` // Contoh: "Kantor Pusat", "Gudang"
 	Latitude  float64   `json:"latitude"`
 	Longitude float64   `json:"longitude"`

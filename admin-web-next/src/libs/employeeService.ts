@@ -307,6 +307,39 @@ return data.data;
 return data.data;
     },
 
+    async createTestimonial(payload: { name: string; rating: number; description: string; photo_url?: string }) {
+        const response = await fetch(`${API_URL}/admin/testimonials`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Gagal menambahkan testimoni.');
+        
+return data.data;
+    },
+
+    async uploadTestimonialPhoto(file: File) {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+
+        formData.append('file', file);
+
+        const response = await fetch(`${API_URL}/admin/testimonials/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Gagal mengupload foto.');
+        
+return data.data;
+    },
+
     async deleteTestimonial(id: number) {
         const response = await fetch(`${API_URL}/super-admin/testimonials/${id}`, {
             method: 'DELETE',

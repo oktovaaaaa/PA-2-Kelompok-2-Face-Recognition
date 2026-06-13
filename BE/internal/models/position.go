@@ -1,5 +1,3 @@
-// internal/models/position.go
-
 package models
 
 import "time"
@@ -11,6 +9,7 @@ import "time"
 type Position struct {
 	ID        string  `gorm:"primaryKey" json:"id"`
 	CompanyID string  `gorm:"index" json:"company_id"`
+	Company   Company `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"company,omitempty"`
 
 	Name   string  `json:"name"`
 	Salary      float64 `json:"salary"`

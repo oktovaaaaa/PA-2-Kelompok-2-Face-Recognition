@@ -8,15 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetTestimonials returns approved testimonials
+// GetTestimonials returns only approved testimonials (public endpoint)
 func GetTestimonials(c *gin.Context) {
 	var testimonials []models.Testimonial
-	database.DB.Order("created_at desc").Find(&testimonials)
+	database.DB.Where("is_approved = ?", true).Order("created_at desc").Find(&testimonials)
 	utils.Success(c, "Success", testimonials)
 }
 
-// CreateTestimonial handles guest submission
+// CreateTestimonial handles admin-only testimonial creation
 func CreateTestimonial(c *gin.Context) {
+	// Ambil user_id dari JWT (di-set oleh AuthMiddleware)
+	userID, _ := c.Get("user_id")
+	userIDStr, _ := userID.(string)
+
 	var input struct {
 		Name        string `json:"name" binding:"required"`
 		Rating      int    `json:"rating" binding:"required,min=1,max=5"`
@@ -30,11 +34,12 @@ func CreateTestimonial(c *gin.Context) {
 	}
 
 	testimonial := models.Testimonial{
+		UserID:      userIDStr,
 		Name:        input.Name,
 		Rating:      input.Rating,
 		Description: input.Description,
 		PhotoURL:    input.PhotoURL,
-		IsApproved:  true, 
+		IsApproved:  true, // Admin sudah terverifikasi, langsung tayang
 	}
 
 	if err := database.DB.Create(&testimonial).Error; err != nil {

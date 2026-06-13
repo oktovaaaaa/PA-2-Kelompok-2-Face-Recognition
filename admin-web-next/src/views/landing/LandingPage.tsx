@@ -95,13 +95,6 @@ return () => {
     pesan: ''
   })
 
-  const [testiForm, setTestiForm] = useState({
-    name: '',
-    rating: 0,
-    description: '',
-    photo_url: ''
-  })
-
   const fetchTestimonials = async () => {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials`)
@@ -118,23 +111,33 @@ return () => {
     fetchTestimonials()
   }, [])
 
+  const [testiForm, setTestiForm] = useState({
+    name: '',
+    rating: 0,
+    description: '',
+    photo_url: ''
+  })
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return
     setIsUploading(true)
-    const formData = new FormData()
+    const fd = new FormData()
 
-    formData.append('file', e.target.files[0])
+    fd.append('file', e.target.files[0])
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials/upload`, {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/testimonials/upload`, {
         method: 'POST',
-        body: formData
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
       })
 
       if (res.ok) {
         const data = await res.json()
 
-        setTestiForm({ ...testiForm, photo_url: data.data.url })
+        setTestiForm(prev => ({ ...prev, photo_url: data.data?.url || '' }))
+        showNotification('Foto berhasil diunggah!', 'success')
       } else {
         showNotification('Gagal mengupload foto', 'error')
       }
@@ -148,33 +151,32 @@ return () => {
 
     if (isUploading) {
       showNotification('Tunggu hingga foto selesai diupload!', 'warning')
-      
-return
+      return
     }
 
     if (testiForm.rating === 0) {
       showNotification('Silakan pilih rating minimal 1 bintang!', 'warning')
-      
-return
+      return
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials`, {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/testimonials`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(testiForm)
       })
 
       if (res.ok) {
-        showNotification('Testimoni berhasil dikirim!', 'success')
+        showNotification('Testimoni berhasil ditambahkan!', 'success')
         setShowTestimonialModal(false)
-        setTestiForm({
-          name: '',
-          rating: 0,
-          description: '',
-          photo_url: ''
-        })
+        setTestiForm({ name: '', rating: 0, description: '', photo_url: '' })
         fetchTestimonials()
+      } else {
+        showNotification('Gagal mengirim testimoni. Pastikan Anda sudah login.', 'error')
       }
     } catch (err) { showNotification('Gagal mengirim testimoni', 'error') }
   }
@@ -625,7 +627,11 @@ Saya ingin menghubungi Anda dengan detail berikut:
       <section className='testimonials-section' id='testimonials'>
         <div className='section-header reveal reveal-up'>
           <h2>Apa Kata <span>Mereka?</span></h2>
-          <button className='btn-add-testi' onClick={() => setShowTestimonialModal(true)}>Beri Ulasan Kami</button>
+          {isLoggedIn && (
+            <button className='btn-add-testi' onClick={() => setShowTestimonialModal(true)}>
+              Beri Ulasan Kami
+            </button>
+          )}
         </div>
 
         <div className='testimonials-marquee-wrapper'>
@@ -707,9 +713,9 @@ return tripled.map((testi, idx) => {
           </div>
         </div>
 
-        {/* Testimonial Submission Modal */}
+        {/* Testimonial Submission Modal — hanya tampil saat sudah login */}
         {showTestimonialModal && (
-          <div className='modal-overlay'>
+          <div className='modal-overlay' onClick={(e) => { if (e.target === e.currentTarget) setShowTestimonialModal(false) }}>
             <div className='testi-modal'>
               <div className='modal-header'>
                 <h3>Kirim Testimoni</h3>
@@ -718,7 +724,13 @@ return tripled.map((testi, idx) => {
               <form onSubmit={handleTestiSubmit}>
                 <div className='input-group'>
                   <label>Nama Lengkap</label>
-                  <input type='text' required placeholder='Nama anda...' value={testiForm.name} onChange={e => setTestiForm({...testiForm, name: e.target.value})} />
+                  <input
+                    type='text'
+                    required
+                    placeholder='Nama anda...'
+                    value={testiForm.name}
+                    onChange={e => setTestiForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
                 </div>
                 <div className='input-group'>
                   <label>Rating Kepuasan Anda *</label>
@@ -728,7 +740,7 @@ return tripled.map((testi, idx) => {
                         key={star}
                         type='button'
                         className={`star-btn ${star <= testiForm.rating ? 'active' : ''}`}
-                        onClick={() => setTestiForm({ ...testiForm, rating: star })}
+                        onClick={() => setTestiForm(prev => ({ ...prev, rating: star }))}
                       >
                         ★
                       </button>
@@ -738,18 +750,24 @@ return tripled.map((testi, idx) => {
                 </div>
                 <div className='input-group'>
                   <label>Pesan Ulasan</label>
-                  <textarea required rows={4} placeholder='Tulis ulasan anda...' value={testiForm.description} onChange={e => setTestiForm({...testiForm, description: e.target.value})}></textarea>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder='Tulis ulasan anda...'
+                    value={testiForm.description}
+                    onChange={e => setTestiForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
                 </div>
                 <div className='input-group'>
-                  <label>Upload Foto Profil {isUploading && '(Sabar sedang mengupload...)'}</label>
-                  <input type='file' accept='image/*' onChange={handleFileUpload} />
+                  <label>Upload Foto Profil {isUploading && '(Sedang mengupload...)'}</label>
+                  <input type='file' accept='image/*' onChange={handleFileUpload} disabled={isUploading} />
                   {testiForm.photo_url && !isUploading && (
                     <p style={{ color: '#9fe811', fontSize: '0.8rem', marginTop: '0.5rem' }}>✓ Foto berhasil diunggah!</p>
                   )}
                 </div>
-                <button 
-                  type='submit' 
-                  className='btn-submit-testi' 
+                <button
+                  type='submit'
+                  className='btn-submit-testi'
                   disabled={isUploading}
                   style={{ opacity: isUploading ? 0.5 : 1 }}
                 >

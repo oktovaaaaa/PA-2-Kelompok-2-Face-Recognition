@@ -54,8 +54,6 @@ func SetupAuthRouter() *gin.Engine {
 	api.POST("/auth/forgot-password", handlers.ForgotPassword)
 	api.POST("/auth/reset-password", handlers.ResetPassword)
 	api.GET("/testimonials", handlers.GetTestimonials)
-	api.POST("/testimonials", handlers.CreateTestimonial)
-	api.POST("/testimonials/upload", handlers.UploadFile)
 
 	// Protected routes (semua user yang sudah login)
 	protected := api.Group("/")
@@ -103,6 +101,9 @@ func SetupAuthRouter() *gin.Engine {
 		admin.GET("/employees", handlers.GetEmployees)
 		admin.POST("/employees/fire", handlers.FireEmployee)
 		admin.POST("/employees/reactivate", handlers.ReactivateEmployee)
+		// Testimoni (hanya Admin yang bisa tambah)
+		admin.POST("/testimonials", handlers.CreateTestimonial)
+		admin.POST("/testimonials/upload", handlers.UploadFile)
 	}
 
 	// Super Admin API Routes
@@ -251,8 +252,6 @@ func SetupRouter() *gin.Engine {
 	api.POST("/auth/forgot-password", handlers.ForgotPassword)
 	api.POST("/auth/reset-password", handlers.ResetPassword)
 	api.GET("/testimonials", handlers.GetTestimonials)
-	api.POST("/testimonials", handlers.CreateTestimonial)
-	api.POST("/testimonials/upload", handlers.UploadFile)
 
 	// Protected routes (semua user yang sudah login)
 	protected := api.Group("/")
@@ -312,6 +311,10 @@ func SetupRouter() *gin.Engine {
 		admin.GET("/employees", handlers.GetEmployees)
 		admin.POST("/employees/fire", handlers.FireEmployee)
 		admin.POST("/employees/reactivate", handlers.ReactivateEmployee)
+
+		// Testimoni (hanya Admin yang bisa tambah)
+		admin.POST("/testimonials", handlers.CreateTestimonial)
+		admin.POST("/testimonials/upload", handlers.UploadFile)
 
 		// Perizinan karyawan
 		admin.GET("/leaves", handlers.AdminGetLeaveRequests)
