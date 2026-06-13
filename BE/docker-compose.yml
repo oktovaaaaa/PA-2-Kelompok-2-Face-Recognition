@@ -16,6 +16,7 @@ services:
 
   auth-service:
     build: .
+    image: videnti-app:latest
     command: ./auth
     container_name: videnti_auth
     restart: always
@@ -24,7 +25,7 @@ services:
       - postgres
 
   attendance-service:
-    build: .
+    image: videnti-app:latest
     command: ./attendance
     container_name: videnti_attendance
     restart: always
@@ -35,7 +36,7 @@ services:
       - uploads_data:/app/uploads
 
   payroll-service:
-    build: .
+    image: videnti-app:latest
     command: ./payroll
     container_name: videnti_payroll
     restart: always
@@ -44,7 +45,7 @@ services:
       - postgres
 
   gateway-service:
-    build: .
+    image: videnti-app:latest
     command: ./gateway
     container_name: videnti_gateway
     restart: always
@@ -58,7 +59,7 @@ services:
       - uploads_data:/app/uploads
 
   face-api-service:
-    build: .
+    image: videnti-app:latest
     command: python -m uvicorn process_face_api:app --host 0.0.0.0 --port 5000
     container_name: videnti_face_api
     restart: always
