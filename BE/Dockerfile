@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python packages
-RUN pip install --no-cache-dir numpy==1.24.3 pillow onnxruntime==1.16.3 opencv-python-headless insightface==0.7.3
+RUN pip install --no-cache-dir numpy==1.24.3 pillow onnxruntime==1.16.3 opencv-python-headless insightface==0.7.3 fastapi uvicorn
 
 # Copy precompiled Go binaries (compiled locally on Windows for Linux target)
 COPY gateway .
