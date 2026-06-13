@@ -18,7 +18,7 @@ COPY auth .
 COPY attendance .
 COPY payroll .
 RUN chmod +x gateway auth attendance payroll
-COPY process_face.py .
+COPY process_face.py process_face_api.py ./
 COPY service-account.json* ./
 
 # Copy environment files
