@@ -1,14 +1,3 @@
-# Dockerfile
-FROM golang:1.25-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o gateway cmd/gateway/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o auth cmd/auth/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o attendance cmd/attendance/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -p 1 -o payroll cmd/payroll/main.go
-
 # Build Python runtime
 FROM python:3.10-slim
 WORKDIR /app
@@ -23,16 +12,16 @@ RUN apt-get update && apt-get install -y \
 # Install python packages
 RUN pip install --no-cache-dir numpy==1.24.3 pillow onnxruntime==1.16.3 opencv-python-headless insightface==0.7.3
 
-# Copy compiled Go binaries
-COPY --from=builder /app/gateway .
-COPY --from=builder /app/auth .
-COPY --from=builder /app/attendance .
-COPY --from=builder /app/payroll .
-COPY --from=builder /app/process_face.py .
-COPY --from=builder /app/service-account.json* ./
+# Copy precompiled Go binaries (compiled locally on Windows for Linux target)
+COPY gateway .
+COPY auth .
+COPY attendance .
+COPY payroll .
+COPY process_face.py .
+COPY service-account.json* ./
 
 # Copy environment files
-COPY --from=builder /app/.env* ./
+COPY .env* ./
 
 # Create directory for uploads
 RUN mkdir -p uploads/profiles uploads/attendance

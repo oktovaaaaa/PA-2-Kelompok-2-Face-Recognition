@@ -1,0 +1,48 @@
+# Exclude git directory
+.git
+.gitignore
+
+# Exclude local executables and backups
+*.exe
+*.exe~
+*.bat
+
+# Exclude python virtual environment and caches
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+var/
+sdist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+parts/
+bin/
+var/
+sdist/
+release/
+build/
+dist/
+
+# Exclude media uploads and databases
+uploads/
+*.db
+*.sqlite
+
+# Exclude frontend/node modules if present
+node_modules/
+.next/
+dist/
+
+# Exclude temp files
+tmp/
+.temp/
+*.log
