@@ -76,7 +76,7 @@ return (
         const cloneDay = day
         
         // Find leaves for this day
-        const dayLeaves = leaves.filter(l => {
+        const dayLeaves = (leaves || []).filter(l => {
            // We'll normalize date strings from backend
            const lDate = new Date(l.created_at)
 

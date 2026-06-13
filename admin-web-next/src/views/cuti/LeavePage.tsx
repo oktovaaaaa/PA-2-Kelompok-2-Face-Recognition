@@ -36,7 +36,8 @@ const LeavePage = () => {
     setLoading(true)
 
     try {
-      const data = await leaveService.getLeaves({ year: new Date().getFullYear() })
+      const rawData = await leaveService.getLeaves({ year: new Date().getFullYear() })
+      const data = rawData || []
 
       setLeaves(data)
       

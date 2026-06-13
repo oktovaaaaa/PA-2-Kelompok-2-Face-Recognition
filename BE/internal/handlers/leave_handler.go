@@ -71,7 +71,7 @@ func AdminGetLeaveRequests(c *gin.Context) {
 		UserPhoto string `json:"user_photo"`
 	}
 
-	var result []LeaveWithUser
+	result := []LeaveWithUser{}
 	for _, l := range leaves {
 		res := LeaveWithUser{LeaveRequest: l}
 		if u, ok := userMap[l.UserID]; ok {
@@ -449,7 +449,7 @@ func EmployeeGetLeaves(c *gin.Context) {
 	month := c.Query("month")
 	year := c.Query("year")
 
-	var leaves []models.LeaveRequest
+	leaves := []models.LeaveRequest{}
 	query := database.DB.Where("user_id = ? AND is_deleted_by_employee = ?", emp.ID, false)
 
 	// Filter bulan & tahun menggunakan EXTRACT (Postgres)

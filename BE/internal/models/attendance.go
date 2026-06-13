@@ -17,14 +17,14 @@ type Attendance struct {
 	// Geofencing Audit info (Check-In)
 	CheckInLatitude   float64 `json:"check_in_latitude"`
 	CheckInLongitude  float64 `json:"check_in_longitude"`
-	CheckInLocationID string  `json:"check_in_location_id"`
+	CheckInLocationID *string `json:"check_in_location_id"`
 	CheckInLocation   CompanyLocation `gorm:"foreignKey:CheckInLocationID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"check_in_location,omitempty"`
 	CheckInDistance   float64 `json:"check_in_distance"`
 
 	// Geofencing Audit info (Check-Out)
 	CheckOutLatitude   float64 `json:"check_out_latitude"`
 	CheckOutLongitude  float64 `json:"check_out_longitude"`
-	CheckOutLocationID string  `json:"check_out_location_id"`
+	CheckOutLocationID *string `json:"check_out_location_id"`
 	CheckOutLocation   CompanyLocation `gorm:"foreignKey:CheckOutLocationID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"check_out_location,omitempty"`
 	CheckOutDistance   float64 `json:"check_out_distance"`
 

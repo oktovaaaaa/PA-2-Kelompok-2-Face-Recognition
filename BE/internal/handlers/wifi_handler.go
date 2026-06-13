@@ -56,10 +56,15 @@ func CreateCompanyWifi(c *gin.Context) {
 		isActiveVal = *body.IsActive
 	}
 
+	var locPtr *string
+	if body.LocationID != "" {
+		locPtr = &body.LocationID
+	}
+
 	wifi := models.CompanyWifi{
 		ID:         uuid.New().String(),
 		CompanyID:  admin.CompanyID,
-		LocationID: body.LocationID,
+		LocationID: locPtr,
 		Name:       body.Name,
 		BSSID:      body.BSSID,
 		IsActive:   isActiveVal,
@@ -105,7 +110,13 @@ func UpdateCompanyWifi(c *gin.Context) {
 	if body.BSSID != "" {
 		wifi.BSSID = body.BSSID
 	}
-	wifi.LocationID = body.LocationID // Boleh dikosongkan
+	
+	var locPtr *string
+	if body.LocationID != "" {
+		locPtr = &body.LocationID
+	}
+	wifi.LocationID = locPtr // Boleh dikosongkan
+
 	if body.IsActive != nil {
 		wifi.IsActive = *body.IsActive
 	}

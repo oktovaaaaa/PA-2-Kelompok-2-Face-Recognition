@@ -297,7 +297,12 @@ func CheckIn(c *gin.Context) {
 		}
 	}
 
-	upsertCheckIn(emp.ID, emp.CompanyID, today, now, status, deduction, req.Latitude, req.Longitude, validLoc.ID, minDistance)
+	errCheckIn := upsertCheckIn(emp.ID, emp.CompanyID, today, now, status, deduction, req.Latitude, req.Longitude, validLoc.ID, minDistance)
+	if errCheckIn != nil {
+		fmt.Printf("--> [ATTENDANCE ERROR] Gagal menyimpan check-in: %v\n", errCheckIn)
+		utils.Error(c, "Gagal menyimpan absensi masuk: "+errCheckIn.Error())
+		return
+	}
 	utils.Success(c, "Absensi masuk berhasil", gin.H{
 		"check_in_time": now.Format("15:04:05"),
 		"date":          today,
@@ -503,10 +508,20 @@ func CheckOut(c *gin.Context) {
 	// Update audit fields for check-out
 	att.CheckOutLatitude = req.Latitude
 	att.CheckOutLongitude = req.Longitude
-	att.CheckOutLocationID = validLoc.ID
+	
+	var checkOutLoc *string
+	if validLoc.ID != "" {
+		checkOutLoc = &validLoc.ID
+	}
+	att.CheckOutLocationID = checkOutLoc
+	
 	att.CheckOutDistance = minDistance
 
-	database.DB.Save(&att)
+	if err := database.DB.Save(&att).Error; err != nil {
+		fmt.Printf("--> [ATTENDANCE ERROR] Gagal menyimpan check-out: %v\n", err)
+		utils.Error(c, "Gagal menyimpan absensi pulang: "+err.Error())
+		return
+	}
 
 	utils.Success(c, "Absensi pulang berhasil", gin.H{
 		"check_out_time": now.Format("15:04:05"),
@@ -1333,9 +1348,15 @@ func getFilterStart(filter string) string {
 }
 
 // upsertCheckIn membuat atau update record check-in
-func upsertCheckIn(userID, companyID, date string, checkInTime time.Time, status string, deduction float64, lat, lon float64, locID string, dist float64) {
+func upsertCheckIn(userID, companyID, date string, checkInTime time.Time, status string, deduction float64, lat, lon float64, locID string, dist float64) error {
 	var att models.Attendance
 	err := database.DB.Where("user_id = ? AND date = ?", userID, date).First(&att).Error
+	
+	var checkInLoc *string
+	if locID != "" {
+		checkInLoc = &locID
+	}
+
 	if err != nil {
 		att = models.Attendance{
 			ID:              uuid.New().String(),
@@ -1347,20 +1368,25 @@ func upsertCheckIn(userID, companyID, date string, checkInTime time.Time, status
 			SalaryDeduction: deduction,
 			CheckInLatitude:  lat,
 			CheckInLongitude: lon,
-			CheckInLocationID: locID,
+			CheckInLocationID: checkInLoc,
 			CheckInDistance:  dist,
 		}
-		database.DB.Create(&att)
+		if err := database.DB.Create(&att).Error; err != nil {
+			return err
+		}
 	} else {
 		att.CheckInTime = &checkInTime
 		att.Status = status
 		att.SalaryDeduction = deduction
 		att.CheckInLatitude = lat
 		att.CheckInLongitude = lon
-		att.CheckInLocationID = locID
+		att.CheckInLocationID = checkInLoc
 		att.CheckInDistance = dist
-		database.DB.Save(&att)
+		if err := database.DB.Save(&att).Error; err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // helper parseT (pindah keluar untuk dipakai di CheckIn)

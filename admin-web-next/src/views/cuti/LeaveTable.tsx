@@ -104,7 +104,7 @@ const LeaveTable = ({ leaves, onView, onDelete }: Props) => {
     }
   }
 
-  const filteredLeaves = leaves.filter(l => 
+  const filteredLeaves = (leaves || []).filter(l => 
     (l.user_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
     (l.user_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (l.title || '').toLowerCase().includes(searchTerm.toLowerCase())

@@ -51,6 +51,8 @@ func main() {
 	r.Any("/api/admin/approve-employee", authProxy)  
 	r.Any("/api/admin/reject-employee", authProxy)    
 	r.Any("/api/admin/reset-device", authProxy)
+	r.Any("/api/admin/testimonials", authProxy)
+	r.Any("/api/admin/testimonials/*any", authProxy)
 
 	// Super Admin Features (Auth Service)
 	r.Any("/api/super-admin", authProxy)
