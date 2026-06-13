@@ -1,5 +1,3 @@
-// internal/models/bonus.go
-
 package models
 
 import "time"
@@ -7,7 +5,7 @@ import "time"
 type Bonus struct {
 	ID          string    `gorm:"primaryKey" json:"id"`
 	UserID      string    `gorm:"index" json:"user_id"`
-	User        User      `gorm:"-" json:"user"`
+	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user,omitempty"`
 	
 	Title       string    `json:"title"`
 	Description string    `json:"description"`

@@ -189,5 +189,10 @@ func UpdateCompanyStatus(c *gin.Context) {
 		return
 	}
 
+	go func() {
+		_ = database.SyncCompanyToAttendance(company)
+		_ = database.SyncCompanyToPayroll(company)
+	}()
+
 	utils.Success(c, "Status perusahaan berhasil diperbarui", company)
 }

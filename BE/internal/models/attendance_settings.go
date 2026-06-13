@@ -9,20 +9,21 @@ import "time"
 // CheckOutStart/End: rentang waktu boleh check-out (format "HH:MM")
 // AlphaPenalty: nilai potongan gaji (Rp) per hari tidak hadir (alpha)
 type AttendanceSettings struct {
-	ID        string `gorm:"primaryKey" json:"id"`
-	CompanyID string `gorm:"uniqueIndex" json:"company_id"`
+	ID        string  `gorm:"primaryKey" json:"id"`
+	CompanyID string  `gorm:"uniqueIndex" json:"company_id"`
+	Company   Company `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"company,omitempty"`
 
 	CheckInStart  string `json:"check_in_start"`  // contoh: "07:00"
 	CheckInEnd    string `json:"check_in_end"`    // contoh: "09:00"
 	CheckOutStart string `json:"check_out_start"` // contoh: "16:00"
 	CheckOutEnd   string `json:"check_out_end"`   // contoh: "18:00"
 
-	AlphaPenalty      float64 `json:"alpha_penalty"`      // Potongan gaji per hari alpha (Rp)
-	LatePenalty       float64 `json:"late_penalty"`       // Potongan gaji per hari terlambat (Rp) - Default
-	LatePenaltyTiers  string  `json:"late_penalty_tiers"` // JSON array: [{"hours": 1, "penalty": 50000}, ...]
+	AlphaPenalty      float64 `json:"alpha_penalty"`       // Potongan gaji per hari alpha (Rp)
+	LatePenalty       float64 `json:"late_penalty"`        // Potongan gaji per hari terlambat (Rp) - Default
+	LatePenaltyTiers  string  `json:"late_penalty_tiers"`  // JSON array: [{"hours": 1, "penalty": 50000}, ...]
 	EarlyLeavePenalty float64 `json:"early_leave_penalty"` // Potongan gaji jika pulang sebelum jam operasional (Rp)
 
-	WorkDays         string  `json:"work_days" gorm:"default:'Monday,Tuesday,Wednesday,Thursday,Friday'"`
+	WorkDays string `json:"work_days" gorm:"default:'Monday,Tuesday,Wednesday,Thursday,Friday'"`
 
 	// Geofencing
 	Latitude  float64 `json:"latitude"`

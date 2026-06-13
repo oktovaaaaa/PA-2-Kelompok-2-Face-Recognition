@@ -1,4 +1,3 @@
-CREATE DATABASE pa2frkel2;
 CREATE DATABASE pa2_auth;
 CREATE DATABASE pa2_attendance;
 CREATE DATABASE pa2_payroll;

@@ -11,6 +11,118 @@ import (
 	"gorm.io/gorm"
 )
 
+// SyncCompanyToAttendance menyalin data company dari Auth ke database Attendance secara manual.
+func SyncCompanyToAttendance(company models.Company) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_attendance", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Save(&company).Error
+}
+
+// SyncCompanyToPayroll menyalin data company dari Auth ke database Payroll secara manual.
+func SyncCompanyToPayroll(company models.Company) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_payroll", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Save(&company).Error
+}
+
+// SyncPositionToAttendance menyalin data position dari Auth ke database Attendance secara manual.
+func SyncPositionToAttendance(position models.Position) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_attendance", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Save(&position).Error
+}
+
+// SyncPositionToPayroll menyalin data position dari Auth ke database Payroll secara manual.
+func SyncPositionToPayroll(position models.Position) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_payroll", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Save(&position).Error
+}
+
+// DeleteCompanyToAttendance menghapus data company dari database Attendance.
+func DeleteCompanyToAttendance(id string) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_attendance", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Delete(&models.Company{}, "id = ?", id).Error
+}
+
+// DeleteCompanyToPayroll menghapus data company dari database Payroll.
+func DeleteCompanyToPayroll(id string) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_payroll", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Delete(&models.Company{}, "id = ?", id).Error
+}
+
+// DeletePositionToAttendance menghapus data position dari database Attendance.
+func DeletePositionToAttendance(id string) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_attendance", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Delete(&models.Position{}, "id = ?", id).Error
+}
+
+// DeletePositionToPayroll menghapus data position dari database Payroll.
+func DeletePositionToPayroll(id string) error {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
+		"pa2_payroll", os.Getenv("DB_PORT"),
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+	return db.Delete(&models.Position{}, "id = ?", id).Error
+}
+
 // SyncUserToAttendance menyalin data user dari Auth ke database Attendance secara manual.
 // Ini digunakan untuk menjaga prinsip microservices (DB terpisah) tapi data tetap tersinkron.
 func SyncUserToAttendance(user models.User) error {
@@ -83,6 +195,39 @@ func InitialSyncFromAuth() {
 		return
 	}
 
+	// 1. Sync Companies
+	var companies []models.Company
+	if err := authDB.Find(&companies).Error; err != nil {
+		fmt.Printf("[Sync] !!! ERROR QUERY COMPANY DI AUTH: %v\n", err)
+	} else {
+		fmt.Printf("[Sync] Ditemukan %d company di database pa2_auth. Mulai menyalin...\n", len(companies))
+		for _, c := range companies {
+			if err := SyncCompanyToAttendance(c); err != nil {
+				fmt.Printf("[Sync] !!! GAGAL menyalin company %s ke Attendance: %v\n", c.Name, err)
+			}
+			if err := SyncCompanyToPayroll(c); err != nil {
+				fmt.Printf("[Sync] !!! GAGAL menyalin company %s ke Payroll: %v\n", c.Name, err)
+			}
+		}
+	}
+
+	// 2. Sync Positions
+	var positions []models.Position
+	if err := authDB.Find(&positions).Error; err != nil {
+		fmt.Printf("[Sync] !!! ERROR QUERY POSITION DI AUTH: %v\n", err)
+	} else {
+		fmt.Printf("[Sync] Ditemukan %d position di database pa2_auth. Mulai menyalin...\n", len(positions))
+		for _, p := range positions {
+			if err := SyncPositionToAttendance(p); err != nil {
+				fmt.Printf("[Sync] !!! GAGAL menyalin position %s ke Attendance: %v\n", p.Name, err)
+			}
+			if err := SyncPositionToPayroll(p); err != nil {
+				fmt.Printf("[Sync] !!! GAGAL menyalin position %s ke Payroll: %v\n", p.Name, err)
+			}
+		}
+	}
+
+	// 3. Sync Users
 	var users []models.User
 	if err := authDB.Find(&users).Error; err != nil {
 		fmt.Printf("[Sync] !!! ERROR QUERY USER DI AUTH: %v\n", err)

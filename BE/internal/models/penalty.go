@@ -1,5 +1,3 @@
-// internal/models/penalty.go
-
 package models
 
 import "time"
@@ -7,7 +5,7 @@ import "time"
 type Penalty struct {
 	ID          string    `gorm:"primaryKey" json:"id"`
 	UserID      string    `gorm:"index" json:"user_id"`
-	User        User      `gorm:"-" json:"user"`
+	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user,omitempty"`
 	
 	Type        string    `json:"type"` // e.g. DAMAGE, CONDUCT, OTHER
 	Title       string    `json:"title"`

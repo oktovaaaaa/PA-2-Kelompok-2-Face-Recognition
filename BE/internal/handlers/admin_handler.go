@@ -201,6 +201,11 @@ func UpdateCompanySettings(c *gin.Context) {
 
 	database.DB.Save(&company)
 
+	go func() {
+		_ = database.SyncCompanyToAttendance(company)
+		_ = database.SyncCompanyToPayroll(company)
+	}()
+
 	utils.Success(c, "Data perusahaan berhasil diperbarui", company)
 }
 

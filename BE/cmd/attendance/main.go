@@ -29,10 +29,6 @@ func main() {
 		&models.CompanyWifi{},
 	)
 
-	// [FIX] Hapus constraint foreign key di database Attendance karena tabel Company/Position tidak ada isinya
-	database.DB.Exec("ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_company;")
-	database.DB.Exec("ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_position;")
-
 	// [NEW] Sinkronisasi awal data user dari DB Auth (karena DB terpisah)
 	database.InitialSyncFromAuth()
 

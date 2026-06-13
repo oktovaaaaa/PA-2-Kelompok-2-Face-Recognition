@@ -1,5 +1,3 @@
-// internal/models/leave_request.go
-
 package models
 
 import "time"
@@ -10,7 +8,10 @@ import "time"
 type LeaveRequest struct {
 	ID        string `gorm:"primaryKey" json:"id"`
 	UserID    string `gorm:"index" json:"user_id"`
+	User      User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user,omitempty"`
+
 	CompanyID string `gorm:"index" json:"company_id"`
+	Company   Company `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"company,omitempty"`
 
 	// IZIN | SAKIT
 	Type string `json:"type"`

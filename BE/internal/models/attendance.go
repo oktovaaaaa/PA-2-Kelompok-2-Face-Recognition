@@ -1,5 +1,3 @@
-// internal/models/attendance.go
-
 package models
 
 import "time"
@@ -9,7 +7,10 @@ import "time"
 type Attendance struct {
 	ID        string `gorm:"primaryKey" json:"id"`
 	UserID    string `gorm:"index" json:"user_id"`
+	User      User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user,omitempty"`
+
 	CompanyID string `gorm:"index" json:"company_id"`
+	Company   Company `gorm:"foreignKey:CompanyID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"company,omitempty"`
 
 	Date string `json:"date"` // format "YYYY-MM-DD"
 	
@@ -17,12 +18,14 @@ type Attendance struct {
 	CheckInLatitude   float64 `json:"check_in_latitude"`
 	CheckInLongitude  float64 `json:"check_in_longitude"`
 	CheckInLocationID string  `json:"check_in_location_id"`
+	CheckInLocation   CompanyLocation `gorm:"foreignKey:CheckInLocationID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"check_in_location,omitempty"`
 	CheckInDistance   float64 `json:"check_in_distance"`
 
 	// Geofencing Audit info (Check-Out)
 	CheckOutLatitude   float64 `json:"check_out_latitude"`
 	CheckOutLongitude  float64 `json:"check_out_longitude"`
 	CheckOutLocationID string  `json:"check_out_location_id"`
+	CheckOutLocation   CompanyLocation `gorm:"foreignKey:CheckOutLocationID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"check_out_location,omitempty"`
 	CheckOutDistance   float64 `json:"check_out_distance"`
 
 	CheckInTime  *time.Time `json:"check_in_time"`

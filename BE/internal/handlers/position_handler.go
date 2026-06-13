@@ -40,6 +40,10 @@ func CreatePosition(c *gin.Context) {
 		utils.Error(c, "Gagal membuat jabatan")
 		return
 	}
+	go func() {
+		_ = database.SyncPositionToAttendance(position)
+		_ = database.SyncPositionToPayroll(position)
+	}()
 	utils.Success(c, "Jabatan berhasil dibuat", position)
 }
 
@@ -79,6 +83,10 @@ func UpdatePosition(c *gin.Context) {
 	position.Salary = body.Salary
 	position.Description = body.Description
 	database.DB.Save(&position)
+	go func() {
+		_ = database.SyncPositionToAttendance(position)
+		_ = database.SyncPositionToPayroll(position)
+	}()
 	utils.Success(c, "Jabatan berhasil diperbarui", position)
 }
 
@@ -104,6 +112,10 @@ func DeletePosition(c *gin.Context) {
 	}
 
 	database.DB.Delete(&position)
+	go func() {
+		_ = database.DeletePositionToAttendance(id)
+		_ = database.DeletePositionToPayroll(id)
+	}()
 	utils.Success(c, "Jabatan berhasil dihapus", nil)
 }
 
