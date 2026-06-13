@@ -100,20 +100,12 @@ func CreatePenalty(c *gin.Context) {
 	generateSalary(userID, int(t.Month()), t.Year())
 
 	// Kirim Notifikasi ke Karyawan
-	notif := models.Notification{
-		ID:        uuid.New().String(),
-		UserID:    userID,
-		CompanyID: checkUser.CompanyID,
-		Title:     "Sanksi Baru",
-		Body:      fmt.Sprintf("Anda telah dikenakan sanksi sebesar %s atas: %s.", utils.FormatRupiah(amount), title),
-		Type:      "PENALTY_RECEIVED",
-		IsRead:    false,
-		CreatedAt: time.Now(),
-	}
-	database.DB.Create(&notif)
+	services.CreateNotification(userID, checkUser.CompanyID, "Sanksi Baru",
+		fmt.Sprintf("Anda telah dikenakan sanksi sebesar %s atas: %s.", utils.FormatRupiah(amount), title),
+		"PENALTY_RECEIVED", penalty.ID)
 
 	// Push Notification via FCM
-	services.SendPushNotification(checkUser.ID, notif.Title, notif.Body)
+	services.SendPushNotification(checkUser.ID, "Sanksi Baru", fmt.Sprintf("Anda telah dikenakan sanksi sebesar %s atas: %s.", utils.FormatRupiah(amount), title))
 
 	utils.Success(c, "Denda berhasil dicatatkan dan notifikasi dikirim", penalty)
 }

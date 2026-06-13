@@ -67,20 +67,12 @@ func AdminCreateBonus(c *gin.Context) {
 	generateSalary(input.UserID, int(t.Month()), t.Year())
 
 	// Kirim Notifikasi ke Karyawan
-	notif := models.Notification{
-		ID:        uuid.New().String(),
-		UserID:    input.UserID,
-		CompanyID: checkUser.CompanyID,
-		Title:     "Bonus Baru!",
-		Body:      fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title),
-		Type:      "BONUS_RECEIVED",
-		IsRead:    false,
-		CreatedAt: time.Now(),
-	}
-	database.DB.Create(&notif)
+	services.CreateNotification(input.UserID, checkUser.CompanyID, "Bonus Baru!",
+		fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title),
+		"BONUS_RECEIVED", bonus.ID)
 
 	// Push Notification via FCM
-	services.SendPushNotification(checkUser.ID, notif.Title, notif.Body)
+	services.SendPushNotification(checkUser.ID, "Bonus Baru!", fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title))
 
 	utils.Success(c, "Bonus berhasil dicatat dan notifikasi dikirim", bonus)
 }
