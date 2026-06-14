@@ -218,13 +218,11 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	err = services.SendOTPEmail(body.Email, code)
-
-	if err != nil {
-
-		utils.Error(c, "Gagal mengirim OTP")
-		return
-	}
+	go func() {
+		if err := services.SendOTPEmail(body.Email, code); err != nil {
+			fmt.Printf("[ERROR] Failed to send Login OTP: %v\n", err)
+		}
+	}()
 
 	utils.Success(c, "OTP login dikirim", nil)
 }
@@ -387,12 +385,11 @@ func GoogleLogin(c *gin.Context) {
 		return
 	}
 
-	err = services.SendOTPEmail(email, code)
-
-	if err != nil {
-		utils.Error(c, "Gagal mengirim OTP")
-		return
-	}
+	go func() {
+		if err := services.SendOTPEmail(email, code); err != nil {
+			fmt.Printf("[ERROR] Failed to send Google Login OTP: %v\n", err)
+		}
+	}()
 
 	utils.Success(c, "OTP login dikirim", nil)
 }
@@ -514,11 +511,11 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	err = services.SendOTPEmail(body.Email, code)
-	if err != nil {
-		utils.Error(c, "Gagal mengirim email reset")
-		return
-	}
+	go func() {
+		if err := services.SendOTPEmail(body.Email, code); err != nil {
+			fmt.Printf("[ERROR] Failed to send Forgot Password OTP: %v\n", err)
+		}
+	}()
 
 	utils.Success(c, "OTP reset password telah dikirim", nil)
 }
