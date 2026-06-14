@@ -485,7 +485,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                   title: 'Dashboard Web Utama',
                   subtitle: 'Menu administrasi lengkap via browser',
                   onTap: () async {
-                    final url = Uri.parse('http://localhost:3000/dashboard');
+                    final url = Uri.parse('https://videnti.web.id/dashboard');
                     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
                       if (context.mounted) AppDialog.showError(context, 'Tidak dapat membuka dashboard web');
                     }

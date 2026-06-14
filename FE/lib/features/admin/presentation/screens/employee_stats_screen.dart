@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:front_end/core/network/api_client.dart';
 import 'package:front_end/core/utils/date_formatter.dart';
 import 'package:front_end/core/utils/error_mapper.dart';
+import 'package:front_end/core/constants/app_constants.dart';
 import '../../../common/widgets/app_dialog.dart';
 
 class EmployeeStatsScreen extends StatefulWidget {
@@ -183,7 +184,7 @@ class _EmployeeStatsScreenState extends State<EmployeeStatsScreen> {
                           radius: 28,
                           backgroundColor: Colors.white.withOpacity(0.15),
                           backgroundImage: (widget.photoUrl != null && widget.photoUrl!.isNotEmpty)
-                              ? NetworkImage('http://10.0.2.2:8080${widget.photoUrl}')
+                              ? NetworkImage('${AppConstants.baseUrl}${widget.photoUrl}')
                               : null,
                           child: (widget.photoUrl == null || widget.photoUrl!.isEmpty)
                               ? Text(
