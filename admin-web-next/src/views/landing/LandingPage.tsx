@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { googleLogout } from '@react-oauth/google'
 
 import { useNotification } from '@/contexts/NotificationContext'
+import { settingService } from '@/libs/settingService'
 import './landing.css'
 
 // Image path as generated earlier
@@ -32,7 +33,6 @@ const LandingPage = () => {
   const [showContactForm, setShowContactForm] = useState(false)
   const [showTestimonialModal, setShowTestimonialModal] = useState(false)
   const [testimonials, setTestimonials] = useState<any[]>([])
-  const [isUploading, setIsUploading] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [windowWidth, setWindowWidth] = useState(0)
@@ -118,41 +118,28 @@ return () => {
     photo_url: ''
   })
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return
-    setIsUploading(true)
-    const fd = new FormData()
-
-    fd.append('file', e.target.files[0])
-
-    try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/testimonials/upload`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: fd
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-
-        setTestiForm(prev => ({ ...prev, photo_url: data.data?.url || '' }))
-        showNotification('Foto berhasil diunggah!', 'success')
-      } else {
-        showNotification('Gagal mengupload foto', 'error')
+  useEffect(() => {
+    if (showTestimonialModal && isLoggedIn) {
+      const loadProfile = async () => {
+        try {
+          const profile = await settingService.getProfile()
+          if (profile) {
+            setTestiForm(prev => ({
+              ...prev,
+              name: profile.name || prev.name,
+              photo_url: profile.photo_url || ''
+            }))
+          }
+        } catch (err) {
+          console.error('Gagal memuat profil admin:', err)
+        }
       }
-    } catch (err) { showNotification('Terjadi kesalahan saat upload', 'error') }
-
-    setIsUploading(false)
-  }
+      loadProfile()
+    }
+  }, [showTestimonialModal, isLoggedIn])
 
   const handleTestiSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (isUploading) {
-      showNotification('Tunggu hingga foto selesai diupload!', 'warning')
-      return
-    }
 
     if (testiForm.rating === 0) {
       showNotification('Silakan pilih rating minimal 1 bintang!', 'warning')
@@ -758,20 +745,11 @@ return tripled.map((testi, idx) => {
                     onChange={e => setTestiForm(prev => ({ ...prev, description: e.target.value }))}
                   />
                 </div>
-                <div className='input-group'>
-                  <label>Upload Foto Profil {isUploading && '(Sedang mengupload...)'}</label>
-                  <input type='file' accept='image/*' onChange={handleFileUpload} disabled={isUploading} />
-                  {testiForm.photo_url && !isUploading && (
-                    <p style={{ color: '#9fe811', fontSize: '0.8rem', marginTop: '0.5rem' }}>✓ Foto berhasil diunggah!</p>
-                  )}
-                </div>
                 <button
                   type='submit'
                   className='btn-submit-testi'
-                  disabled={isUploading}
-                  style={{ opacity: isUploading ? 0.5 : 1 }}
                 >
-                  {isUploading ? 'Menunggu Upload...' : 'Kirim Sekarang'}
+                  Kirim Sekarang
                 </button>
               </form>
             </div>
