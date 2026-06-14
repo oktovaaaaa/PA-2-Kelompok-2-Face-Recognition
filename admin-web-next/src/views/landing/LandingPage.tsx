@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { googleLogout } from '@react-oauth/google'
 
 import { useNotification } from '@/contexts/NotificationContext'
-import { settingService } from '@/libs/settingService'
+import { settingService, formatImageUrl } from '@/libs/settingService'
 import './landing.css'
 
 // Image path as generated earlier
@@ -634,7 +634,7 @@ return tripled.map((testi, idx) => {
                   const originalIndex = idx % displayData.length;
 
                   const avatarSrc = testi.photo_url 
-                    ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${testi.photo_url}`
+                    ? formatImageUrl(testi.photo_url) as string
                     : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
 
                   return (
@@ -673,7 +673,7 @@ return tripled.map((testi, idx) => {
                   const originalIndex = (L * 3 - 1 - idx) % L;
 
                   const avatarSrc = testi.photo_url 
-                    ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${testi.photo_url}`
+                    ? formatImageUrl(testi.photo_url) as string
                     : `/images/avatars/${(displayData.slice(0, originalIndex).filter((t: any) => !t.photo_url).length % 8) + 1}.png`;
 
                   return (
