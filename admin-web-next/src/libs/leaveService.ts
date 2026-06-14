@@ -26,7 +26,6 @@ export const formatImageUrl = (url?: string) => {
 
     return `${BASE_URL}${cleanUrl}`;
 };
-};
 
 export interface LeaveRequest {
   id: string
