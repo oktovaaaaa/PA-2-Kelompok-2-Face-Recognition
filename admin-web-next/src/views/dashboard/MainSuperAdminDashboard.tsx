@@ -190,8 +190,8 @@ const MainSuperAdminDashboard = () => {
                                     )}
                                     <Box className='relative'>
                                         <Avatar 
-                                            src={user.photo_url ? `http://localhost:8080${user.photo_url}` : undefined} 
-                                            sx={{ width: 40, height: 40, border: '2px solid var(--mui-palette-divider)', boxShadow: '0 0 15px rgba(99, 102, 241, 0.2)' }}
+                                            src={formatImageUrl(user.photo_url)} 
+                                            sx={{ width: 40, height: 40, border: '2px solid var(--mui-palette-divider)', boxShadow: '0 0 15px rgba(99, 102, 241, 0.2)' }}>
                                         >
                                             {user.name.charAt(0)}
                                         </Avatar>
@@ -237,8 +237,8 @@ const MainSuperAdminDashboard = () => {
                                     <Box className='relative mbe-4'>
                                         <Box className='absolute inset-0 bg-indigo-500 rounded-3xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity' />
                                         <Avatar 
-                                            src={company.logo_url ? `http://localhost:8080${company.logo_url}` : undefined}
-                                            sx={{ width: 64, height: 64, bgcolor: 'primary.light', color: 'primary.main', fontSize: '1.5rem', fontWeight: 900, borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                                            src={formatImageUrl(company.logo_url)}
+                                            sx={{ width: 64, height: 64, bgcolor: 'primary.light', color: 'primary.main', fontSize: '1.5rem', fontWeight: 900, borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                                         >
                                             {company.name.charAt(0)}
                                         </Avatar>

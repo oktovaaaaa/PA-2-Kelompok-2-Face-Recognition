@@ -24,6 +24,7 @@ import useVerticalNav from '@menu/hooks/useVerticalNav'
 
 // Service Imports
 import { employeeService, type Employee } from '@/libs/employeeService'
+import { formatImageUrl } from '@/libs/settingService'
 
 interface SearchItem {
   id: string
@@ -209,7 +210,7 @@ const NavSearch = () => {
                       <ListItemIcon sx={{ minWidth: 48 }}>
                         {item.type === 'EMPLOYEE' ? (
                           <Avatar 
-                            src={item.data?.photo_url ? `http://localhost:8080${item.data.photo_url}` : undefined}
+                            src={formatImageUrl(item.data?.photo_url)}
                             sx={{ width: 32, height: 32 }}
                           >
                             {item.name.charAt(0)}

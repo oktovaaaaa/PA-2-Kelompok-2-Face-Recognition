@@ -27,6 +27,7 @@ import {
 
 import type { Employee } from '../../libs/employeeService';
 import { employeeService } from '../../libs/employeeService'
+import { formatImageUrl } from '@/libs/settingService'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useNotification } from '@/contexts/NotificationContext'
 
@@ -198,7 +199,7 @@ const EmployeeApproval = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar 
-                          src={row.photo_url ? `http://localhost:8080${row.photo_url}` : undefined}
+                          src={formatImageUrl(row.photo_url)}
                           sx={{ mr: 3, width: 34, height: 34 }} 
                         >
                           {row.name?.charAt(0)}

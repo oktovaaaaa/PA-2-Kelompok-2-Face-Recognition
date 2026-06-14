@@ -33,6 +33,7 @@ import type { Position } from '@/libs/employeeService';
 import { employeeService } from '@/libs/employeeService'
 import SalaryDetailModal from './SalaryDetailModal'
 import { useNotification } from '@/contexts/NotificationContext'
+import { formatImageUrl } from '@/libs/settingService'
 
 const PayrollList = () => {
   const { showNotification } = useNotification()
@@ -196,12 +197,12 @@ const PayrollList = () => {
                   const balance = row.total_salary - row.paid_amount
 
                   
-return (
+                  return (
                     <TableRow key={row.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Avatar 
-                            src={row.user?.photo_url ? `http://localhost:8080${row.user.photo_url}` : undefined}
+                            src={formatImageUrl(row.user?.photo_url)}
                             sx={{ mr: 3, width: 34, height: 34, bgcolor: 'primary.light' }}
                           >
                             {row.user?.name?.charAt(0)}

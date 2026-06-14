@@ -24,6 +24,7 @@ import type { Salary } from '@/libs/payrollService';
 import { payrollService } from '@/libs/payrollService'
 import { useNotification } from '@/contexts/NotificationContext'
 import { formatFullDate, formatDateInString } from '@/utils/dateFormatter'
+import { formatImageUrl } from '@/libs/settingService'
 
 interface Props {
   open: boolean
@@ -97,7 +98,7 @@ return formattedDetail.split(';').filter(d => d.trim() !== '')
       <DialogContent sx={{ pt: 4 }}>
         <Box sx={{ p: 4, bgcolor: 'background.default', borderRadius: 2, mb: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
           <Avatar 
-                src={salary.user?.photo_url ? `http://localhost:8080${salary.user.photo_url}` : undefined}
+                src={formatImageUrl(salary.user?.photo_url)}
                 sx={{ width: 44, height: 44 }}
             >
                 {salary.user?.name?.charAt(0)}

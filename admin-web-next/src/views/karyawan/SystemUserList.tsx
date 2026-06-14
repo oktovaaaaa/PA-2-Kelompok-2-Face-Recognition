@@ -36,6 +36,7 @@ import {
 
 import { employeeService, Employee } from '../../libs/employeeService'
 import { formatFullDate } from '@/utils/dateFormatter'
+import { formatImageUrl } from '@/libs/settingService'
 
 const SystemUserList = () => {
   // States
@@ -302,8 +303,8 @@ const SystemUserList = () => {
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Avatar
-                              src={row.photo_url ? `http://localhost:8080${row.photo_url}` : undefined}
-                              sx={{ mr: 4, width: 44, height: 44, border: '2px solid var(--mui-palette-divider)' }}
+                              src={formatImageUrl(row.photo_url)}
+                              sx={{ mr: 4, width: 44, height: 44, border: '2px solid var(--mui-palette-divider)' }}>
                             >
                               {row.name.charAt(0)}
                             </Avatar>
@@ -369,8 +370,8 @@ const SystemUserList = () => {
             <Box className='relative h-32 bg-gradient-to-r from-indigo-600 to-purple-600'>
               <Box className='absolute -bottom-12 left-8'>
                 <Avatar
-                  src={selectedUser.photo_url ? `http://localhost:8080${selectedUser.photo_url}` : undefined}
-                  sx={{ width: 100, height: 100, border: '6px solid var(--mui-palette-background-paper)', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+                  src={formatImageUrl(selectedUser.photo_url)}
+                  sx={{ width: 100, height: 100, border: '6px solid var(--mui-palette-background-paper)', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}>
                 >
                   {selectedUser.name.charAt(0)}
                 </Avatar>
@@ -432,8 +433,8 @@ const SystemUserList = () => {
           <DialogContent className='p-0'>
             <Box className='bg-primary/5 p-10 flex flex-col items-center gap-6'>
               <Avatar
-                src={selectedCompany.logo_url ? `http://localhost:8080${selectedCompany.logo_url}` : undefined}
-                sx={{ width: 100, height: 100, border: '4px solid white', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: '2rem', bgcolor: 'primary.main' }}
+                src={formatImageUrl(selectedCompany.logo_url)}
+                sx={{ width: 100, height: 100, border: '4px solid white', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: '2rem', bgcolor: 'primary.main' }}>
               >
                 {selectedCompany.name.charAt(0)}
               </Avatar>

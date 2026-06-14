@@ -36,6 +36,7 @@ import type { ApexOptions } from 'apexcharts'
 
 import type { Employee} from '../../libs/employeeService';
 import { employeeService } from '../../libs/employeeService'
+import { formatImageUrl } from '@/libs/settingService'
 
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
@@ -308,7 +309,7 @@ return 'Alpha';
           <Grid item xs={12} md={5}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, mt: 2 }}>
               <Avatar
-                src={employee.photo_url ? `http://localhost:8080${employee.photo_url}` : undefined}
+                src={formatImageUrl(employee.photo_url)}
                 sx={{ width: 80, height: 80, mr: 4, borderRadius: 2, border: '3px solid #F1F5F9' }}
               >
                 {employee.name.charAt(0)}

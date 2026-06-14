@@ -27,13 +27,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Divider
+  Divider,
+  Alert
 } from '@mui/material'
 
 import { employeeService } from '../../libs/employeeService'
+import { settingService, formatImageUrl } from '@/libs/settingService'
 import { formatFullDate } from '@/utils/dateFormatter'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { useNotification } from '@/contexts/NotificationContext'
+import type { Profile } from '@/libs/settingService'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface Testimonial {
@@ -61,6 +64,7 @@ const TestimonialList = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [adminProfile, setAdminProfile] = useState<Profile | null>(null)
   const { showNotification } = useNotification()
 
   // Delete States
@@ -71,7 +75,6 @@ const TestimonialList = () => {
   const [openCreate, setOpenCreate] = useState(false)
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
 
   // Pagination States
   const [page, setPage] = useState(0)
@@ -81,12 +84,16 @@ const TestimonialList = () => {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await employeeService.getAllTestimonials()
+      const [data, profile] = await Promise.all([
+        employeeService.getAllTestimonials(),
+        settingService.getProfile()
+      ])
       setTestimonials(data || [])
+      setAdminProfile(profile)
       setPage(0)
     } catch (error) {
       console.error(error)
-      showNotification('Gagal memuat testimoni', 'error')
+      showNotification('Gagal memuat data testimoni', 'error')
     } finally {
       setLoading(false)
     }
@@ -113,36 +120,26 @@ const TestimonialList = () => {
 
   // ─── Create ───────────────────────────────────────────────────────────
   const handleOpenCreate = () => {
-    setForm(EMPTY_FORM)
+    // Pre-fill form with admin profile data
+    setForm({
+      name: adminProfile?.name || '',
+      rating: 0,
+      description: '',
+      photo_url: adminProfile?.photo_url || '',
+    })
     setOpenCreate(true)
   }
 
   const handleCloseCreate = () => {
-    if (isSubmitting || isUploading) return
+    if (isSubmitting) return
     setOpenCreate(false)
     setForm(EMPTY_FORM)
-  }
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return
-    setIsUploading(true)
-    try {
-      const result = await employeeService.uploadTestimonialPhoto(e.target.files[0])
-      setForm(prev => ({ ...prev, photo_url: result?.url || '' }))
-      showNotification('Foto berhasil diunggah!', 'success')
-    } catch (err) {
-      console.error(err)
-      showNotification('Gagal mengupload foto', 'error')
-    } finally {
-      setIsUploading(false)
-    }
   }
 
   const handleSubmitCreate = async () => {
     if (!form.name.trim()) { showNotification('Nama tidak boleh kosong', 'warning'); return }
     if (form.rating === 0) { showNotification('Pilih rating minimal 1 bintang', 'warning'); return }
     if (!form.description.trim()) { showNotification('Isi ulasan tidak boleh kosong', 'warning'); return }
-    if (isUploading) { showNotification('Tunggu foto selesai diunggah', 'warning'); return }
 
     setIsSubmitting(true)
     try {
@@ -270,9 +267,7 @@ const TestimonialList = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
-                          src={row.photo_url
-                            ? `${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${row.photo_url}`
-                            : `/images/avatars/${(testimonials.indexOf(row) % 8) + 1}.png`}
+                          src={formatImageUrl(row.photo_url) || `/images/avatars/${(testimonials.indexOf(row) % 8) + 1}.png`}
                           sx={{ mr: 4, width: 44, height: 44, border: '2px solid var(--mui-palette-divider)' }}
                         >
                           {row.name.charAt(0)}
@@ -356,6 +351,28 @@ const TestimonialList = () => {
         <Divider />
         <DialogContent sx={{ pt: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
 
+          {/* Foto Profil Otomatis */}
+          <Alert
+            icon={
+              <Avatar
+                src={formatImageUrl(adminProfile?.photo_url)}
+                sx={{ width: 36, height: 36 }}
+              >
+                {adminProfile?.name?.charAt(0)}
+              </Avatar>
+            }
+            severity='info'
+            variant='outlined'
+            sx={{ borderRadius: '12px', alignItems: 'center' }}
+          >
+            <Typography variant='body2' fontWeight={700}>
+              Foto profil Anda akan otomatis digunakan sebagai foto testimoni.
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              Untuk mengubah foto, perbarui foto profil Anda terlebih dahulu di menu Profil.
+            </Typography>
+          </Alert>
+
           {/* Nama */}
           <TextField
             label='Nama Pelanggan'
@@ -396,44 +413,13 @@ const TestimonialList = () => {
             placeholder='Tuliskan ulasan pelanggan...'
             InputProps={{ sx: { borderRadius: '12px' } }}
           />
-
-          {/* Upload Foto */}
-          <Box>
-            <Typography variant='body2' fontWeight={700} sx={{ mb: 1 }}>
-              Foto Profil <span style={{ color: 'var(--mui-palette-text-secondary)' }}>(Opsional)</span>
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-              {form.photo_url && (
-                <Avatar
-                  src={`${process.env.NEXT_PUBLIC_API_URL?.split('/api')[0]}${form.photo_url}`}
-                  sx={{ width: 56, height: 56, border: '2px solid var(--mui-palette-divider)' }}
-                />
-              )}
-              <Button
-                component='label'
-                variant='outlined'
-                size='small'
-                disabled={isUploading}
-                startIcon={isUploading ? <CircularProgress size={14} /> : <i className='ri-upload-2-line' />}
-                sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700 }}
-              >
-                {isUploading ? 'Mengunggah...' : form.photo_url ? 'Ganti Foto' : 'Upload Foto'}
-                <input type='file' hidden accept='image/*' onChange={handlePhotoUpload} />
-              </Button>
-              {form.photo_url && !isUploading && (
-                <Typography variant='caption' color='success.main' fontWeight={700}>
-                  ✓ Foto siap
-                </Typography>
-              )}
-            </Box>
-          </Box>
         </DialogContent>
 
         <DialogActions sx={{ px: 6, pb: 4, gap: 2 }}>
           <Button
             onClick={handleCloseCreate}
             variant='outlined'
-            disabled={isSubmitting || isUploading}
+            disabled={isSubmitting}
             sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700 }}
           >
             Batal
@@ -441,7 +427,7 @@ const TestimonialList = () => {
           <Button
             onClick={handleSubmitCreate}
             variant='contained'
-            disabled={isSubmitting || isUploading}
+            disabled={isSubmitting}
             startIcon={isSubmitting ? <CircularProgress size={16} color='inherit' /> : <i className='ri-send-plane-2-line' />}
             sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, px: 4 }}
           >
