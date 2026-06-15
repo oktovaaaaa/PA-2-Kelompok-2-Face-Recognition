@@ -11,11 +11,11 @@ func main() {
 	config.LoadEnv(".env.attendance")
 	database.ConnectDatabase("Diagnostic-Check")
 	
-	var users []models.User
-	database.DB.Order("created_at asc").Find(&users)
-	fmt.Printf("--> DIAGNOSTIC: Found %d users:\n", len(users))
-	for _, u := range users {
-		fmt.Printf("Name=%s, Email=%s, Role=%s, Status=%s, CreatedAt=%s\n", u.Name, u.Email, u.Role, u.Status, u.CreatedAt.Format("2006-01-02 15:04:05"))
+	var settings []models.AttendanceSettings
+	database.DB.Find(&settings)
+	fmt.Printf("--> DIAGNOSTIC: Found %d settings:\n", len(settings))
+	for _, s := range settings {
+		fmt.Printf("CompanyID=%s, LatePenalty=%f, AlphaPenalty=%f, EarlyLeavePenalty=%f\n", s.CompanyID, s.LatePenalty, s.AlphaPenalty, s.EarlyLeavePenalty)
 	}
 }
 
