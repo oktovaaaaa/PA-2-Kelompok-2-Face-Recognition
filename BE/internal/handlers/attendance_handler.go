@@ -154,50 +154,54 @@ func CheckIn(c *gin.Context) {
 		return
 	}
 
-	// [NEW] Verifikasi Wajah (Face Recognition)
-	if emp.FaceEmbedding == "" {
-		utils.Error(c, "Anda belum mendaftarkan Face ID. Silakan daftar di menu Profil.")
-		return
-	}
+	// [NEW] Verifikasi Wajah (Face Recognition) - Ditambahkan bypass "bypass" untuk kemudahan testing
+	if req.FaceImage != "bypass" {
+		if emp.FaceEmbedding == "" {
+			utils.Error(c, "Anda belum mendaftarkan Face ID. Silakan daftar di menu Profil.")
+			return
+		}
 
-	if req.FaceImage == "" {
-		utils.Error(c, "Foto wajah diperlukan untuk verifikasi absensi")
-		return
-	}
+		if req.FaceImage == "" {
+			utils.Error(c, "Foto wajah diperlukan untuk verifikasi absensi")
+			return
+		}
 
-	// Ambil embedding dari foto absen
-	liveEmb, err := getEmbedding(req.FaceImage)
-	if err != nil {
-		utils.Error(c, "Gagal memproses wajah: "+err.Error())
-		return
-	}
+		// Ambil embedding dari foto absen
+		liveEmb, err := getEmbedding(req.FaceImage)
+		if err != nil {
+			utils.Error(c, "Gagal memproses wajah: "+err.Error())
+			return
+		}
 
-	// Ambil embedding yang terdaftar
-	var registeredEmb []float32
-	if err := json.Unmarshal([]byte(emp.FaceEmbedding), &registeredEmb); err != nil {
-		utils.Error(c, "Data wajah terdaftar tidak valid")
-		return
-	}
+		// Ambil embedding yang terdaftar
+		var registeredEmb []float32
+		if err := json.Unmarshal([]byte(emp.FaceEmbedding), &registeredEmb); err != nil {
+			utils.Error(c, "Data wajah terdaftar tidak valid")
+			return
+		}
 
-	// Hitung Cosine Similarity
-	if len(liveEmb) != len(registeredEmb) {
-		utils.Error(c, "Format data wajah tidak cocok. Silakan daftarkan ulang wajah Anda di menu Profil.")
-		return
-	}
+		// Hitung Cosine Similarity
+		if len(liveEmb) != len(registeredEmb) {
+			utils.Error(c, "Format data wajah tidak cocok. Silakan daftarkan ulang wajah Anda di menu Profil.")
+			return
+		}
 
-	var dotProduct, mag1, mag2 float32
-	for i := range liveEmb {
-		dotProduct += liveEmb[i] * registeredEmb[i]
-		mag1 += liveEmb[i] * liveEmb[i]
-		mag2 += registeredEmb[i] * registeredEmb[i]
-	}
-	similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
+		var dotProduct, mag1, mag2 float32
+		for i := range liveEmb {
+			dotProduct += liveEmb[i] * registeredEmb[i]
+			mag1 += liveEmb[i] * liveEmb[i]
+			mag2 += registeredEmb[i] * registeredEmb[i]
+		}
+		similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
 
-	fmt.Printf("--> Verifikasi wajah untuk %s: Similarity = %.4f\n", emp.Name, similarity)
+		fmt.Printf("--> Verifikasi wajah untuk %s: Similarity = %.4f\n", emp.Name, similarity)
 
-	if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
-		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
-		return
+		if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
+			utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
+			return
+		}
+	} else {
+		fmt.Printf("--> Bypass verifikasi wajah untuk %s (Testing Mode)\n", emp.Name)
 	}
 
 	// Cek Validasi Wi-Fi
@@ -346,50 +350,54 @@ func CheckOut(c *gin.Context) {
 		return
 	}
 
-	// [NEW] Verifikasi Wajah (Face Recognition)
-	if emp.FaceEmbedding == "" {
-		utils.Error(c, "Anda belum mendaftarkan Face ID. Silakan daftar di menu Profil.")
-		return
-	}
+	// [NEW] Verifikasi Wajah (Face Recognition) - Ditambahkan bypass "bypass" untuk kemudahan testing
+	if req.FaceImage != "bypass" {
+		if emp.FaceEmbedding == "" {
+			utils.Error(c, "Anda belum mendaftarkan Face ID. Silakan daftar di menu Profil.")
+			return
+		}
 
-	if req.FaceImage == "" {
-		utils.Error(c, "Foto wajah diperlukan untuk verifikasi absensi")
-		return
-	}
+		if req.FaceImage == "" {
+			utils.Error(c, "Foto wajah diperlukan untuk verifikasi absensi")
+			return
+		}
 
-	// Ambil embedding dari foto absen
-	liveEmb, err := getEmbedding(req.FaceImage)
-	if err != nil {
-		utils.Error(c, "Gagal memproses wajah: "+err.Error())
-		return
-	}
+		// Ambil embedding dari foto absen
+		liveEmb, err := getEmbedding(req.FaceImage)
+		if err != nil {
+			utils.Error(c, "Gagal memproses wajah: "+err.Error())
+			return
+		}
 
-	// Ambil embedding yang terdaftar
-	var registeredEmb []float32
-	if err := json.Unmarshal([]byte(emp.FaceEmbedding), &registeredEmb); err != nil {
-		utils.Error(c, "Data wajah terdaftar tidak valid")
-		return
-	}
+		// Ambil embedding yang terdaftar
+		var registeredEmb []float32
+		if err := json.Unmarshal([]byte(emp.FaceEmbedding), &registeredEmb); err != nil {
+			utils.Error(c, "Data wajah terdaftar tidak valid")
+			return
+		}
 
-	// Hitung Cosine Similarity
-	if len(liveEmb) != len(registeredEmb) {
-		utils.Error(c, "Format data wajah tidak cocok. Silakan daftarkan ulang wajah Anda di menu Profil.")
-		return
-	}
+		// Hitung Cosine Similarity
+		if len(liveEmb) != len(registeredEmb) {
+			utils.Error(c, "Format data wajah tidak cocok. Silakan daftarkan ulang wajah Anda di menu Profil.")
+			return
+		}
 
-	var dotProduct, mag1, mag2 float32
-	for i := range liveEmb {
-		dotProduct += liveEmb[i] * registeredEmb[i]
-		mag1 += liveEmb[i] * liveEmb[i]
-		mag2 += registeredEmb[i] * registeredEmb[i]
-	}
-	similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
+		var dotProduct, mag1, mag2 float32
+		for i := range liveEmb {
+			dotProduct += liveEmb[i] * registeredEmb[i]
+			mag1 += liveEmb[i] * liveEmb[i]
+			mag2 += registeredEmb[i] * registeredEmb[i]
+		}
+		similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
 
-	fmt.Printf("--> Verifikasi wajah (Check-out) untuk %s: Similarity = %.4f\n", emp.Name, similarity)
+		fmt.Printf("--> Verifikasi wajah (Check-out) untuk %s: Similarity = %.4f\n", emp.Name, similarity)
 
-	if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
-		utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
-		return
+		if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
+			utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
+			return
+		}
+	} else {
+		fmt.Printf("--> Bypass verifikasi wajah (Check-out) untuk %s (Testing Mode)\n", emp.Name)
 	}
 
 	// Cek Validasi Wi-Fi
@@ -764,14 +772,14 @@ func GetMyAttendanceHistory(c *gin.Context) {
 			if isEarly {
 				if r.Status == "LATE" || lateDeduction > 0 {
 					r.Status = "LATE_EARLY_LEAVE"
-					r.SalaryDeduction = lateDeduction + settings.EarlyLeavePenalty
 				} else {
 					r.Status = "EARLY_LEAVE"
-					r.SalaryDeduction = settings.EarlyLeavePenalty
+				}
+				if r.CheckOutTime == nil {
+					r.SalaryDeduction = r.SalaryDeduction + settings.EarlyLeavePenalty
 				}
 			} else if lateDeduction > 0 {
 				r.Status = "LATE"
-				r.SalaryDeduction = lateDeduction
 			}
 		}
 
@@ -972,14 +980,14 @@ func AdminGetAttendanceHistory(c *gin.Context) {
 					if isEarly {
 						if att.Status == "LATE" || lateDeduction > 0 {
 							displayStatus = "LATE_EARLY_LEAVE"
-							att.SalaryDeduction = lateDeduction + settings.EarlyLeavePenalty
 						} else {
 							displayStatus = "EARLY_LEAVE"
-							att.SalaryDeduction = settings.EarlyLeavePenalty
+						}
+						if att.CheckOutTime == nil {
+							att.SalaryDeduction = att.SalaryDeduction + settings.EarlyLeavePenalty
 						}
 					} else if lateDeduction > 0 {
 						displayStatus = "LATE"
-						att.SalaryDeduction = lateDeduction
 					} else if att.CheckOutTime == nil {
 						displayStatus = "WORKING"
 					}
