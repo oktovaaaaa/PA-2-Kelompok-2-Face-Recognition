@@ -621,6 +621,7 @@ func GetTodayAttendance(c *gin.Context) {
 		"attendance":             att,
 		"has_record":             len(attList) > 0,
 		"settings":               settings,
+		"rules":                  settings,
 		"current_time":           now.Format("15:04:05"),
 		"display_status":         displayStatus,
 		"total_deduction_month":  totalDeductionMonth,
