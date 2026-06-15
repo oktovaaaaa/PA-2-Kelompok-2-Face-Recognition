@@ -15,6 +15,7 @@ func main() {
 	// 1. Load specific env for Attendance Service
 	config.LoadEnv(".env.attendance")
 
+
 	// 2. Connect to Attendance Database
 	database.ConnectDatabase("Attendance-Service")
 

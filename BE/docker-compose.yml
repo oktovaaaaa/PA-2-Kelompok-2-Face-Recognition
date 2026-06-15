@@ -25,6 +25,8 @@ services:
       - postgres
     volumes:
       - uploads_data:/app/uploads
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
   attendance-service:
     image: videnti-app:latest
@@ -36,6 +38,8 @@ services:
       - postgres
     volumes:
       - uploads_data:/app/uploads
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
   payroll-service:
     image: videnti-app:latest
@@ -47,6 +51,8 @@ services:
       - postgres
     volumes:
       - uploads_data:/app/uploads
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
   gateway-service:
     image: videnti-app:latest
@@ -61,6 +67,8 @@ services:
       - face-api-service
     volumes:
       - uploads_data:/app/uploads
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
   face-api-service:
     image: videnti-app:latest
