@@ -28,7 +28,7 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 2500),
     )..repeat();
-    
+
     _rippleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _rippleController, curve: Curves.easeOut),
     );
@@ -58,10 +58,8 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             final auth = Provider.of<AuthProvider>(context, listen: false);
-            auth.login({
-              'id': userId,
-              'role': role?.toUpperCase(),
-            });
+            auth.login({'id': userId, 'role': role?.toUpperCase()});
+            auth.lockSession(); // Kunci sesi secara otomatis saat startup jika sudah login
           }
         });
       }
@@ -88,7 +86,9 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
           children: [
             // Top Premium Waves
             Positioned(
-              top: 0, left: 0, right: 0,
+              top: 0,
+              left: 0,
+              right: 0,
               child: CustomPaint(
                 size: Size(MediaQuery.of(context).size.width, 200),
                 painter: TopPremiumWavePainter(),
@@ -97,13 +97,15 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
 
             // High Quality Organic Waves
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: CustomPaint(
                 size: Size(MediaQuery.of(context).size.width, 320),
                 painter: PremiumWavePainter(),
               ),
             ),
-            
+
             // Central Branding
             Center(
               child: Column(
@@ -125,8 +127,13 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
                         tag: 'logo',
                         child: Image.asset(
                           'assets/images/videnti.png',
-                          width: 140, height: 140,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.face_retouching_natural_rounded, size: 100, color: Color(0xFF2563EB)),
+                          width: 140,
+                          height: 140,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.face_retouching_natural_rounded,
+                            size: 100,
+                            color: Color(0xFF2563EB),
+                          ),
                         ),
                       ),
                     ],
@@ -148,7 +155,8 @@ class _SplashGateState extends State<SplashGate> with TickerProviderStateMixin {
             // Minimalist Loading Section
             Positioned(
               bottom: 100,
-              left: 50, right: 50,
+              left: 50,
+              right: 50,
               child: Column(
                 children: [
                   Text(
@@ -200,8 +208,8 @@ class LogoRipplePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // Geser pusat lebih jauh ke bawah logo agar tidak bertumpukan
-    final center = Offset(size.width / 2, size.height / 2 + 65); 
-    
+    final center = Offset(size.width / 2, size.height / 2 + 65);
+
     for (int i = 0; i < 3; i++) {
       final double progress = (animationValue + (i / 3)) % 1.0;
       final double opacity = (1.0 - progress) * 0.4; // Opasitas lebih tebal
@@ -211,16 +219,19 @@ class LogoRipplePainter extends CustomPainter {
       final paint = Paint()
         ..color = const Color(0xFF2563EB).withOpacity(opacity)
         ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5); // Haluskan pinggirnya
+        ..maskFilter = const MaskFilter.blur(
+          BlurStyle.normal,
+          5,
+        ); // Haluskan pinggirnya
 
       final Rect rect = Rect.fromCenter(
         center: center,
-        width: 160 * scale,   
-        height: 45 * scale,   
+        width: 160 * scale,
+        height: 45 * scale,
       );
-      
+
       canvas.drawOval(rect, paint);
-      
+
       // Tambahkan pendaran cahaya (Glow) ekstra di tengah
       if (i == 0) {
         final glowPaint = Paint()
@@ -228,7 +239,7 @@ class LogoRipplePainter extends CustomPainter {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
         canvas.drawOval(
           Rect.fromCenter(center: center, width: 80, height: 25),
-          glowPaint
+          glowPaint,
         );
       }
     }
@@ -242,12 +253,19 @@ class TopPremiumWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint();
-    
+
     // Layer 1
     paint.color = const Color(0xFFDBEAFE).withOpacity(0.3);
     var path1 = Path();
     path1.lineTo(0, size.height * 0.7);
-    path1.cubicTo(size.width * 0.3, size.height * 0.9, size.width * 0.6, size.height * 0.5, size.width, size.height * 0.6);
+    path1.cubicTo(
+      size.width * 0.3,
+      size.height * 0.9,
+      size.width * 0.6,
+      size.height * 0.5,
+      size.width,
+      size.height * 0.6,
+    );
     path1.lineTo(size.width, 0);
     path1.close();
     canvas.drawPath(path1, paint);
@@ -256,7 +274,14 @@ class TopPremiumWavePainter extends CustomPainter {
     paint.color = const Color(0xFFEFF6FF).withOpacity(0.5);
     var path2 = Path();
     path2.lineTo(0, size.height * 0.5);
-    path2.cubicTo(size.width * 0.4, size.height * 0.7, size.width * 0.7, size.height * 0.3, size.width, size.height * 0.4);
+    path2.cubicTo(
+      size.width * 0.4,
+      size.height * 0.7,
+      size.width * 0.7,
+      size.height * 0.3,
+      size.width,
+      size.height * 0.4,
+    );
     path2.lineTo(size.width, 0);
     path2.close();
     canvas.drawPath(path2, paint);
@@ -265,7 +290,14 @@ class TopPremiumWavePainter extends CustomPainter {
     paint.color = const Color(0xFFF8FAFC).withOpacity(0.4);
     var path3 = Path();
     path3.lineTo(0, size.height * 0.3);
-    path3.cubicTo(size.width * 0.3, size.height * 0.4, size.width * 0.7, size.height * 0.2, size.width, size.height * 0.2);
+    path3.cubicTo(
+      size.width * 0.3,
+      size.height * 0.4,
+      size.width * 0.7,
+      size.height * 0.2,
+      size.width,
+      size.height * 0.2,
+    );
     path3.lineTo(size.width, 0);
     path3.close();
     canvas.drawPath(path3, paint);
@@ -279,12 +311,19 @@ class PremiumWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint();
-    
+
     // Bottom Layer 1
     paint.color = const Color(0xFFDBEAFE).withOpacity(0.4);
     var path1 = Path();
     path1.moveTo(0, size.height * 0.6);
-    path1.cubicTo(size.width * 0.3, size.height * 0.4, size.width * 0.7, size.height * 0.8, size.width, size.height * 0.5);
+    path1.cubicTo(
+      size.width * 0.3,
+      size.height * 0.4,
+      size.width * 0.7,
+      size.height * 0.8,
+      size.width,
+      size.height * 0.5,
+    );
     path1.lineTo(size.width, size.height);
     path1.lineTo(0, size.height);
     path1.close();
@@ -294,7 +333,14 @@ class PremiumWavePainter extends CustomPainter {
     paint.color = const Color(0xFFEFF6FF).withOpacity(0.6);
     var path2 = Path();
     path2.moveTo(0, size.height * 0.75);
-    path2.cubicTo(size.width * 0.3, size.height * 0.6, size.width * 0.7, size.height * 0.9, size.width, size.height * 0.7);
+    path2.cubicTo(
+      size.width * 0.3,
+      size.height * 0.6,
+      size.width * 0.7,
+      size.height * 0.9,
+      size.width,
+      size.height * 0.7,
+    );
     path2.lineTo(size.width, size.height);
     path2.lineTo(0, size.height);
     path2.close();
@@ -304,7 +350,14 @@ class PremiumWavePainter extends CustomPainter {
     paint.color = const Color(0xFFF0F9FF).withOpacity(0.8);
     var path3 = Path();
     path3.moveTo(0, size.height * 0.9);
-    path3.cubicTo(size.width * 0.4, size.height * 0.8, size.width * 0.7, size.height * 1.0, size.width, size.height * 0.85);
+    path3.cubicTo(
+      size.width * 0.4,
+      size.height * 0.8,
+      size.width * 0.7,
+      size.height * 1.0,
+      size.width,
+      size.height * 0.85,
+    );
     path3.lineTo(size.width, size.height);
     path3.lineTo(0, size.height);
     path3.close();
