@@ -19,6 +19,7 @@ import (
 
 // AdminCreateBonus - Catat bonus manual untuk karyawan
 func AdminCreateBonus(c *gin.Context) {
+	// 1. bind request json ke struct input
 	var input struct {
 		UserID      string  `json:"user_id" binding:"required"`
 		Title       string  `json:"title" binding:"required"`
@@ -35,7 +36,7 @@ func AdminCreateBonus(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	admin := userCtx.(models.User)
 
-	// [FIX MICROSERVICES] Verifikasi via Auth Service (Port 8081)
+	// 2. panggil auth service internal untuk memverifikasi data karyawan
 	var checkUser models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", input.UserID)
 	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
@@ -43,11 +44,13 @@ func AdminCreateBonus(c *gin.Context) {
 		return
 	}
 
+	// 3. validasi kecocokan perusahaan admin dengan perusahaan karyawan
 	if checkUser.CompanyID != admin.CompanyID {
 		utils.Error(c, "Karyawan tidak ditemukan di instansi Anda")
 		return
 	}
 
+	// 4. inisialisasi model bonus baru
 	bonus := models.Bonus{
 		ID:          uuid.New().String(),
 		UserID:      input.UserID,
@@ -57,21 +60,22 @@ func AdminCreateBonus(c *gin.Context) {
 		Date:        input.Date,
 	}
 
+	// 5. simpan data bonus ke database
 	if err := database.DB.Create(&bonus).Error; err != nil {
 		utils.Error(c, "Gagal mencatat bonus: "+err.Error())
 		return
 	}
 
-	// Trigger sinkronisasi gaji untuk bulan tersebut
+	// 6. hitung ulang (recalculate) total gaji karyawan pada bulan terkait
 	t, _ := time.Parse("2006-01-02", input.Date)
 	generateSalary(input.UserID, int(t.Month()), t.Year())
 
-	// Kirim Notifikasi ke Karyawan
+	// 7. buat notifikasi dalam sistem database
 	services.CreateNotification(input.UserID, checkUser.CompanyID, "Bonus Baru!",
 		fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title),
 		"BONUS_RECEIVED", bonus.ID)
 
-	// Push Notification via FCM
+	// 8. kirim push notification firebase secara real-time
 	services.SendPushNotification(checkUser.ID, "Bonus Baru!", fmt.Sprintf("Anda menerima bonus sebesar %s untuk: %s", utils.FormatRupiah(input.Amount), input.Title))
 
 	utils.Success(c, "Bonus berhasil dicatat dan notifikasi dikirim", bonus)

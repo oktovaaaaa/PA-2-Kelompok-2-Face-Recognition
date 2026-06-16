@@ -352,48 +352,45 @@ func repairDuplicates(userID string, month int, year int) {
 }
 
 func generateSalary(userID string, month int, year int) {
-	// 1. Fetch User data from Auth Service (Microservices)
+	// 1. ambil data user karyawan secara internal dari auth service
 	var user models.User
-	
 	utils.CallInternalAPI(fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID), &user)
 
 	if user.ID == "" {
 		return
 	}
 
-	// JANGAN buat gaji untuk peran ADMIN
+	// 2. jangan buat/hitung payroll untuk user dengan peran admin
 	if user.Role == "ADMIN" {
-		// Cleanup jika ada record tersisa
 		database.DB.Where("user_id = ?", userID).Delete(&models.Salary{})
 		return
 	}
 
-	// JANGAN buat gaji untuk bulan SEBELUM karyawan bergabung
+	// 3. abaikan atau bersihkan data jika bulan target sebelum karyawan tersebut resmi bergabung
 	joinMonth := time.Date(user.CreatedAt.Year(), user.CreatedAt.Month(), 1, 0, 0, 0, 0, time.Local)
 	targetMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
 	if targetMonth.Before(joinMonth) {
-		// Jika ini adalah data sampah dari bug sebelumnya, kita hapus saja
 		database.DB.Where("user_id = ? AND month = ? AND year = ?", userID, month, year).Delete(&models.Salary{})
 		return
 	}
 
-	// [NEW] Perbaiki record ganda sebelum memproses update
+	// 4. bersihkan duplikasi record gaji ganda jika ditemukan
 	repairDuplicates(userID, month, year)
 
-	// Gaji dasar dari Position
+	// 5. dapatkan gaji pokok berdasarkan jabatan karyawan saat ini
 	baseSalary := 0.0
 	if user.PositionID != nil {
 		baseSalary = user.Position.Salary
 	}
 
-	// Hitung Penyesuaian (Bonuses & Deductions)
+	// 6. ambil total potongan dan bonus baik dari absensi (terlambat/alpha) maupun input manual
 	deductions, bonuses, deductionDetails, bonusDetails := FetchAdjustmentsFromAttendance(userID, month, year)
 
-	// Update or Create
+	// 7. cari data gaji bulan ini di database
 	var salary models.Salary
 	database.DB.Where("user_id = ? AND month = ? AND year = ?", userID, month, year).First(&salary)
 
-	// Recalculate PaidAmount from actual payments to fix corruption
+	// 8. hitung ulang nominal yang sudah dibayarkan dari data pembayaran riil
 	var actualPaid float64
 	database.DB.Model(&models.SalaryPayment{}).Where("salary_id = ?", salary.ID).Select("COALESCE(sum(amount), 0)").Scan(&actualPaid)
 	salary.PaidAmount = actualPaid
@@ -410,7 +407,7 @@ func generateSalary(userID string, month int, year int) {
 	salary.Deductions = deductions
 	salary.Bonuses = bonuses
 	
-	// Trim trailing semicolon and space from details
+	// 9. rapikan detail teks rincian potongan dan bonus
 	if len(deductionDetails) > 2 && deductionDetails[len(deductionDetails)-2:] == "; " {
 		deductionDetails = deductionDetails[:len(deductionDetails)-2]
 	}
@@ -425,7 +422,7 @@ func generateSalary(userID string, month int, year int) {
 		salary.TotalSalary = 0
 	}
 
-	// Sinkronisasi status berdasarkan histori pembayaran
+	// 10. perbarui status pembayaran berdasarkan rasio total gaji dan jumlah terbayar
 	if salary.TotalSalary > 0 {
 		if salary.PaidAmount >= salary.TotalSalary {
 			salary.Status = "PAID"
@@ -438,6 +435,7 @@ func generateSalary(userID string, month int, year int) {
 		salary.Status = "PENDING"
 	}
 
+	// 11. simpan perubahan data gaji ke database
 	database.DB.Save(&salary)
 }
 

@@ -104,7 +104,7 @@ const LocationSettings = () => {
       
 return;
     }
-
+    // search menggunakan api openstreetmap
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`, {

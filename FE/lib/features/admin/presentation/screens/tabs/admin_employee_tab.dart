@@ -311,13 +311,16 @@ class _AdminEmployeeTabState extends State<AdminEmployeeTab> with SingleTickerPr
                   onPressed: () async {
                     Navigator.pop(ctx);
                     try {
+                      // 1. kirim request post ke api dengan membawa user_id karyawan dan position_id jabatan baru
                       final res = await ApiClient.post('/api/admin/positions/assign',
                           {'user_id': emp['id'], 'position_id': selectedPositionId ?? ''});
                       if (!mounted) return;
                       if (res.success) {
+                        // 2. tampilkan dialog sukses jika berhasil dan muat ulang data karyawan
                         AppDialog.showSuccess(context, 'Jabatan berhasil diset untuk ${emp['name']}');
                         _loadData();
                       } else {
+                        // 3. tampilkan pesan error jika server mengembalikan status gagal
                         AppDialog.showError(context, res.message ?? 'Gagal menetapkan jabatan');
                       }
                     } catch (_) {}

@@ -93,6 +93,12 @@ func RegisterAdmin(c *gin.Context) {
 	utils.Success(c, "Registrasi admin berhasil", nil)
 }
 
+// SendOTP ditrigger ketika user meminta OTP untuk registrasi baru atau login (melalui form login/register).
+// Flow:
+// 1. FE (Flutter/NextJS) mengirim request POST ke `/auth/send-otp` dengan payload `email`, `isAdminPanel`, dan `type` (LOGIN/REGISTER).
+// 2. Handler memvalidasi status akun di database (apakah email sudah terdaftar atau belum).
+// 3. Jika validasi lolos, sistem men-generate kode OTP baru menggunakan services.GenerateOTP.
+// 4. Sistem kemudian mengirim email berisi kode OTP tersebut melalui services.SendOTPEmail.
 func SendOTP(c *gin.Context) {
 	var body struct {
 		Email        string `json:"email"`
@@ -139,13 +145,16 @@ func SendOTP(c *gin.Context) {
 		}
 	}
 
+	// 1. Menghasilkan kode OTP unik baru di DB/sistem untuk email yang bersangkutan.
 	code, err := services.GenerateOTP(body.Email)
 	if err != nil {
 		utils.Error(c, err.Error())
 		return
 	}
 
+	// 2. Memanggil email service untuk mengirimkan email OTP kepada user.
 	services.SendOTPEmail(body.Email, code)
+	// 3. Memberitahukan klien (FE) bahwa OTP sukses terkirim.
 	utils.Success(c, "OTP berhasil dikirim", nil)
 }
 
@@ -173,6 +182,13 @@ func VerifyOTP(c *gin.Context) {
 	utils.Success(c, "OTP valid", nil)
 }
 
+// Login ditrigger saat pengguna memasukkan email & password di halaman login (Step 1).
+// Flow:
+// 1. FE mengirim request POST ke `/auth/login` dengan payload `email`, `password`, dan `isAdminPanel`.
+// 2. Sistem memverifikasi kecocokan password.
+// 3. Jika cocok, sistem men-generate kode OTP login via services.GenerateLoginOTP.
+// 4. Sistem mengirim OTP ini ke email pengguna menggunakan goroutine asinkron (tidak memblokir respon login).
+// 5. Setelah respon sukses diterima oleh FE, halaman akan beralih ke form OTP untuk input kode verifikasi (Step 2).
 func Login(c *gin.Context) {
 
 	var body struct {
@@ -210,6 +226,7 @@ func Login(c *gin.Context) {
 		}
 	}
 
+	// 1. Menghasilkan kode OTP baru khusus untuk keperluan verifikasi Login (Step 1 sukses).
 	code, err := services.GenerateLoginOTP(body.Email)
 
 	if err != nil {
@@ -218,12 +235,15 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// 2. Menjalankan pengiriman email secara asinkron (goroutine) agar respon HTTP tidak tertunda oleh proses SMTP.
 	go func() {
+		// 3. Memanggil email service untuk mengirimkan kode OTP login.
 		if err := services.SendOTPEmail(body.Email, code); err != nil {
 			fmt.Printf("[ERROR] Failed to send Login OTP: %v\n", err)
 		}
 	}()
 
+	// 4. Mengembalikan respon sukses ke FE agar FE dapat menampilkan form input OTP (Step 2).
 	utils.Success(c, "OTP login dikirim", nil)
 }
 
@@ -329,6 +349,12 @@ func VerifyLoginOTP(c *gin.Context) {
 	})
 }
 
+// GoogleLogin ditrigger saat pengguna login menggunakan OAuth Google.
+// Flow:
+// 1. FE memverifikasi kredensial Google, mendapatkan ID Token, dan mengirimkannya ke `/auth/google-login`.
+// 2. BE memverifikasi validitas token tersebut dan mencocokkan email Google dengan database.
+// 3. Jika email terdaftar, BE men-generate kode OTP login tambahan untuk keamanan ganda.
+// 4. OTP dikirim ke email tujuan via services.SendOTPEmail secara asinkron.
 func GoogleLogin(c *gin.Context) {
 	var body struct {
 		IDToken      string `json:"id_token"`
@@ -378,6 +404,7 @@ func GoogleLogin(c *gin.Context) {
 		return
 	}
 
+	// 1. Menghasilkan kode OTP login khusus untuk email akun Google yang sukses divalidasi.
 	code, err := services.GenerateLoginOTP(email)
 
 	if err != nil {
@@ -385,12 +412,15 @@ func GoogleLogin(c *gin.Context) {
 		return
 	}
 
+	// 2. Mengirimkan email OTP secara asinkron menggunakan goroutine.
 	go func() {
+		// 3. Memproses pengiriman SMTP lewat email service.
 		if err := services.SendOTPEmail(email, code); err != nil {
 			fmt.Printf("[ERROR] Failed to send Google Login OTP: %v\n", err)
 		}
 	}()
 
+	// 4. Memberikan respon sukses ke FE agar melangkah ke form input OTP.
 	utils.Success(c, "OTP login dikirim", nil)
 }
 
@@ -479,6 +509,13 @@ func LoginPin(c *gin.Context) {
 	})
 }
 
+// ForgotPassword ditrigger saat pengguna mengklik "Lupa Password" dan memasukkan email mereka.
+// Flow:
+// 1. FE mengirim request POST ke `/auth/forgot-password` dengan payload `email` dan `isAdminPanel`.
+// 2. BE memeriksa apakah email terdaftar dan memiliki akses yang sesuai.
+// 3. BE menghasilkan kode OTP khusus reset password menggunakan services.GenerateResetOTP.
+// 4. BE mengirimkan OTP tersebut ke email pengguna secara asinkron melalui services.SendOTPEmail.
+// 5. FE mengarahkan pengguna ke halaman reset password untuk memasukkan kode OTP beserta password baru.
 func ForgotPassword(c *gin.Context) {
 	var body struct {
 		Email        string `json:"email"`
@@ -505,18 +542,22 @@ func ForgotPassword(c *gin.Context) {
 		}
 	}
 
+	// 1. Menghasilkan kode OTP baru yang khusus berjenis Reset Password di DB/sistem.
 	code, err := services.GenerateResetOTP(body.Email)
 	if err != nil {
 		utils.Error(c, "Email tidak terdaftar atau gagal membuat OTP")
 		return
 	}
 
+	// 2. Memicu pengiriman email secara asinkron (goroutine) supaya API response cepat.
 	go func() {
+		// 3. Mengirim email berisi link/kode OTP reset password ke inbox user.
 		if err := services.SendOTPEmail(body.Email, code); err != nil {
 			fmt.Printf("[ERROR] Failed to send Forgot Password OTP: %v\n", err)
 		}
 	}()
 
+	// 4. Memberitahukan FE bahwa kode OTP reset telah berhasil dikirim ke alamat email terkait.
 	utils.Success(c, "OTP reset password telah dikirim", nil)
 }
 

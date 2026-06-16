@@ -20,6 +20,7 @@ import (
 
 // CreatePenalty - Admin creates a new penalty for an employee
 func CreatePenalty(c *gin.Context) {
+	// 1. bind request json ke struct input
 	var input struct {
 		UserID      string  `json:"user_id" binding:"required"`
 		Title       string  `json:"title" binding:"required"`
@@ -37,7 +38,7 @@ func CreatePenalty(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	admin := userCtx.(models.User)
 
-	// [FIX MICROSERVICES] Verifikasi via Auth Service (Port 8081)
+	// 2. panggil auth service internal untuk memverifikasi data karyawan
 	var checkUser models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", input.UserID)
 	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
@@ -45,6 +46,7 @@ func CreatePenalty(c *gin.Context) {
 		return
 	}
 
+	// 3. validasi kecocokan perusahaan admin dengan perusahaan karyawan
 	if checkUser.CompanyID != admin.CompanyID {
 		utils.Error(c, "Karyawan tidak ditemukan di instansi Anda")
 		return
@@ -61,11 +63,10 @@ func CreatePenalty(c *gin.Context) {
 		dateStr = time.Now().Format("2006-01-02")
 	}
 
-	// Handle optional attachment photo
+	// 4. simpan file lampiran/bukti denda jika diupload
 	file, err := c.FormFile("attachment")
 	var attachmentPath string
 	if err == nil {
-		// Ensure directory exists
 		uploadDir := "uploads/penalties"
 		if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 			os.MkdirAll(uploadDir, 0755)
@@ -79,6 +80,7 @@ func CreatePenalty(c *gin.Context) {
 		}
 	}
 
+	// 5. inisialisasi model sanksi (penalty) baru
 	penalty := models.Penalty{
 		ID:          uuid.New().String(),
 		UserID:      userID,
@@ -90,21 +92,22 @@ func CreatePenalty(c *gin.Context) {
 		Date:        dateStr,
 	}
 
+	// 6. simpan data sanksi ke dalam database
 	if err := database.DB.Create(&penalty).Error; err != nil {
 		utils.Error(c, "Gagal membuat data denda: "+err.Error())
 		return
 	}
 
-	// Trigger payroll recalculation for this month
+	// 7. hitung ulang (recalculate) total gaji karyawan pada bulan terkait
 	t, _ := time.Parse("2006-01-02", dateStr)
 	generateSalary(userID, int(t.Month()), t.Year())
 
-	// Kirim Notifikasi ke Karyawan
+	// 8. buat notifikasi dalam sistem database
 	services.CreateNotification(userID, checkUser.CompanyID, "Sanksi Baru",
 		fmt.Sprintf("Anda telah dikenakan sanksi sebesar %s atas: %s.", utils.FormatRupiah(amount), title),
 		"PENALTY_RECEIVED", penalty.ID)
 
-	// Push Notification via FCM
+	// 9. kirim push notification firebase secara real-time
 	services.SendPushNotification(checkUser.ID, "Sanksi Baru", fmt.Sprintf("Anda telah dikenakan sanksi sebesar %s atas: %s.", utils.FormatRupiah(amount), title))
 
 	utils.Success(c, "Denda berhasil dicatatkan dan notifikasi dikirim", penalty)

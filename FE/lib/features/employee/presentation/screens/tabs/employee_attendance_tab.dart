@@ -78,29 +78,35 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   }
 
   Future<void> _initLocation() async {
+    // 1. periksa apakah sensor layanan gps pada perangkat aktif
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() => _locationStatus = 'GPS Mati');
       return;
     }
 
+    // 2. periksa status izin akses lokasi aplikasi
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      // minta izin akses lokasi jika belum pernah disetujui
+      permission = await Geolocator.requestPermission(); 
       if (permission == LocationPermission.denied) {
         setState(() => _locationStatus = 'Izin Ditolak');
         return;
       }
     }
     
+    // jika izin ditolak secara permanen oleh sistem hp
     if (permission == LocationPermission.deniedForever) {
       setState(() => _locationStatus = 'Izin Permanen Ditolak');
       return;
     }
 
-    _positionStream = Geolocator.getPositionStream(
+    // 3. buka langganan aliran data gps real-time dengan akurasi tinggi setiap pergeseran 2 meter
+    _positionStream = Geolocator.getPositionStream( 
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 2),
     ).listen(
+      // hitung jarak setiap kali koordinat hp berubah
       (Position position) => _calculateDistance(position),
       onError: (e) => setState(() => _locationStatus = 'Error Lokasi'),
     );
@@ -111,18 +117,23 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     bool foundInside = false;
     Map<String, dynamic>? closest;
 
+    // jika daftar lokasi instansi sudah dimuat dari backend
     if (_locations.isNotEmpty) {
+      // iterasi setiap titik kantor yang diizinkan untuk absensi
       for (var loc in _locations) {
         final lat = (loc['latitude'] as num?)?.toDouble();
         final lng = (loc['longitude'] as num?)?.toDouble();
         final rad = (loc['radius'] as num?)?.toDouble() ?? 100.0;
 
         if (lat != null && lng != null) {
+          // hitung jarak hp ke titik kantor menggunakan rumus haversine bawaan geolocator
           final d = Geolocator.distanceBetween(position.latitude, position.longitude, lat, lng);
+          // simpan info jika lokasi ini merupakan yang terdekat saat ini
           if (minDistance == null || d < minDistance) {
             minDistance = d;
             closest = loc;
           }
+          // tandai sukses jika jarak berada di dalam batas radius toleransi kantor
           if (d <= rad) foundInside = true;
         }
       }
@@ -144,6 +155,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
 
     if (mounted) {
       setState(() {
+        // simpan jarak terdekat, status jangkauan radius, dan detail info kantor terdekat ke state
         _distance = minDistance;
         _isInRadius = foundInside;
         _nearestLoc = closest;
@@ -191,14 +203,17 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
   }
 
   Future<void> _handleAction(String action) async {
+    // mencegah tombol ditekan berkali-kali saat proses sedang berjalan
     if (_actionLoading) return;
     
-    // 1. Validasi Wi-Fi di Frontend Sebelum Buka Kamera
+    // cek apakah instansi mewajibkan validasi koneksi wi-fi kantor
     if (_wifis.isNotEmpty) {
       String? currentBssid;
       String? currentSsid;
       try {
+        // ambil alamat mac (bssid) wifi hp sekarang
         currentBssid = await _networkInfo.getWifiBSSID();
+        // ambil nama ssid wifi hp sekarang
         currentSsid = await _networkInfo.getWifiName();
       } catch (e) {
         debugPrint('Gagal membaca Wi-Fi info: $e');
@@ -207,7 +222,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       bool wifiMatch = false;
       final normalizedCurrentBssid = (currentBssid ?? '').trim().toLowerCase();
 
-      // Helper untuk mengambil 4 segmen pertama MAC Address/BSSID (misal: aa:bb:cc:dd)
+      // helper untuk memotong 4 segmen pertama alamat bssid agar kompatibel
       String getBssidPrefix(String mac) {
         final clean = mac.trim().toLowerCase().replaceAll('-', ':');
         final parts = clean.split(':');
@@ -219,6 +234,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
 
       final currentBssidPrefix = getBssidPrefix(normalizedCurrentBssid);
 
+      // cocokan prefix wifi hp dengan daftar wifi resmi instansi di database
       for (var w in _wifis) {
         final dbBssid = (w['bssid'] as String? ?? '').trim().toLowerCase();
         final dbBssidPrefix = getBssidPrefix(dbBssid);
@@ -229,6 +245,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
         }
       }
 
+      // jika hp terhubung ke wifi yang tidak terdaftar, batalkan absensi
       if (!wifiMatch) {
         _triggerFailure();
         AppDialog.showError(
@@ -239,19 +256,23 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       }
     }
 
-    // 2. Validasi Geofencing GPS (Hanya untuk check-in)
+    // pastikan gps user berada di dalam radius lokasi kantor yang ditentukan (kecuali pulang)
     if (!_isInRadius && action != 'check_out') {
       _triggerFailure();
       AppDialog.showError(context, 'Anda berada di luar radius kantor (${_locationStatus})');
       return;
     }
 
+    // buka layar kamera verifikasi wajah dan tunggu hasil foto base64
     final faceB64 = await Navigator.push(context, MaterialPageRoute(builder: (_) => const FaceVerificationScreen()));
     if (faceB64 == null) return;
 
+    // aktifkan status loading tombol absensi
     setState(() => _actionLoading = true);
     try {
+      // tentukan endpoint backend (checkin atau checkout) sesuai aksi
       final endpoint = action == 'check_in' ? 'checkin' : 'checkout';
+      // ambil koordinat gps terkini saat tombol ditekan
       final pos = await Geolocator.getCurrentPosition();
       
       String? bssid;
@@ -263,6 +284,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
         debugPrint('Gagal membaca Wi-Fi info: $e');
       }
 
+      // kirim data koordinat, wi-fi, dan foto wajah ke backend
       final res = await ApiClient.post('/api/employee/attendance/$endpoint', {
         'face_image': faceB64,
         'latitude': pos.latitude,
@@ -272,15 +294,20 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       });
 
       if (mounted) {
+        // jika backend sukses memproses absensi
         if (res.success) {
+          // tampilkan dialog berhasil
           AppDialog.showSuccess(context, action == 'check_in' ? 'Absensi Masuk Berhasil' : 'Absensi Pulang Berhasil');
+          // muat ulang data status absensi hari ini ke layar
           _load();
         } else {
+          // trigger efek getar gagal dan tampilkan pesan error dari backend
           _triggerFailure();
           AppDialog.showError(context, res.message ?? 'Gagal melakukan absensi');
         }
       }
     } finally {
+      // matikan loading status tombol setelah selesai
       if (mounted) setState(() => _actionLoading = false);
     }
   }

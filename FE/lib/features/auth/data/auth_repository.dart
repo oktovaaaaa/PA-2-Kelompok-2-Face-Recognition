@@ -48,11 +48,17 @@ class AuthRepository {
     }
   }
 
+  // Alur 1: Kirim OTP Umum (Registrasi Karyawan / Admin)
+  // Ditrigger oleh UI registrasi ketika pengguna memasukkan email dan menekan "Kirim OTP".
+  // Backend akan membuat kode OTP baru dan mengirimkannya ke email pengguna melalui email_service.go.
   Future<void> sendOtp(String email) async {
+    // 1. Mengirim request HTTP POST ke endpoint '/auth/send-otp' di Backend.
+    // BE akan memproses pembuatan kode OTP dan mengirimkannya ke email yang bersangkutan.
     final res = await ApiClient.post('/auth/send-otp', {
       'email': email,
     });
 
+    // 2. Jika status respon dari server tidak sukses, lemparkan Exception untuk ditangani oleh antarmuka UI.
     if (!res.status) {
       throw Exception(res.message);
     }
@@ -72,18 +78,25 @@ class AuthRepository {
     }
   }
 
+  // Alur 2: Login Tahap 1 (Kredensial Email & Password)
+  // Ditrigger saat user menekan "Login". Jika kredensial benar, BE akan mengirim kode OTP 2FA ke email terdaftar secara otomatis.
+  // Setelah respon sukses, UI Flutter akan mengarahkan pengguna ke halaman OTP (OtpLoginScreen) untuk verifikasi kode (Tahap 2).
   Future<void> login({
     required String email,
     required String password,
   }) async {
+    // 1. Mengambil atau membuat ID unik perangkat untuk keperluan validasi device binding.
     final deviceId = await SessionStorage.getOrCreateDeviceId();
 
+    // 2. Mengirim request login kredensial (Step 1) ke backend.
+    // Jika password benar, backend secara otomatis memicu pengiriman OTP ke email pengguna.
     final res = await ApiClient.post('/auth/login', {
       'email': email,
       'password': password,
       'deviceID': deviceId,
     });
 
+    // 3. Jika validasi email/password gagal di BE, batalkan proses dan tampilkan pesan error di UI.
     if (!res.status) {
       throw Exception(res.message);
     }
@@ -353,11 +366,17 @@ class AuthRepository {
     return list;
   }
 
+  // Alur 3: Lupa Password (Request OTP)
+  // Ditrigger saat pengguna berada di halaman forgot password dan memasukkan email untuk reset kata sandi.
+  // BE akan mengecek apakah email terdaftar, men-generate OTP reset, dan mengirimkannya ke email pengguna.
   Future<void> forgotPassword(String email) async {
+    // 1. Mengirimkan permohonan reset sandi (Step 1) berupa alamat email ke backend.
+    // BE kemudian akan memverifikasi email dan mengirimkan kode OTP reset sandi via SMTP.
     final res = await ApiClient.post('/auth/forgot-password', {
       'email': email,
     });
 
+    // 2. Tampilkan pesan kesalahan jika alamat email tidak ditemukan di database backend.
     if (!res.status) {
       throw Exception(res.message);
     }
@@ -381,8 +400,14 @@ class AuthRepository {
 
   // --- Profile Security ---
   
+  // Alur 4: Request OTP Keamanan Profil (Ubah Password/PIN saat Login)
+  // Ditrigger ketika user menekan tombol "Minta OTP" di menu ubah sandi atau ubah PIN dalam aplikasi (sudah login).
+  // BE akan mengambil email user aktif dari database, lalu membuat dan mengirimkan OTP ke email tersebut.
   Future<void> requestProfileOtp() async {
+    // 1. Mengirim request POST ke endpoint '/profile/request-otp' (terotentikasi token JWT).
+    // BE mendeteksi identitas user lewat token, membuat kode OTP, dan mengirimkannya ke email terdaftar.
     final res = await ApiClient.post('/profile/request-otp', {});
+    // 2. Melempar Exception jika backend gagal membuat/mengirimkan OTP tersebut.
     if (!res.status) throw Exception(res.message);
   }
 

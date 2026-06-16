@@ -23,7 +23,7 @@ import (
 
 // LateTier representasi denda keterlambatan berjenjang (sudah didefinisikan di payroll_handler.go)
 
-// getBSSIDPrefix mengambil 4 segmen pertama dari MAC Address/BSSID (misal: aa:bb:cc:dd)
+// getBSSIDPrefix mengambil 4 segmen pertama dari MAC Address/BSSID (misal: aa:bb:cc:dd:ee:ff)
 func getBSSIDPrefix(mac string) string {
 	clean := strings.ReplaceAll(strings.TrimSpace(strings.ToLower(mac)), "-", ":")
 	parts := strings.Split(clean, ":")
@@ -73,17 +73,25 @@ func calculateLatePenalty(now, checkInEnd time.Time, basePenalty float64, tiersJ
 
 // calculateDistance menghitung jarak antara dua titik koordinat (meter) menggunakan rumus Haversine
 func calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
-	const R = 6371000 // Radius bumi dalam meter
+	// radius bumi rata-rata dalam meter
+	const R = 6371000 
+	// ubah derajat latitude pertama ke radian
 	phi1 := lat1 * math.Pi / 180
+	// ubah derajat latitude kedua ke radian
 	phi2 := lat2 * math.Pi / 180
+	// selisih koordinat latitude dalam radian
 	deltaPhi := (lat2 - lat1) * math.Pi / 180
+	// selisih koordinat longitude dalam radian
 	deltaLambda := (lon2 - lon1) * math.Pi / 180
 
+	// perhitungan rumus haversine untuk kelengkungan bumi
 	a := math.Sin(deltaPhi/2)*math.Sin(deltaPhi/2) +
 		math.Cos(phi1)*math.Cos(phi2)*
 			math.Sin(deltaLambda/2)*math.Sin(deltaLambda/2)
+	// dapatkan sudut kelengkungan antar dua koordinat
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
+	// kalikan dengan radius bumi untuk menghasilkan jarak akhir dalam meter
 	return R * c
 }
 
@@ -120,9 +128,10 @@ func isHoliday(companyID string, t time.Time) (bool, string) {
 
 // CheckIn — karyawan melakukan absensi masuk
 func CheckIn(c *gin.Context) {
+	// ambil id user dari token jwt yang terverifikasi
 	userID, _ := c.Get("user_id")
 	
-	// Ambil data User dari Auth Service (Microservices way)
+	// panggil api internal untuk mengambil data detail karyawan dari auth service
 	var emp models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
 	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
@@ -131,12 +140,14 @@ func CheckIn(c *gin.Context) {
 		return
 	}
 
+	// periksa apakah data karyawan ditemukan di database auth
 	if emp.ID == "" {
 		fmt.Printf("--> [ATTENDANCE ERROR] User ID %v tidak ditemukan di Auth Service\n", userID)
 		utils.Error(c, "Data pengguna tidak ditemukan di sistem pusat")
 		return
 	}
 
+	// tolak akses absensi jika pengguna adalah admin
 	if emp.Role == "ADMIN" {
 		utils.Error(c, "Akun Admin tidak diperbolehkan melakukan absensi.")
 		return
@@ -149,6 +160,7 @@ func CheckIn(c *gin.Context) {
 		BSSID     string  `json:"bssid"`
 		SSID      string  `json:"ssid"`
 	}
+	// ikat body json dari request frontend ke struct req
 	if err := c.BindJSON(&req); err != nil {
 		utils.Error(c, "Koordinat lokasi dan foto wajah diperlukan")
 		return
@@ -215,7 +227,7 @@ func CheckIn(c *gin.Context) {
 		fmt.Printf("--> Bypass verifikasi wajah untuk %s (Testing Mode)\n", emp.Name)
 	}
 
-	// Cek Validasi Wi-Fi
+	// ambil data wifi instansi yang aktif untuk validasi koneksi
 	var wifis []models.CompanyWifi
 	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&wifis)
 	if len(wifis) > 0 {
@@ -228,6 +240,7 @@ func CheckIn(c *gin.Context) {
 				break
 			}
 		}
+		// cetak info kecocokan wifi ke log server
 		fmt.Printf("--> Validasi Wi-Fi (Check-in) untuk %s: Request BSSID = '%s', Prefix = '%s', Match = %v\n", emp.Name, req.BSSID, reqPrefix, wifiMatch)
 		if !wifiMatch {
 			utils.Error(c, "Absensi ditolak! Anda tidak terhubung ke Wi-Fi resmi instansi.")
@@ -235,7 +248,7 @@ func CheckIn(c *gin.Context) {
 		}
 	}
 
-	// Cek Geofencing
+	// ambil semua lokasi kantor yang aktif untuk validasi jarak (geofencing)
 	var locations []models.CompanyLocation
 	database.DB.Where("company_id = ? AND is_active = ?", emp.CompanyID, true).Find(&locations)
 	
@@ -247,24 +260,26 @@ func CheckIn(c *gin.Context) {
 	var validLoc *models.CompanyLocation
 	var minDistance float64 = -1
 
+	// bandingkan koordinat karyawan dengan setiap lokasi kantor yang terdaftar
 	for i, loc := range locations {
 		dist := calculateDistance(req.Latitude, req.Longitude, loc.Latitude, loc.Longitude)
 		if dist <= loc.Radius {
 			validLoc = &locations[i]
 			minDistance = dist
-			break // Berhasil menemukan lokasi yang valid
+			break 
 		}
 		if minDistance == -1 || dist < minDistance {
 			minDistance = dist
 		}
 	}
 
+	// tolak absensi jika karyawan berada di luar jangkauan radius kantor
 	if validLoc == nil {
 		utils.Error(c, fmt.Sprintf("Anda berada di luar radius absensi. Jarak terdekat: %.0f meter.", minDistance))
 		return
 	}
 
-	// Cek Hari Libur
+	// periksa apakah hari ini adalah hari libur atau akhir pekan
 	if holiday, msg := isHoliday(emp.CompanyID, time.Now()); holiday {
 		utils.Error(c, "Hari ini libur: "+msg)
 		return
@@ -273,7 +288,7 @@ func CheckIn(c *gin.Context) {
 	now := time.Now()
 	today := now.Format("2006-01-02")
 
-	// Ambil pengaturan jam absensi
+	// ambil pengaturan operasional absensi instansi
 	var settingsList []models.AttendanceSettings
 	database.DB.Where("company_id = ?", emp.CompanyID).Limit(1).Find(&settingsList)
 	if len(settingsList) == 0 {
@@ -282,27 +297,29 @@ func CheckIn(c *gin.Context) {
 	}
 	settings := settingsList[0]
 
-	// Validasi waktu check-in
+	// pastikan waktu absensi masuk sudah dimulai
 	if now.Before(parseT(today, settings.CheckInStart, now.Location())) {
 		utils.Error(c, fmt.Sprintf("Absensi masuk belum dibuka. Mulai jam %s", settings.CheckInStart))
 		return
 	}
+	// pastikan batas akhir absensi harian belum terlewati
 	if now.After(parseT(today, settings.CheckOutEnd, now.Location())) {
 		utils.Error(c, "Batas waktu absensi untuk hari ini sudah berakhir (Alpha)")
 		return
 	}
 
-	// Tentukan Status: LATE jika lewat dari CheckInEnd
+	// tentukan status awal absensi sebagai hadir tepat waktu
 	status := "PRESENT"
 	var deduction float64 = 0
 	checkInEndT := parseT(today, settings.CheckInEnd, now.Location())
 
+	// jika waktu absen melebihi toleransi jam masuk, status berubah jadi terlambat dan dikenakan denda
 	if now.After(checkInEndT) {
 		status = "LATE"
 		deduction = calculateLatePenalty(now, checkInEndT, settings.LatePenalty, settings.LatePenaltyTiers)
 	}
 
-	// Cek apakah sudah check-in hari ini
+	// pastikan karyawan belum melakukan absensi masuk sebelumnya pada hari yang sama
 	var existingList []models.Attendance
 	database.DB.Where("user_id = ? AND date = ?", emp.ID, today).Limit(1).Find(&existingList)
 	if len(existingList) > 0 {
@@ -312,12 +329,14 @@ func CheckIn(c *gin.Context) {
 		}
 	}
 
+	// simpan atau perbarui data absensi masuk baru ke dalam database
 	errCheckIn := upsertCheckIn(emp.ID, emp.CompanyID, today, now, status, deduction, req.Latitude, req.Longitude, validLoc.ID, minDistance)
 	if errCheckIn != nil {
 		fmt.Printf("--> [ATTENDANCE ERROR] Gagal menyimpan check-in: %v\n", errCheckIn)
 		utils.Error(c, "Gagal menyimpan absensi masuk: "+errCheckIn.Error())
 		return
 	}
+	// kirim respon sukses beserta data jam absen dan lokasi ke frontend
 	utils.Success(c, "Absensi masuk berhasil", gin.H{
 		"check_in_time": now.Format("15:04:05"),
 		"date":          today,
@@ -591,12 +610,12 @@ func GetTodayAttendance(c *gin.Context) {
 		}
 	}
 
-	// Hitung status tampilan dinamis
+	// hitung status tampilan dinamis berdasarkan jam saat ini dan data di db
 	displayStatus := att.Status
 	now := time.Now()
 	loc := now.Location()
 
-	// Cek Hari Libur
+	// 1. jika hari ini hari libur, status adalah HOLIDAY (libur)
 	if holiday, msg := isHoliday(emp.CompanyID, now); holiday {
 		utils.Success(c, "Hari ini libur", gin.H{
 			"date":           today,
@@ -606,20 +625,28 @@ func GetTodayAttendance(c *gin.Context) {
 		return
 	}
 
-	if len(attList) == 0 { // Belum ada record absensi hari ini
+	// 2. jika karyawan belum absen masuk sama sekali hari ini
+	if len(attList) == 0 { 
+		// jika jam saat ini belum masuk jadwal check-in dimulai
 		if now.Before(parseT(today, settings.CheckInStart, loc)) {
-			displayStatus = "NOT_STARTED" // Label: Belum Mulai
+			displayStatus = "NOT_STARTED" // status: belum mulai waktu absen
+		// jika jam saat ini sudah melewati batas akhir checkout harian
 		} else if now.After(parseT(today, settings.CheckOutEnd, loc)) {
-			displayStatus = "ABSENT" // Label: Alpha (Hanya jika benar-benar lewat hari/jam pulang)
+			displayStatus = "ABSENT" // status: mangkir/alpha
+		// jika jam saat ini sudah lewat batas akhir check-in tepat waktu
 		} else if now.After(parseT(today, settings.CheckInEnd, loc)) {
-			displayStatus = "LATE" // Label: Terlambat
+			displayStatus = "LATE" // status: terlambat (jika absen sekarang)
 		} else {
-			displayStatus = "READY" // Siap Absen
+			displayStatus = "READY" // status: siap untuk melakukan absen
 		}
-	} else if att.CheckOutTime == nil { // Sudah check-in tapi belum check-out
+	// 3. jika karyawan sudah check-in tetapi belum check-out
+	} else if att.CheckOutTime == nil { 
+		// jika jam saat ini sudah melewati batas akhir check-out dan dia belum absen pulang
 		if now.After(parseT(today, settings.CheckOutEnd, loc)) {
+			// jika paginya terlambat, status menjadi terlambat & pulang mendahului
 			if att.Status == "LATE" {
 				displayStatus = "LATE_EARLY_LEAVE"
+			// jika paginya tepat waktu, status menjadi pulang mendahului
 			} else {
 				displayStatus = "EARLY_LEAVE"
 			}
@@ -1982,6 +2009,7 @@ func CreateCompanyLocation(c *gin.Context) {
 		Name      string  `json:"name" binding:"required"`
 		Latitude  float64 `json:"latitude" binding:"required"`
 		Longitude float64 `json:"longitude" binding:"required"`
+		// radius diikat dari request json web admin (misal 100 meter)
 		Radius    float64 `json:"radius" binding:"required"`
 		IsActive  bool    `json:"is_active"`
 	}
@@ -1996,10 +2024,12 @@ func CreateCompanyLocation(c *gin.Context) {
 		Name:      body.Name,
 		Latitude:  body.Latitude,
 		Longitude: body.Longitude,
+		// simpan nilai radius ke dalam record lokasi di database
 		Radius:    body.Radius,
 		IsActive:  true,
 	}
 
+	// masukkan data lokasi baru beserta radiusnya ke tabel database
 	if err := database.DB.Create(&newLocation).Error; err != nil {
 		utils.Error(c, "Gagal menambah lokasi")
 		return
@@ -2046,6 +2076,7 @@ func UpdateCompanyLocation(c *gin.Context) {
 		Name      string  `json:"name"`
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
+		// ambil data radius baru jika diubah oleh admin
 		Radius    float64 `json:"radius"`
 		IsActive  *bool   `json:"is_active"`
 	}
@@ -2057,9 +2088,11 @@ func UpdateCompanyLocation(c *gin.Context) {
 	if body.Name != "" { loc.Name = body.Name }
 	if body.Latitude != 0 { loc.Latitude = body.Latitude }
 	if body.Longitude != 0 { loc.Longitude = body.Longitude }
+	// update radius di database jika ada perubahan nilai dari admin
 	if body.Radius != 0 { loc.Radius = body.Radius }
 	if body.IsActive != nil { loc.IsActive = *body.IsActive }
 
+	// simpan perubahan radius dan lokasi ke database
 	database.DB.Save(&loc)
 	utils.Success(c, "Lokasi berhasil diperbarui", loc)
 }

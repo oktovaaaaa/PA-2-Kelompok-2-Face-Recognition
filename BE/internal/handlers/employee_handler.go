@@ -32,15 +32,16 @@ func RegisterEmployee(c *gin.Context) {
 		FaceImages    []string `json:"face_images"` // [NEW]
 	}
 
+	// periksa validitas format data pendaftaran yang dikirim frontend
 	if err := c.ShouldBindJSON(&body); err != nil {
-
 		utils.Error(c, "Data tidak valid")
 		return
 	}
 
-	// Bersihkan input email agar tidak ada spasi atau huruf besar yang mengganggu
+	// bersihkan email dari spasi kosong dan ubah ke huruf kecil semua
 	cleanEmail := strings.ToLower(strings.TrimSpace(body.Email))
 
+	// buat objek user baru dengan menyalin isian data dari frontend
 	user := models.User{
 		Name:              body.Name,
 		Email:             cleanEmail,
@@ -56,6 +57,7 @@ func RegisterEmployee(c *gin.Context) {
 		FcmToken:          body.FcmToken,
 	}
 
+	// jika mendaftar menggunakan tombol google sign-in, validasikan token google oauth
 	if body.GoogleIDToken != "" {
 		payload, err := services.VerifyGoogleToken(body.GoogleIDToken)
 		if err == nil {
@@ -66,13 +68,14 @@ func RegisterEmployee(c *gin.Context) {
 			return
 		}
 	} else {
-		// Verifikasi OTP untuk pendaftaran email biasa
+		// pastikan pengisian otp tidak kosong untuk pendaftaran email biasa
 		if body.OTPCode == "" {
 			utils.Error(c, "Kode OTP wajib diisi")
 			return
 		}
 	}
 
+	// jalankan proses registrasi karyawan di layanan employee service
 	err := services.RegisterEmployee(user, body.InviteToken, body.FaceImages)
 
 	if err != nil {
@@ -80,17 +83,14 @@ func RegisterEmployee(c *gin.Context) {
 		return
 	}
 
-	// [NEW] Verifikasi OTP dilakukan TERAKHIR setelah registrasi (termasuk cek wajah) berhasil.
-	// Dengan begini, jika cek wajah gagal, OTP belum "hangus" dan bisa dipakai lagi.
+	// verifikasi otp diletakkan di akhir agar kode otp tidak hangus jika registrasi wajah gagal
 	if body.GoogleIDToken == "" {
 		if err := services.VerifyOTP(cleanEmail, body.OTPCode); err != nil {
-			// Jika OTP gagal, kita harus menghapus user yang baru dibuat agar tidak duplikat saat coba lagi
-			// Tapi karena statusnya PENDING dan email di-anonymize jika hapus, lebih baik biarkan user mencoba lagi.
-			// Untuk sementara, kita tampilkan error OTP saja.
 			utils.Error(c, err.Error())
 			return
 		}
 	}
 
+	// kembalikan status sukses pendaftaran ke frontend dengan tanda menunggu persetujuan admin
 	utils.Success(c, "Registrasi karyawan berhasil, menunggu persetujuan admin", nil)
 }

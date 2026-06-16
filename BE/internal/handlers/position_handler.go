@@ -16,9 +16,11 @@ import (
 
 // CreatePosition — admin membuat jabatan baru
 func CreatePosition(c *gin.Context) {
+	// 1. dapatkan user context admin dari middleware autentikasi
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
+	// 2. bind request body untuk data nama, gaji, dan deskripsi jabatan
 	var body struct {
 		Name        string  `json:"name"`
 		Salary      float64 `json:"salary"`
@@ -29,6 +31,7 @@ func CreatePosition(c *gin.Context) {
 		return
 	}
 
+	// 3. buat objek model jabatan baru dengan generate id uuid baru
 	position := models.Position{
 		ID:          uuid.New().String(),
 		CompanyID:   adminUser.CompanyID,
@@ -36,10 +39,14 @@ func CreatePosition(c *gin.Context) {
 		Salary:      body.Salary,
 		Description: body.Description,
 	}
+
+	// 4. simpan data jabatan ke database utama
 	if err := database.DB.Create(&position).Error; err != nil {
 		utils.Error(c, "Gagal membuat jabatan")
 		return
 	}
+
+	// 5. jalankan sinkronisasi data jabatan ke db absensi dan payroll secara async (goroutine)
 	go func() {
 		_ = database.SyncPositionToAttendance(position)
 		_ = database.SyncPositionToPayroll(position)
@@ -121,9 +128,11 @@ func DeletePosition(c *gin.Context) {
 
 // AssignPosition — assign jabatan ke karyawan
 func AssignPosition(c *gin.Context) {
+	// 1. dapatkan user context admin dari middleware autentikasi
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
+	// 2. bind request body untuk mendapatkan user_id karyawan dan position_id jabatan
 	var body struct {
 		UserID     string `json:"user_id"`
 		PositionID string `json:"position_id"`
@@ -133,14 +142,14 @@ func AssignPosition(c *gin.Context) {
 		return
 	}
 
-	// Validasi karyawan milik perusahaan ini
+	// 3. validasi bahwa karyawan yang akan diassign terdaftar di perusahaan admin tersebut
 	var employee models.User
 	if err := database.DB.Where("id = ? AND company_id = ?", body.UserID, adminUser.CompanyID).First(&employee).Error; err != nil {
 		utils.Error(c, "Karyawan tidak ditemukan")
 		return
 	}
 
-	// Validasi jabatan milik perusahaan ini (boleh kosong untuk unassign)
+	// 4. validasi bahwa jabatan yang dipilih terdaftar di perusahaan admin tersebut
 	if body.PositionID != "" {
 		var position models.Position
 		if err := database.DB.Where("id = ? AND company_id = ?", body.PositionID, adminUser.CompanyID).First(&position).Error; err != nil {
@@ -149,13 +158,14 @@ func AssignPosition(c *gin.Context) {
 		}
 	}
 
+	// 5. perbarui data jabatan di tabel user karyawan (set nil jika position_id kosong)
 	if body.PositionID == "" {
 		database.DB.Model(&employee).Update("position_id", nil)
 	} else {
 		database.DB.Model(&employee).Update("position_id", body.PositionID)
 	}
 
-	// Kirim Notifikasi
+	// 6. buat dan kirim notifikasi secara async ke database dan firebase cloud messaging
 	go func() {
 		title := "Perubahan Jabatan"
 		bodyText := "Posisi jabatan Anda telah diperbarui oleh Bos."
@@ -168,7 +178,7 @@ func AssignPosition(c *gin.Context) {
 			bodyText = "Posisi jabatan Anda telah diberhentikan oleh Bos."
 		}
 
-		// Simpan Notifikasi ke DB
+		// 7. simpan riwayat notifikasi ke dalam tabel notifications
 		notif := models.Notification{
 			ID:        uuid.New().String(),
 			UserID:    employee.ID,
@@ -182,7 +192,7 @@ func AssignPosition(c *gin.Context) {
 		}
 		database.DB.Create(&notif)
 
-		// Kirim Push Notification jika ada DeviceID
+		// 8. kirim push notification via firebase jika karyawan memiliki device id terdaftar
 		if employee.DeviceID != "" {
 			services.SendPushNotification(employee.ID, title, bodyText)
 		}

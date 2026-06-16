@@ -2,20 +2,21 @@
  * k6 Stress Test Script - Sistem Absensi Videnti (Employee Endpoints)
  * Target: http://103.49.238.222:8080
  *
- * Cara jalankan:
- *   k6 run k6_stress_test.js
- *
- * Simpan hasil ke CSV:
- *   k6 run --out csv=results.csv k6_stress_test.js
+ * cara jalankan stress test k6:
+ *   1. pastikan k6 sudah terinstall di perangkat (download dari k6.io atau via brew/choco)
+ *   2. buat file 'face_base64.txt' di direktori yang sama berisi string base64 gambar wajah untuk pengetesan face recognition
+ *   3. jalankan perintah dasar berikut di terminal:
+ *        k6 run k6_stress_test.js
+ *   4. jika ingin mengekspor hasil statistik pengetesan ke file csv, jalankan:
+ *        k6 run --out csv=results.csv k6_stress_test.js
  */
 
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
-// ==========================================
+
 // KONFIGURASI TARGET
-// ==========================================
 const BASE_URL = 'http://103.49.238.222:8080';
 
 // Token Karyawan

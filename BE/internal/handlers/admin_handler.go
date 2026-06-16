@@ -92,17 +92,20 @@ func ApproveEmployee(c *gin.Context) {
 		UserID string `json:"user_id"`
 	}
 
+	// ikat data id user karyawan yang akan disetujui dari request json
 	if err := c.ShouldBindJSON(&body); err != nil {
 
 		utils.Error(c, "Data tidak valid")
 		return
 	}
 
+	// ambil identitas admin yang sedang login dari context jwt
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
 	var user models.User
 
+	// cari data karyawan pending berdasarkan id dan pastikan berada di perusahaan admin yang sama
 	err := database.DB.Where("id = ? AND company_id = ?", body.UserID, adminUser.CompanyID).First(&user).Error
 
 	if err != nil {
@@ -111,16 +114,18 @@ func ApproveEmployee(c *gin.Context) {
 		return
 	}
 
+	// ubah status karyawan menjadi ACTIVE agar bisa login dan menggunakan aplikasi
 	user.Status = "ACTIVE"
 	database.DB.Save(&user)
 
-	// [NEW] Sinkronisasi ke DB Attendance & Payroll agar pengingat absensi dan gaji bisa jalan
+	// sinkronisasikan data karyawan teraktivasi ini ke database attendance (absensi) dan payroll (gaji)
 	go database.SyncUserToAttendance(user)
 	go database.SyncUserToPayroll(user)
 
-	// Kirim Notifikasi ke Karyawan
+	// buat notifikasi in-app untuk disimpan ke database penerima (karyawan)
 	services.CreateNotification(user.ID, user.CompanyID, "Akun Disetujui",
 		"Selamat! Akun Anda telah disetujui oleh Bos. Anda sekarang dapat mengakses seluruh fitur aplikasi.", "EMPLOYEE_APPROVED", user.ID)
+	// kirim push notification firebase ke perangkat karyawan terkait
 	services.SendPushNotification(user.ID, "Akun Disetujui", "Akun Anda telah aktif. Mohon lakukan login kembali.")
 
 	utils.Success(c, "Karyawan berhasil diapprove", nil)

@@ -301,6 +301,7 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                         return;
                       }
 
+                      // 1. susun data permohonan izin dalam format map untuk dikirim ke backend
                       final body = {
                         'type': selectedType,
                         'title': titleCtrl.text.trim(),
@@ -310,15 +311,18 @@ class _EmployeeLeaveTabState extends State<EmployeeLeaveTab> {
                         'dates': datesToSend,
                       };
                       try {
+                        // 2. kirim data izin ke backend lewat api client (put jika edit, post jika baru)
                         final res = isEdit
                             ? await ApiClient.put('/api/employee/leaves/${existing!['id']}', body)
                             : await ApiClient.post('/api/employee/leaves', body);
                         if (!mounted) return;
-                        if (!mounted) return;
                         if (res.success) {
+                          // jika berhasil, tampilkan pemberitahuan sukses
                           AppDialog.showSuccess(context, isEdit ? 'Izin diperbarui' : 'Izin berhasil diajukan!');
+                          // muat ulang daftar riwayat izin terbaru
                           _load();
                         } else {
+                          // tampilkan error jika gagal diproses oleh server
                           AppDialog.showError(context, res.message ?? 'Gagal memproses izin');
                         }
                       } catch (_) {}

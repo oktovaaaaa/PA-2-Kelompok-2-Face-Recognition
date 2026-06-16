@@ -106,9 +106,11 @@ func GetMyProfile(c *gin.Context) {
 
 // UpdateMyProfile — edit data diri sendiri (admin & karyawan, wajib isi semua field)
 func UpdateMyProfile(c *gin.Context) {
+	// 1. dapatkan user dari token JWT yang terautentikasi
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
+	// 2. ikat data request body JSON
 	var body struct {
 		Name              string `json:"name"`
 		Phone             string `json:"phone"`
@@ -131,15 +133,15 @@ func UpdateMyProfile(c *gin.Context) {
 		utils.Error(c, "Nomor telepon wajib diisi")
 		return
 	}
-	// Opsional: Alamat bisa dikosongkan untuk Super Admin atau jika memang belum ada
 
-
+	// 3. cari user di database auth utama
 	var dbUser models.User
 	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
 		utils.Error(c, "User tidak ditemukan di database")
 		return
 	}
 
+	// 4. simpan perubahan data profil ke model
 	dbUser.Name = body.Name
 	dbUser.Phone = body.Phone
 	dbUser.BirthPlace = body.BirthPlace
@@ -151,6 +153,7 @@ func UpdateMyProfile(c *gin.Context) {
 	dbUser.BankName = body.BankName
 	dbUser.BankAccountNumber = body.BankAccountNumber
 
+	// 5. simpan perubahan data profil ke database
 	database.DB.Save(&dbUser)
 	utils.Success(c, "Profil berhasil diperbarui", gin.H{
 		"name":                dbUser.Name,
@@ -208,25 +211,35 @@ func UpdateFcmToken(c *gin.Context) {
 	utils.Success(c, "FCM token berhasil disimpan", nil)
 }
 
-// RequestProfileOTP — kirim OTP ke email user yang sedang login untuk verifikasi ubah password/pin
+// RequestProfileOTP ditrigger saat pengguna (sudah login) ingin mengubah data sensitif seperti password atau PIN di profil mereka.
+// Flow:
+// 1. FE mengirim request POST ke `/profile/request-otp` dengan membawa Bearer Token (sudah login).
+// 2. BE mendeteksi ID user dari JWT context, mengambil data email lengkap dari database.
+// 3. BE men-generate kode OTP verifikasi profil via services.GenerateOTP.
+// 4. BE mengirimkan OTP tersebut ke email pengguna via services.SendOTPEmail.
+// 5. Kode OTP ini wajib disertakan oleh FE saat memanggil API `/profile/change-password` atau `/profile/change-pin`.
 func RequestProfileOTP(c *gin.Context) {
+	// 1. Mengambil informasi user dari context JWT yang sedang aktif.
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
-	// Ambil data lengkap user dari DB untuk mendapatkan Email
+	// 2. Mengambil data lengkap user dari DB berdasarkan ID untuk mendapatkan alamat email.
 	var dbUser models.User
 	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
 		utils.Error(c, "User tidak ditemukan")
 		return
 	}
 
+	// 3. Menghasilkan kode OTP baru berjenis umum di sistem untuk email user tersebut.
 	code, err := services.GenerateOTP(dbUser.Email)
 	if err != nil {
 		utils.Error(c, "Gagal membuat OTP: "+err.Error())
 		return
 	}
 
+	// 4. Memanggil email service untuk mengirimkan email OTP keamanan ke inbox user.
 	services.SendOTPEmail(dbUser.Email, code)
+	// 5. Mengembalikan response sukses ke aplikasi mobile (FE) untuk diarahkan ke halaman input OTP.
 	utils.Success(c, "OTP berhasil dikirim ke email Anda", nil)
 }
 
@@ -370,9 +383,11 @@ func ChangePin(c *gin.Context) {
 
 // DeleteAccount — hapus akun sendiri secara permanen (3 lapis keamanan)
 func DeleteAccount(c *gin.Context) {
+	// 1. ambil user context dari JWT token yang terautentikasi
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
+	// 2. ikat data konfirmasi penghapusan akun dari request body
 	var body struct {
 		Password           string `json:"password"`
 		ConfirmationPhrase string `json:"confirmation_phrase"`
@@ -382,31 +397,31 @@ func DeleteAccount(c *gin.Context) {
 		return
 	}
 
-	// Validasi 1: Cek password
+	// 3. validasi 1: cek apakah password lama diinputkan
 	if body.Password == "" {
 		utils.Error(c, "Password wajib diisi untuk menghapus akun")
 		return
 	}
 
-	// Ambil user terbaru dari database
+	// 4. cari record data user terbaru di database
 	var dbUser models.User
 	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
 		utils.Error(c, "Akun tidak ditemukan")
 		return
 	}
 
+	// 5. validasi 2: pastikan password yang dimasukkan cocok dengan hash di database
 	if !utils.CheckPassword(dbUser.Password, body.Password) {
 		utils.Error(c, "Password salah, penghapusan akun dibatalkan")
 		return
 	}
 
-	// Validasi tambahan: Nama user harus ada agar frasa bisa dibuat
 	if strings.TrimSpace(dbUser.Name) == "" {
 		utils.Error(c, "Nama akun tidak terdeteksi di database. Harap hubungi admin atau lengkapi profil Anda.")
 		return
 	}
 
-	// Validasi 2: Cek frasa konfirmasi
+	// 6. validasi 3: pastikan frasa konfirmasi yang diketik sesuai dengan nama pengguna
 	expectedPhrase := fmt.Sprintf("SAYA YAKIN MENGHAPUS AKUN %s", strings.ToUpper(dbUser.Name))
 	if body.ConfirmationPhrase != expectedPhrase {
 		utils.Error(c, fmt.Sprintf("Frasa konfirmasi tidak sesuai. Ketik \"%s\" untuk melanjutkan", expectedPhrase))

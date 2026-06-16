@@ -87,9 +87,11 @@ func AdminGetLeaveRequests(c *gin.Context) {
 
 // ApproveLeave — admin menyetujui izin karyawan
 func ApproveLeave(c *gin.Context) {
+	// ambil data admin yang sedang login dari context jwt
 	userCtx, _ := c.Get("user")
 	adminUser := userCtx.(models.User)
 
+	// ambil parameter id permohonan izin dari url endpoint
 	id := c.Param("id")
 	var body struct {
 		Note string `json:"note"`
@@ -97,25 +99,29 @@ func ApproveLeave(c *gin.Context) {
 	c.ShouldBindJSON(&body)
 
 	var leave models.LeaveRequest
+	// cari data izin karyawan berdasarkan id dan pastikan perusahaan admin cocok
 	if err := database.DB.Where("id = ? AND company_id = ?", id, adminUser.CompanyID).First(&leave).Error; err != nil {
 		utils.Error(c, "Izin tidak ditemukan")
 		return
 	}
+	// pastikan permohonan izin tersebut masih berstatus pending
 	if leave.Status != "PENDING" {
 		utils.Error(c, "Izin sudah diproses sebelumnya")
 		return
 	}
 
+	// ubah status permohonan menjadi APPROVED dan simpan catatan admin jika ada
 	leave.Status = "APPROVED"
 	leave.AdminNote = body.Note
 	database.DB.Save(&leave)
 
-	// Tandai hari kehadiran dengan status LEAVE/SICK untuk SEMUA tanggal terpilih
+	// set status kehadiran absensi harian menjadi LEAVE (izin) atau SICK (sakit)
 	attendanceStatus := "LEAVE"
 	if leave.Type == "SAKIT" {
 		attendanceStatus = "SICK"
 	}
 
+	// urutkan tanggal terpilih dan isi/perbarui tabel absensi agar hari tersebut dihitung hadir izin/sakit
 	if leave.Dates != "" {
 		var dateList []string
 		if err := json.Unmarshal([]byte(leave.Dates), &dateList); err == nil {
@@ -124,18 +130,19 @@ func ApproveLeave(c *gin.Context) {
 			}
 		}
 	} else {
-		// Fallback ke CreatedAt jika data Dates kosong (kompatibilitas data lama)
 		upsertAttendance(leave.UserID, adminUser.CompanyID, leave.CreatedAt.Format("2006-01-02"), attendanceStatus)
 	}
 
-	// Kirim notifikasi ke karyawan
+	// susun kalimat notifikasi balasan untuk karyawan
 	msg := "Permohonan izin Anda telah disetujui oleh Bos."
 	if body.Note != "" {
 		msg = fmt.Sprintf("Permohonan izin Anda telah disetujui oleh Bos. Catatan: %s", body.Note)
 	}
 
+	// buat data notifikasi in-app untuk disimpan ke database
 	services.CreateNotification(leave.UserID, adminUser.CompanyID, "Izin Disetujui",
 		msg, "LEAVE_APPROVED", leave.ID)
+	// kirim push notification firebase langsung ke handphone karyawan
 	services.SendPushNotification(leave.UserID, "Izin Disetujui", msg)
 
 	utils.Success(c, "Izin berhasil disetujui", nil)
@@ -274,6 +281,7 @@ func AdminCreateLeave(c *gin.Context) {
 
 // EmployeeCreateLeave — karyawan mengajukan izin/sakit
 func EmployeeCreateLeave(c *gin.Context) {
+	// ambil data identitas karyawan yang terverifikasi dari context jwt
 	userCtx, _ := c.Get("user")
 	emp := userCtx.(models.User)
 
@@ -283,24 +291,28 @@ func EmployeeCreateLeave(c *gin.Context) {
 		Description     string   `json:"description"`
 		PhotoURL        string   `json:"photo_url"`
 		ConfirmedHonest bool     `json:"confirmed_honest"`
-		Dates           []string `json:"dates"` // Harap mengirimkan list tanggal
+		Dates           []string `json:"dates"` 
 	}
+	// ikat body json request permohonan izin dari frontend hp
 	if err := c.ShouldBindJSON(&body); err != nil || body.Title == "" || body.Type == "" || len(body.Dates) == 0 {
 		utils.Error(c, "Data izin tidak lengkap (pastikan tanggal sudah dipilih)")
 		return
 	}
+	// pastikan karyawan sudah mencentang pernyataan kejujuran data
 	if !body.ConfirmedHonest {
 		utils.Error(c, "Kamu harus mengkonfirmasi kejujuran data izin")
 		return
 	}
+	// pastikan tipe izin yang dipilih adalah antara IZIN atau SAKIT
 	if body.Type != "IZIN" && body.Type != "SAKIT" {
 		utils.Error(c, "Tipe izin tidak valid (IZIN / SAKIT)")
 		return
 	}
 
-	// Serialize dates to JSON string
+	// ubah array list tanggal yang dipilih menjadi representasi json string
 	datesJSON, _ := json.Marshal(body.Dates)
 
+	// buat objek baru leave request dengan status default PENDING
 	leave := models.LeaveRequest{
 		ID:              uuid.New().String(),
 		UserID:          emp.ID,
@@ -313,26 +325,29 @@ func EmployeeCreateLeave(c *gin.Context) {
 		ConfirmedHonest: body.ConfirmedHonest,
 		Dates:           string(datesJSON),
 	}
+	// simpan record permohonan izin ke database
 	if err := database.DB.Create(&leave).Error; err != nil {
 		utils.Error(c, "Gagal membuat izin")
 		return
 	}
 
-	// [FIX] Ambil data user lengkap dari DB lokal untuk mendapatkan Nama
+	// ambil data nama lengkap karyawan dari db lokal
 	var fullEmp models.User
 	if err := database.DB.Where("id = ?", emp.ID).First(&fullEmp).Error; err != nil {
-		// Jika tidak ada di DB lokal (Attendance), pakai ID saja sebagai fallback
 		fullEmp = emp
 		fullEmp.Name = "User " + emp.ID
 	}
 
-	// 2. Cari admin perusahaan ini untuk kirim notifikasi (via Auth Service)
+	// ambil daftar data admin perusahaan ini dari auth service
 	var admins []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/admins?company_id=%s", emp.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &admins); err == nil {
+		// kirimkan notifikasi ke setiap admin perusahaan secara paralel
 		for _, admin := range admins {
+			// simpan record log notifikasi baru ke database admin
 			services.CreateNotification(admin.ID, fullEmp.CompanyID, "Pengajuan Izin Baru",
 				fullEmp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
+			// kirim push notification firebase cloud messaging ke hp admin
 			services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",
 				fullEmp.Name+" mengajukan "+body.Type+": "+body.Title)
 		}

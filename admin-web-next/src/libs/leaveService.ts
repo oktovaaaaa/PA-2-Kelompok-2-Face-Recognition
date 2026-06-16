@@ -67,28 +67,34 @@ return data.data as LeaveRequest[];
   },
 
   async approveLeave(id: string, note?: string) {
+    // 1. kirim request put ke endpoint approve izin di backend dengan membawa id izin
     const response = await fetch(`${API_URL}/admin/leaves/${id}/approve`, {
       method: 'PUT',
       headers: getAuthHeaders(),
+      // 2. lampirkan catatan persetujuan admin jika ada
       body: JSON.stringify({ note }),
     });
 
     const data = await response.json();
 
+    // lemparkan pesan error jika proses persetujuan gagal di sisi server
     if (!response.ok) throw new Error(data.message || 'Gagal menyetujui izin.');
     
 return data;
   },
 
   async rejectLeave(id: string, note: string) {
+    // 1. kirim request put ke endpoint reject izin di backend dengan membawa id izin
     const response = await fetch(`${API_URL}/admin/leaves/${id}/reject`, {
       method: 'PUT',
       headers: getAuthHeaders(),
+      // 2. lampirkan alasan penolakan dari admin
       body: JSON.stringify({ note }),
     });
 
     const data = await response.json();
 
+    // lemparkan pesan error jika penolakan gagal diproses di sisi server
     if (!response.ok) throw new Error(data.message || 'Gagal menolak izin.');
     
 return data;

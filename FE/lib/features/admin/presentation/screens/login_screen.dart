@@ -49,16 +49,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _checkBiometrics() async {
     try {
+      // 1. periksa apakah perangkat keras mendukung keamanan biometrik (sidik jari/face id)
       final isSupported = await _localAuth.isDeviceSupported();
+      // 2. periksa apakah pengguna telah mengaktifkan biometrik di pengaturan hp
       final canCheck = await _localAuth.canCheckBiometrics;
       _canCheckBiometrics = isSupported && canCheck;
       
       if (mounted) setState(() {});
       
+      // jika aplikasi terkunci setelah ditinggalkan 15 menit dan mendukung biometrik
       if (widget.pinOnlyMode && _canCheckBiometrics) {
-        // Beri sedikit jeda agar UI siap
+        // beri sedikit jeda sebelum memunculkan popup biometrik otomatis
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted && !authProvider.isSessionLocked) return;
+          // jalankan proses autentikasi biometrik
           _authenticateBiometrics();
         });
       }
@@ -70,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _authenticateBiometrics() async {
     if (!_canCheckBiometrics || _isUnlocked) return;
     try {
+      // 3. panggil popup autentikasi sidik jari/face id bawaan sistem hp
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Gunakan biometrik untuk login cepat',
         options: const AuthenticationOptions(
@@ -78,11 +83,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
+      // jika pemindaian sidik jari/wajah sukses divalidasi oleh sistem hp
       if (authenticated && mounted) {
         setState(() => _isUnlocked = true);
         
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
+          // buka kembali kunci sesi aktif sehingga pengguna dapat langsung mengakses menu utama
           authProvider.unlockSession();
 
           if (widget.pinOnlyMode) return;
