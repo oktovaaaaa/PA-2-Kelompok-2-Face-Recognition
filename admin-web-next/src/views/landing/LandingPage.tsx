@@ -12,7 +12,7 @@ import { settingService, formatImageUrl } from '@/libs/settingService'
 import './landing.css'
 
 // Image path as generated earlier
-const HERO_IMAGE = '/videntiprofile.jpeg'
+const HERO_IMAGE = '/videntiprofile.png'
 const FACE_ID_ICON = '/images/landing/face_recognition.png'
 const REALTIME_ICON = '/images/landing/real_time.png'
 const ANALYTICS_ICON = '/images/landing/chart.png'
@@ -20,7 +20,7 @@ const MOBILE_ICON = '/images/landing/mobile.png'
 const PAYROLL_ICON = '/images/landing/gaji.png'
 const DASHBOARD_ICON = '/images/landing/dashboard_web.png'
 const RIBBON_PERSON_IMAGE = '/mockupvidenti1.png'
-const ABOUT_IMAGE_MAIN = '/vidientiprofile2.png'
+const ABOUT_IMAGE_MAIN = '/vidientiprofile2.jpeg'
 const ABOUT_IMAGE_SUB = '/videntiprofile3.jpeg'
 
 const LandingPage = () => {
