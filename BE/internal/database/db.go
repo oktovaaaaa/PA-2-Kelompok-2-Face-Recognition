@@ -15,8 +15,13 @@ import (
 
 var DB *gorm.DB
 
+// ConnectDatabase - Membuka koneksi ke database sesuai dengan konfigurasi microservice
 func ConnectDatabase(serviceName string) {
-
+	// 1. susun dsn (data source name) postgresql dengan mengambil variabel dari file env masing-masing service
+	// contoh:
+	// - jika auth service running, dbname dibaca dari .env.auth yaitu 'pa2_auth' (sebagai database asal/utama)
+	// - jika attendance running, dbname dibaca dari .env.attendance yaitu 'pa2_attendance'
+	// - jika payroll running, dbname dibaca dari .env.payroll yaitu 'pa2_payroll'
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -26,6 +31,7 @@ func ConnectDatabase(serviceName string) {
 		os.Getenv("DB_PORT"),
 	)
 
+	// 2. hubungkan gorm ke server database postgresql
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
@@ -69,7 +75,7 @@ func SeedSuperAdmin(db *gorm.DB) {
 
 	if err != nil {
 		hashPassword, _ := utils.HashPassword(password)
-		
+
 		superAdmin := models.User{
 			ID:        "SUPER-ADMIN-ID",
 			CompanyID: "SYSTEM",

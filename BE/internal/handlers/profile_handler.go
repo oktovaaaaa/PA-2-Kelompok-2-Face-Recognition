@@ -26,7 +26,7 @@ import (
 
 func GetMyProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
-	
+
 	var user models.User
 	// [FIX] Tambahkan Preload("Position") agar data jabatan & gaji pokok otomatis terambil
 	if err := database.DB.Preload("Company").Preload("Position").Where("id = ?", userID).First(&user).Error; err != nil {
@@ -35,42 +35,42 @@ func GetMyProfile(c *gin.Context) {
 	}
 
 	type ProfileResponse struct {
-		ID                        string     `json:"id"`
-		Name                      string     `json:"name"`
-		Email                     string     `json:"email"`
-		Phone                     string     `json:"phone"`
-		BirthPlace                string     `json:"birth_place"`
-		BirthDate                 string     `json:"birth_date"`
-		Address                   string     `json:"address"`
-		PhotoURL                  string     `json:"photo_url"`
-		Role                      string     `json:"role"`
-		Status                    string     `json:"status"`
-		PositionID                string     `json:"position_id"`
-		PositionName              string     `json:"position_name"`
-		Salary                    float64    `json:"salary"`
-		CompanyID                 string     `json:"company_id"`
-		BankName                  string     `json:"bank_name"`
-		BankAccountNumber         string     `json:"bank_account_number"`
-		FaceEmbeddingRegistered   bool       `json:"face_embedding_registered"`
-		FaceUpdatedAt             *time.Time `json:"face_updated_at"`
+		ID                      string     `json:"id"`
+		Name                    string     `json:"name"`
+		Email                   string     `json:"email"`
+		Phone                   string     `json:"phone"`
+		BirthPlace              string     `json:"birth_place"`
+		BirthDate               string     `json:"birth_date"`
+		Address                 string     `json:"address"`
+		PhotoURL                string     `json:"photo_url"`
+		Role                    string     `json:"role"`
+		Status                  string     `json:"status"`
+		PositionID              string     `json:"position_id"`
+		PositionName            string     `json:"position_name"`
+		Salary                  float64    `json:"salary"`
+		CompanyID               string     `json:"company_id"`
+		BankName                string     `json:"bank_name"`
+		BankAccountNumber       string     `json:"bank_account_number"`
+		FaceEmbeddingRegistered bool       `json:"face_embedding_registered"`
+		FaceUpdatedAt           *time.Time `json:"face_updated_at"`
 	}
 
 	resp := ProfileResponse{
-		ID:                        user.ID,
-		Name:                      user.Name,
-		Email:                     user.Email,
-		Phone:                     user.Phone,
-		BirthPlace:                user.BirthPlace,
-		BirthDate:                 user.BirthDate,
-		Address:                   user.Address,
-		PhotoURL:                  user.PhotoURL,
-		Role:                      user.Role,
-		Status:                    user.Status,
-		PositionID:                "",
-		CompanyID:                 user.CompanyID,
-		BankName:                  user.BankName,
-		BankAccountNumber:         user.BankAccountNumber,
-		FaceEmbeddingRegistered:   user.FaceEmbedding != "",
+		ID:                      user.ID,
+		Name:                    user.Name,
+		Email:                   user.Email,
+		Phone:                   user.Phone,
+		BirthPlace:              user.BirthPlace,
+		BirthDate:               user.BirthDate,
+		Address:                 user.Address,
+		PhotoURL:                user.PhotoURL,
+		Role:                    user.Role,
+		Status:                  user.Status,
+		PositionID:              "",
+		CompanyID:               user.CompanyID,
+		BankName:                user.BankName,
+		BankAccountNumber:       user.BankAccountNumber,
+		FaceEmbeddingRegistered: user.FaceEmbedding != "",
 		FaceUpdatedAt: func() *time.Time {
 			if user.FaceUpdatedAt == nil {
 				return nil
@@ -90,7 +90,7 @@ func GetMyProfile(c *gin.Context) {
 		// [FIX] Gunakan data dari hasil Preload agar lebih instan dan akurat
 		resp.PositionName = user.Position.Name
 		resp.Salary = user.Position.Salary
-		
+
 		// Fallback jika karena suatu alasan Preload gagal tapi ID ada
 		if resp.PositionName == "" {
 			var pos models.Position
@@ -181,7 +181,7 @@ func UpdateFcmToken(c *gin.Context) {
 	}
 
 	database.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("fcm_token", body.FcmToken)
-	
+
 	// Fetch full user record to avoid overwriting fields with empty values in DBs
 	var fullUser models.User
 	if err := database.DB.Where("id = ?", user.ID).First(&fullUser).Error; err == nil {
@@ -633,14 +633,12 @@ func UpdateFaceEmbedding(c *gin.Context) {
 	utils.Success(c, "Face ID berhasil didaftarkan", nil)
 }
 
-
-
 func RegisterFace(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(models.User)
 
 	var in struct {
-		Images   []string `json:"images"`
+		Images []string `json:"images"`
 	}
 	if err := c.BindJSON(&in); err != nil {
 		utils.Error(c, "Input tidak valid")

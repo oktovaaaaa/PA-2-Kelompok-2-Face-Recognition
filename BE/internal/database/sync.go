@@ -11,8 +11,27 @@ import (
 	"gorm.io/gorm"
 )
 
+/*
+pemetaan sinkronisasi database (sumber ke target):
+
+sumber database utama:
+- dbname: pa2_auth
+
+database target sinkronisasi:
+1. dbname: pa2_attendance (absensi)
+2. dbname: pa2_payroll (penggajian)
+
+skema duplikasi tabel:
+- tabel 'companies' (pa2_auth) ----> diduplikasi ke tabel 'companies' (pa2_attendance & pa2_payroll)
+- tabel 'positions' (pa2_auth) ----> diduplikasi ke tabel 'positions' (pa2_attendance & pa2_payroll)
+- tabel 'users'     (pa2_auth) ----> diduplikasi ke tabel 'users'     (pa2_attendance & pa2_payroll)
+
+patokan utama sinkronisasi adalah id (uuid) dari masing-masing record pada database pa2_auth.
+*/
+
 // SyncCompanyToAttendance menyalin data company dari Auth ke database Attendance secara manual.
 func SyncCompanyToAttendance(company models.Company) error {
+	// 1. buka koneksi gorm langsung ke database absensi (pa2_attendance)
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
@@ -22,11 +41,13 @@ func SyncCompanyToAttendance(company models.Company) error {
 	if err != nil {
 		return err
 	}
+	// 2. simpan/duplikasi record data company ke database absensi
 	return db.Save(&company).Error
 }
 
 // SyncCompanyToPayroll menyalin data company dari Auth ke database Payroll secara manual.
 func SyncCompanyToPayroll(company models.Company) error {
+	// 1. buka koneksi gorm langsung ke database payroll (pa2_payroll)
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
@@ -36,11 +57,13 @@ func SyncCompanyToPayroll(company models.Company) error {
 	if err != nil {
 		return err
 	}
+	// 2. simpan/duplikasi record data company ke database payroll
 	return db.Save(&company).Error
 }
 
 // SyncPositionToAttendance menyalin data position dari Auth ke database Attendance secara manual.
 func SyncPositionToAttendance(position models.Position) error {
+	// 1. buka koneksi gorm langsung ke database absensi (pa2_attendance)
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"),
@@ -50,6 +73,7 @@ func SyncPositionToAttendance(position models.Position) error {
 	if err != nil {
 		return err
 	}
+	// 2. simpan/duplikasi record data jabatan ke database absensi
 	return db.Save(&position).Error
 }
 
@@ -176,12 +200,12 @@ func SyncUserToPayroll(user models.User) error {
 
 func InitialSyncFromAuth() {
 	fmt.Println("[Sync] >>> MEMULAI INITIAL SYNC DARI AUTH DB <<<")
-	
+
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	pass := os.Getenv("DB_PASSWORD")
 	port := os.Getenv("DB_PORT")
-	
+
 	fmt.Printf("[Sync] Menghubungkan ke %s:%s (DB: pa2_auth)...\n", host, port)
 
 	// Koneksi ke DB Auth
@@ -238,12 +262,12 @@ func InitialSyncFromAuth() {
 
 	for _, u := range users {
 		fmt.Printf("[Sync] Menyalin user: %s (Role: %s, Status: %s)\n", u.Name, u.Role, u.Status)
-		
+
 		// Sinkronkan ke Attendance
 		if err := SyncUserToAttendance(u); err != nil {
 			fmt.Printf("[Sync] !!! GAGAL menyalin %s ke Attendance: %v\n", u.Name, err)
 		}
-		
+
 		// Sinkronkan ke Payroll
 		if err := SyncUserToPayroll(u); err != nil {
 			fmt.Printf("[Sync] !!! GAGAL menyalin %s ke Payroll: %v\n", u.Name, err)
