@@ -6,13 +6,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 class PdfExportService {
-  static Future<String> exportAttendance(
+  static Future<String> exportAttendance( //export pdf 
     List<dynamic> records,
     String fileName, {
     required Map<String, int> stats,
     required String periodLabel,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(); // membuat dokumen kosong
     
     // Load logo
     ByteData? logoData;
@@ -29,7 +29,7 @@ class PdfExportService {
     final errorColor = PdfColor.fromHex('#EF4444');
     final infoColor = PdfColor.fromHex('#3B82F6');
 
-    pdf.addPage(
+    pdf.addPage( // tampilan untuk ui pdf 
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(0), // Set to 0 to allow header to span full width
@@ -185,7 +185,7 @@ class PdfExportService {
                       _formatDate(r['date']),
                       _formatTime(r['check_in_time']),
                       _formatTime(r['check_out_time']),
-                      _translateStatus(r['status'] ?? r['type']),
+                      _translateStatus(r['status'] ?? r['type']), // menginput data dari database
                     ];
                   },
                 ),
@@ -198,7 +198,7 @@ class PdfExportService {
 
     final output = await getTemporaryDirectory();
     final file = File("${output.path}/$fileName.pdf");
-    await file.writeAsBytes(await pdf.save());
+    await file.writeAsBytes(await pdf.save()); // donlowd pdf
     return file.path;
   }
 

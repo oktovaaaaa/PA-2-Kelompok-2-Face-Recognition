@@ -198,7 +198,7 @@ func SyncUserToPayroll(user models.User) error {
 	return nil
 }
 
-func InitialSyncFromAuth() {
+func InitialSyncFromAuth() { // sync dari auth ke semua database
 	fmt.Println("[Sync] >>> MEMULAI INITIAL SYNC DARI AUTH DB <<<")
 
 	host := os.Getenv("DB_HOST")
@@ -221,7 +221,7 @@ func InitialSyncFromAuth() {
 
 	// 1. Sync Companies
 	var companies []models.Company
-	if err := authDB.Find(&companies).Error; err != nil {
+	if err := authDB.Find(&companies).Error; err != nil { // yang mengambil data
 		fmt.Printf("[Sync] !!! ERROR QUERY COMPANY DI AUTH: %v\n", err)
 	} else {
 		fmt.Printf("[Sync] Ditemukan %d company di database pa2_auth. Mulai menyalin...\n", len(companies))
@@ -237,7 +237,7 @@ func InitialSyncFromAuth() {
 
 	// 2. Sync Positions
 	var positions []models.Position
-	if err := authDB.Find(&positions).Error; err != nil {
+	if err := authDB.Find(&positions).Error; err != nil { // yang mengambil data
 		fmt.Printf("[Sync] !!! ERROR QUERY POSITION DI AUTH: %v\n", err)
 	} else {
 		fmt.Printf("[Sync] Ditemukan %d position di database pa2_auth. Mulai menyalin...\n", len(positions))
@@ -253,7 +253,7 @@ func InitialSyncFromAuth() {
 
 	// 3. Sync Users
 	var users []models.User
-	if err := authDB.Find(&users).Error; err != nil {
+	if err := authDB.Find(&users).Error; err != nil { // yang mengambil data
 		fmt.Printf("[Sync] !!! ERROR QUERY USER DI AUTH: %v\n", err)
 		return
 	}

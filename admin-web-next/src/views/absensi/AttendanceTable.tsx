@@ -272,7 +272,7 @@ const AttendanceTable = ({ parentPeriod, parentMonth, parentYear }: AttendanceTa
     }
   }
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async () => { // export pdf dari web admin
     const { default: jsPDF } = await import('jspdf')
     const { default: autoTable } = await import('jspdf-autotable')
     

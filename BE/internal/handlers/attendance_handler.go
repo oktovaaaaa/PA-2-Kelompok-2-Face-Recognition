@@ -92,7 +92,7 @@ func calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	// kalikan dengan radius bumi untuk menghasilkan jarak akhir dalam meter
-	return R * c
+	return R * c // r = radius bumi
 }
 
 // isHoliday mengecek apakah tanggal tertentu adalah hari libur (manual atau akhir pekan)

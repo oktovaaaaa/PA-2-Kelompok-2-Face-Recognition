@@ -68,12 +68,14 @@ class _AppContent extends StatelessWidget {
                     key: const ValueKey('lock_screen_overlay'),
                     child: PopScope(
                       canPop: false,
-                      child: Navigator(
-                        key: const ValueKey('lock_screen_navigator'),
-                        onGenerateRoute: (settings) => MaterialPageRoute(
-                          builder: (context) => features_login.LoginScreen(
-                            key: const ValueKey('login_pin_only'),
-                            pinOnlyMode: true,
+                      child: HeroControllerScope.none(
+                        child: Navigator(
+                          key: const ValueKey('lock_screen_navigator'),
+                          onGenerateRoute: (settings) => MaterialPageRoute(
+                            builder: (context) => features_login.LoginScreen(
+                              key: const ValueKey('login_pin_only'),
+                              pinOnlyMode: true,
+                            ),
                           ),
                         ),
                       ),
