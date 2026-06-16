@@ -22,8 +22,6 @@ func SendOTPEmail(email string, otp string) error {
 	m.SetHeader("To", email)
 	// 4. Set subjek email verifikasi.
 	m.SetHeader("Subject", "🔐 Verifikasi Keamanan Videnti")
-	// 5. Menyematkan logo Videnti secara lokal ke dalam email (CID embedding).
-	m.Embed("assets/videnti.png")
 
 	// Preheader padding untuk menyembunyikan sisa konten email agar tidak terlihat pada preview notifikasi push email.
 	preheaderPadding := "&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;"
@@ -41,7 +39,7 @@ func SendOTPEmail(email string, otp string) error {
 			.header { background-color: #F1F5F9; padding: 40px 20px; text-align: center; color: #0F172A; border-bottom: 1px solid #E2E8F0; }
 			.header-content { display: inline-block; }
 			.logo-img { width: 64px; height: 64px; vertical-align: middle; margin-right: -20px; }
-			.brand-name { display: inline-block; vertical-align: middle; margin: 0; font-size: 48px; font-weight: 900; letter-spacing: -2px; text-transform: uppercase; color: #0F172A; }
+			.brand-name { display: inline-block; vertical-align: middle; margin: 0; font-size: 48px; font-weight: 900; letter-spacing: -1px; color: #2563EB; }
 			.content { padding: 30px 25px; text-align: center; color: #1E293B; }
 			.content h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #64748B; margin-bottom: 20px; }
 			.otp-box { background-color: #F8FAFC; border-radius: 12px; padding: 18px 24px; display: inline-block; margin: 0 auto 20px; border: 2px solid #E2E8F0; }
@@ -62,8 +60,7 @@ func SendOTPEmail(email string, otp string) error {
 		<div class="container">
 			<div class="header">
 				<div class="header-content">
-					<img src="cid:videnti.png" alt="" class="logo-img">
-					<h1 class="brand-name">DENTI</h1>
+					<h1 class="brand-name">Videnti</h1>
 				</div>
 			</div>
 			<div class="content">
