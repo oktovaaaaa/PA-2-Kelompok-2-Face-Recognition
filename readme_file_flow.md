@@ -195,9 +195,12 @@ Untuk merubah tujuan API dari server ke lokal atau sebaliknya:
 
 Python service digunakan untuk mengekstrak embedding wajah absensi.
 
-- Masuk ke folder backend (`BE`).
-- Pastikan Python >= 3.8 terinstall, lalu jalankan perintah:
-  ```bash
+- Buka CMD Windows/PowerShell dan masuk ke folder BE:
+  ```cmd
+  cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
+  ```
+- Pastikan Python >= 3.8 terinstall, lalu jalankan perintah instalasi library:
+  ```cmd
   pip install -r requirements.txt
   ```
   _(Library utama mencakup: fastapi, uvicorn, insightface, opencv-python, numpy, onnxruntime)._
@@ -205,30 +208,42 @@ Python service digunakan untuk mengekstrak embedding wajah absensi.
 ### 4. Cara Menjalankan Backend (Microservices & AI Engine)
 
 - **Menjalankan AI Engine (Python)**:
-  ```bash
+  Buka CMD/PowerShell baru, masuk ke folder BE:
+
+  ```cmd
+  cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
   python process_face_api.py
   ```
+
   _(Berjalan di port 5000)._
+
 - **Menjalankan Seluruh Microservices Go Sekaligus (Windows)**:
-  - Cukup jalankan file batch script yang disediakan di folder `BE`:
-    ```cmd
-    run_microservices.bat
-    ```
+  Buka CMD/PowerShell baru, masuk ke folder BE:
+
+  ```cmd
+  cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
+  run_microservices.bat
+  ```
+
 - **Menjalankan Microservices Satu demi Satu secara Manual**:
   - **Auth Service** (Port 8081):
-    ```bash
+    ```cmd
+    cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
     go run cmd/auth/main.go
     ```
   - **Attendance Service** (Port 8082):
-    ```bash
+    ```cmd
+    cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
     go run cmd/attendance/main.go
     ```
   - **Payroll Service** (Port 8083):
-    ```bash
+    ```cmd
+    cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
     go run cmd/payroll/main.go
     ```
   - **API Gateway** (Port 8080):
-    ```bash
+    ```cmd
+    cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition\BE
     go run cmd/gateway/main.go
     ```
 
@@ -236,14 +251,19 @@ Python service digunakan untuk mengekstrak embedding wajah absensi.
 
 Pemicu beban kerja uji stress pada endpoint absensi:
 
-- Buka terminal di direktori utama (root) proyek (`PA-2-Kelompok-2-Face-Recognition`).
-- Pastikan file `face_base64.txt` sudah dibuat di folder root tersebut berisi string base64 gambar wajah.
-- Jalankan pengujian dasar dengan k6:
-  ```bash
-  k6 run k6_stress_test.js
+- Buka CMD Windows/PowerShell baru dan masuk ke direktori utama (root) proyek:
+  ```cmd
+  cd /d c:\Users\Oktovaaaaa\Documents\GitHub\PA-2-Kelompok-2-Face-Recognition
   ```
+- Pastikan file face_base64.txt sudah dibuat di folder root tersebut berisi string base64 gambar wajah.
+- Jalankan pengujian dasar dengan k6:
+
+  ```cmd
+
+  ```
+
 - Jalankan pengujian dan ekspor hasilnya ke file CSV untuk dianalisis:
-  ```bash
+  ```cmd
   k6 run --out csv=results.csv k6_stress_test.js
   ```
 
@@ -252,19 +272,19 @@ Pemicu beban kerja uji stress pada endpoint absensi:
 Mekanisme replikasi data instansi, jabatan, dan pengguna lintas microservices:
 
 - **Database Asal (Sumber Utama)**:
-  - **Nama DB**: `pa2_auth` (Dideklarasikan di file konfigurasi [`.env.auth`](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/.env.auth) lewat variabel `DB_NAME=pa2_auth`).
+  - **Nama DB**: pa2_auth (Dideklarasikan di file konfigurasi .env.auth lewat variabel DB_NAME=pa2_auth).
 - **Database Target (Tujuan Duplikasi)**:
-  - **Nama DB**: `pa2_attendance` dan `pa2_payroll` (Dideklarasikan di file [`sync.go`](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/database/sync.go) melalui parameter koneksi GORM eksplisit).
+  - **Nama DB**: pa2_attendance dan pa2_payroll (Dideklarasikan di file sync.go melalui parameter koneksi GORM eksplisit).
 - **Pemetaan Skema Tabel**:
-  - Tabel `companies` (di DB `pa2_auth`) -> diduplikasi ke tabel `companies` (di DB `pa2_attendance` & `pa2_payroll`).
-  - Tabel `positions` (di DB `pa2_auth`) -> diduplikasi ke tabel `positions` (di DB `pa2_attendance` & `pa2_payroll`).
-  - Tabel `users` (di DB `pa2_auth`) -> diduplikasi ke tabel `users` (di DB `pa2_attendance` & `pa2_payroll`).
+  - Tabel companies (di DB pa2_auth) -> diduplikasi ke tabel companies (di DB pa2_attendance & pa2_payroll).
+  - Tabel positions (di DB pa2_auth) -> diduplikasi ke tabel positions (di DB pa2_attendance & pa2_payroll).
+  - Tabel users (di DB pa2_auth) -> diduplikasi ke tabel users (di DB pa2_attendance & pa2_payroll).
 - **Lokasi Deklarasi Kode**:
-  - Koneksi massal awal dideklarasikan di fungsi `InitialSyncFromAuth` ([`sync.go`](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/database/sync.go)):
+  - Koneksi massal awal dideklarasikan di fungsi InitialSyncFromAuth (sync.go):
     ```go
     authDsn := fmt.Sprintf(..., "pa2_auth", ...)
     ```
-  - Sinkronisasi harian berjalan melalui aksi CRUD di Handler (misal: [`position_handler.go`](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/position_handler.go)):
+  - Sinkronisasi harian berjalan melalui aksi CRUD di Handler (misal: position_handler.go):
     ```go
     // simpan ke DB asal (pa2_auth)
     database.DB.Create(&position)
