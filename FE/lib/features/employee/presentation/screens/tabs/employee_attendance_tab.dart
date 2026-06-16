@@ -1,6 +1,7 @@
 // lib/features/employee/presentation/screens/tabs/employee_attendance_tab.dart
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -282,6 +283,69 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
+  }
+
+  List<Widget> _buildLatePenaltyRows(Map<String, dynamic>? rules) {
+    final List<Widget> list = [];
+    if (rules == null) return list;
+
+    final tiersJson = rules['late_penalty_tiers'] as String?;
+    if (tiersJson != null && tiersJson.isNotEmpty) {
+      try {
+        final List<dynamic> tiers = jsonDecode(tiersJson);
+        if (tiers.isNotEmpty) {
+          for (int i = 0; i < tiers.length; i++) {
+            final t = tiers[i];
+            final hours = (t['hours'] as num?)?.toInt() ?? 0;
+            final penalty = (t['penalty'] as num?)?.toInt() ?? 0;
+            
+            // Format label secara dinamis
+            String labelText = 'Terlambat $hours Jam';
+            if (i == tiers.length - 1) {
+              labelText = 'Terlambat >= $hours Jam';
+            }
+
+            list.add(
+              _buildModernRuleRow(
+                icon: Icons.timer_outlined,
+                label: labelText,
+                value: 'Rp ${CurrencyInputFormatter.formatNumber(penalty)}',
+                iconColor: const Color(0xFFDC2626),
+                bgColor: Colors.white,
+                isDenda: true,
+              ),
+            );
+            
+            // Tambahkan pembatas antar tier (kecuali untuk item terakhir)
+            if (i < tiers.length - 1) {
+              list.add(
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Divider(height: 1, color: Color(0xFFFEE2E2)),
+                ),
+              );
+            }
+          }
+          return list;
+        }
+      } catch (e) {
+        debugPrint('Gagal parse late_penalty_tiers: $e');
+      }
+    }
+
+    // Fallback: Tampilkan denda flat jika tidak ada denda berjenjang
+    final flatPenalty = (rules['late_fine'] ?? rules['late_penalty'] ?? 100000) as num;
+    list.add(
+      _buildModernRuleRow(
+        icon: Icons.timer_outlined,
+        label: 'Terlambat Masuk',
+        value: 'Rp ${CurrencyInputFormatter.formatNumber(flatPenalty.toInt())}',
+        iconColor: const Color(0xFFDC2626),
+        bgColor: Colors.white,
+        isDenda: true,
+      ),
+    );
+    return list;
   }
 
   String _getShortName(String full) {
@@ -611,14 +675,7 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
                         decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFFFEE2E2))),
                         child: Column(
                           children: [
-                            _buildModernRuleRow(
-                              icon: Icons.timer_outlined,
-                              label: 'Terlambat Masuk',
-                              value: 'Rp ${CurrencyInputFormatter.formatNumber((rules?['late_fine'] ?? rules?['late_penalty'] ?? 100000).toInt())}',
-                              iconColor: const Color(0xFFDC2626),
-                              bgColor: Colors.white,
-                              isDenda: true,
-                            ),
+                            ..._buildLatePenaltyRows(rules),
                             const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1, color: Color(0xFFFEE2E2))),
                             _buildModernRuleRow(
                               icon: Icons.person_off_outlined,

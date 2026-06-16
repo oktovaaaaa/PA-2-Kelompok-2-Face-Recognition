@@ -245,6 +245,10 @@ func ResetDeviceBinding(c *gin.Context) {
 	user.DeviceID = ""
 	database.DB.Save(&user)
 
+	// [FIX] Sinkronisasi ke DB Attendance & Payroll agar status reset device_id ikut terupdate
+	go database.SyncUserToAttendance(user)
+	go database.SyncUserToPayroll(user)
+
 	// Clear all active sessions for this user (Force Logout everywhere)
 	database.DB.Where("user_id = ?", user.ID).Delete(&models.Session{})
 

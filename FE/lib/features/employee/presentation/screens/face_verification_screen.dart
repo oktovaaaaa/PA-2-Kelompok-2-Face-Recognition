@@ -29,8 +29,8 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
   @override
   void initState() {
     super.initState();
-    // KODE LAMA (Dikomentari):
-    // // 4 Random gestures + Neutral at the end
+  
+
     // final list = [
     //   FaceAction.lookLeft, 
     //   FaceAction.lookRight, 
@@ -42,7 +42,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
     // list.shuffle();
     // _actions = [...list.take(2), FaceAction.neutral, FaceAction.done];
 
-    // KODE BARU: 3 Random gestures (tanpa blink & mouthOpen) + Neutral di akhir
+
     final list = [
       FaceAction.lookLeft, 
       FaceAction.lookRight, 
@@ -152,7 +152,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Ti
         }
       });
       
-      // Tunggu 1 detik agar user bisa reset posisi wajah
+      // 1 detik agar user bisa reset posisi wajah
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) setState(() => _cooldown = false);
     } else {

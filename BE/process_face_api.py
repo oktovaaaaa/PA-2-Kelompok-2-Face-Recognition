@@ -42,7 +42,7 @@ async def extract_embeddings(files: List[UploadFile] = File(...)):
                 continue
                 
             best_face = max(faces, key=lambda f: f.det_score)
-            results.append(best_face.embedding.tolist())
+            results.append(best_face.embedding.tolist())  # UNTUK konversi menjadi array json 512 angka desimal float yg jadi vector
         except Exception as e:
             results.append({"error": str(e)})
             

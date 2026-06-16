@@ -112,6 +112,10 @@ func FireEmployee(c *gin.Context) {
 
 	database.DB.Save(&user)
 
+	// [FIX] Sinkronisasikan status RESIGNED ke DB Attendance & Payroll
+	go database.SyncUserToAttendance(user)
+	go database.SyncUserToPayroll(user)
+
 	utils.Success(c, "Karyawan berhasil diberhentikan", gin.H{
 		"user_id": user.ID,
 		"name":    user.Name,
@@ -155,5 +159,10 @@ func ReactivateEmployee(c *gin.Context) {
 	}
 
 	database.DB.Save(&user)
+
+	// [FIX] Sinkronisasikan status ACTIVE kembali ke DB Attendance & Payroll
+	go database.SyncUserToAttendance(user)
+	go database.SyncUserToPayroll(user)
+
 	utils.Success(c, "Karyawan berhasil diaktifkan kembali", nil)
 }

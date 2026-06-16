@@ -44,7 +44,7 @@ func ProcessFaceImages(images []string) (string, error) {
 		return "", fmt.Errorf("gagal membuat request HTTP ke AI engine: %w", err)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
-
+	
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("gagal menghubungi AI Engine: %w. Pastikan Python service sudah berjalan.", err)

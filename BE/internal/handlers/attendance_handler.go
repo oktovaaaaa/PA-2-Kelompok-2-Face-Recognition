@@ -194,7 +194,18 @@ func CheckIn(c *gin.Context) {
 		}
 		similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
 
-		fmt.Printf("--> Verifikasi wajah untuk %s: Similarity = %.4f\n", emp.Name, similarity)
+		fmt.Printf("\n==================================================\n")
+		fmt.Printf("=== DEBUG PERBANDINGAN WAJAH (%s) ===\n", emp.Name)
+		if len(liveEmb) >= 5 && len(registeredEmb) >= 5 {
+			fmt.Printf("1. Vektor Live (5 Dimensi Pertama): %v\n", liveEmb[:5])
+			fmt.Printf("2. Vektor DB (5 Dimensi Pertama)  : %v\n", registeredEmb[:5])
+		}
+		fmt.Printf("3. Dot Product                     : %f\n", dotProduct)
+		fmt.Printf("4. Magnitude Live (Akar kuadrat)   : %f (Akar dari %f)\n", math.Sqrt(float64(mag1)), mag1)
+		fmt.Printf("5. Magnitude DB   (Akar kuadrat)   : %f (Akar dari %f)\n", math.Sqrt(float64(mag2)), mag2)
+		fmt.Printf("6. Hasil Cosine Similarity         : %f (Persentase: %.2f%%)\n", similarity, similarity*100)
+		fmt.Printf("7. Batas Threshold Lolos           : 0.6000 (60.00%%)\n")
+		fmt.Printf("==================================================\n\n")
 
 		if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
 			utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
@@ -390,7 +401,18 @@ func CheckOut(c *gin.Context) {
 		}
 		similarity := dotProduct / (float32(math.Sqrt(float64(mag1))) * float32(math.Sqrt(float64(mag2))))
 
-		fmt.Printf("--> Verifikasi wajah (Check-out) untuk %s: Similarity = %.4f\n", emp.Name, similarity)
+		fmt.Printf("\n==================================================\n")
+		fmt.Printf("=== DEBUG PERBANDINGAN WAJAH (CHECK-OUT - %s) ===\n", emp.Name)
+		if len(liveEmb) >= 5 && len(registeredEmb) >= 5 {
+			fmt.Printf("1. Vektor Live (5 Dimensi Pertama): %v\n", liveEmb[:5])
+			fmt.Printf("2. Vektor DB (5 Dimensi Pertama)  : %v\n", registeredEmb[:5])
+		}
+		fmt.Printf("3. Dot Product                     : %f\n", dotProduct)
+		fmt.Printf("4. Magnitude Live (Akar kuadrat)   : %f (Akar dari %f)\n", math.Sqrt(float64(mag1)), mag1)
+		fmt.Printf("5. Magnitude DB   (Akar kuadrat)   : %f (Akar dari %f)\n", math.Sqrt(float64(mag2)), mag2)
+		fmt.Printf("6. Hasil Cosine Similarity         : %f (Persentase: %.2f%%)\n", similarity, similarity*100)
+		fmt.Printf("7. Batas Threshold Lolos           : 0.6000 (60.00%%)\n")
+		fmt.Printf("==================================================\n\n")
 
 		if similarity < 0.6 { // Threshold 0.6 untuk InsightFace ArcFace
 			utils.Error(c, "Verifikasi Wajah Gagal. Pastikan Anda adalah pemilik akun ini.")
