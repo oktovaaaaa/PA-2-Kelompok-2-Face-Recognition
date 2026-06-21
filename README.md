@@ -87,34 +87,55 @@ Telah disediakan script otomatis untuk mem-backup database baik di lingkungan lo
 3. Hasil file backup (.sql) akan otomatis disimpan di folder `BE/backups` dengan format nama menyertakan tanggal saat ini.
 
 ### B. Lingkungan Produksi (VPS Linux/Ubuntu)
-1. Masuk ke folder proyek BE di VPS Anda:
-   ```bash
-   cd ~/PA-2-Kelompok-2-Face-Recognition/BE
-   ```
-2. Berikan izin eksekusi pada file script backup:
-   ```bash
-   chmod +x backup_db.sh
-   ```
-3. Jalankan script backup secara manual:
-   ```bash
-   ./backup_db.sh
-   ```
-4. **Cara Melihat Hasil Backup:**
-   File backup `.sql` akan tersimpan di direktori `~/db_backups/`. Gunakan perintah berikut untuk melihat hasil dan isinya:
-   ```bash
-   cd ~/db_backups
-   ls -lh                                                 # Melihat daftar file backup dan ukurannya
-   grep -i "INSERT INTO" videnti_auth_2026-06-22.sql | head -n 10  # Memverifikasi data record yang berhasil di-backup
-   ```
-5. **Otomatisasi Menggunakan Cron Job:**
-   Agar backup berjalan otomatis setiap hari (misal pukul 02:00 dini hari), edit konfigurasi cron di VPS Anda:
+
+Jalankan perintah-perintah berikut langsung di terminal SSH VPS Anda:
+
+#### 1. Masuk ke Folder Proyek Backend
+```bash
+cd ~/PA-2-Kelompok-2-Face-Recognition/BE
+```
+
+#### 2. Berikan Izin Eksekusi pada Script Backup
+*(Hanya perlu dilakukan satu kali)*
+```bash
+chmod +x backup_db.sh
+```
+
+#### 3. Jalankan Backup secara Manual
+```bash
+./backup_db.sh
+```
+
+#### 4. Cara Melihat Hasil Backup & Isinya
+File backup `.sql` akan tersimpan di folder `~/db_backups/` di direktori home user VPS Anda. Untuk melihat daftar dan isinya, jalankan perintah berikut di VPS:
+```bash
+# Masuk ke folder penyimpanan hasil backup di VPS
+cd ~/db_backups
+
+# Melihat file backup yang terbentuk beserta ukuran filenya (bukan 0 bytes)
+ls -lh
+
+# Mengintip isi 50 baris teratas file SQL (untuk memastikan struktur dump terbentuk)
+head -n 50 videnti_auth_2026-06-22.sql
+
+# Mencari baris perintah INSERT INTO (untuk memastikan record data ter-backup secara riil)
+grep -i "INSERT INTO" videnti_auth_2026-06-22.sql | head -n 10
+```
+*(Sesuaikan tanggal pada nama file `videnti_auth_YYYY-MM-DD.sql` dengan tanggal hari ini).*
+
+#### 5. Menyiapkan Backup Otomatis Mingguan (Cron Job)
+Agar backup berjalan otomatis setiap minggu pada **hari Minggu pukul 00:00 dini hari**, atur jadwal di VPS Anda:
+
+1. Di terminal VPS Anda, ketik perintah berikut:
    ```bash
    crontab -e
    ```
-   Tambahkan baris berikut di baris paling bawah (sesuaikan dengan username VPS Anda):
+2. Jika ditanya jenis editor, pilih `nano` (biasanya ketik `1` lalu tekan `Enter`).
+3. Scroll ke baris paling bawah, lalu paste baris perintah cron job berikut:
    ```text
-   0 2 * * * /home/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/BE/backup_db.sh > /dev/null 2>&1
+   0 0 * * 0 /home/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/BE/backup_db.sh > /dev/null 2>&1
    ```
+4. Simpan perubahan dengan menekan `Ctrl+O`, lalu `Enter`, dan keluar dengan menekan `Ctrl+X`.
 
 ---
 
