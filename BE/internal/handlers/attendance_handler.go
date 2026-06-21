@@ -135,9 +135,12 @@ func CheckIn(c *gin.Context) {
 	var emp models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
 	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
-		fmt.Printf("--> [ATTENDANCE ERROR] Gagal mengambil data dari Auth Service: %v\n", err)
-		utils.Error(c, "Gagal memverifikasi identitas ke Auth Service")
-		return
+		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").First(&emp, "id = ?", userID).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Gagal memverifikasi identitas ke Auth Service dan database lokal")
+			return
+		}
 	}
 
 	// periksa apakah data karyawan ditemukan di database auth
@@ -352,9 +355,12 @@ func CheckOut(c *gin.Context) {
 	var emp models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
 	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
-		fmt.Printf("--> [ATTENDANCE ERROR] Gagal mengambil data dari Auth Service: %v\n", err)
-		utils.Error(c, "Gagal memverifikasi identitas ke Auth Service")
-		return
+		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").First(&emp, "id = ?", userID).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Gagal memverifikasi identitas ke Auth Service dan database lokal")
+			return
+		}
 	}
 
 	if emp.ID == "" {
@@ -902,8 +908,12 @@ func AdminGetAttendanceHistory(c *gin.Context) {
 	var allEmployees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &allEmployees); err != nil {
-		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
-		return
+		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&allEmployees).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Gagal mengambil data karyawan dari Auth Service dan database lokal")
+			return
+		}
 	}
 
 	// Filter hanya ROLE EMPLOYEE (Admin tidak perlu masuk laporan absensi)
@@ -1268,7 +1278,12 @@ func AdminGetDashboardSummary(c *gin.Context) {
 		if err := utils.CallInternalAPI(authURL, &emp); err == nil && emp.CompanyID == admin.CompanyID && emp.Status == "ACTIVE" && emp.Role == "EMPLOYEE" {
 			totalEmployees = 1
 		} else {
-			totalEmployees = 0
+			// Fallback:
+			if database.DB.Where("id = ? AND company_id = ? AND status = ? AND role = ?", userID, admin.CompanyID, "ACTIVE", "EMPLOYEE").First(&emp).Error == nil {
+				totalEmployees = 1
+			} else {
+				totalEmployees = 0
+			}
 		}
 	} else {
 		var empResult struct {
@@ -1278,7 +1293,8 @@ func AdminGetDashboardSummary(c *gin.Context) {
 		if err := utils.CallInternalAPI(authCountURL, &empResult); err == nil {
 			totalEmployees = empResult.Count
 		} else {
-			fmt.Printf("[Attendance] Gagal mengambil jumlah karyawan dari Auth Service: %v\n", err)
+			fmt.Printf("[Attendance] Gagal mengambil jumlah karyawan dari Auth Service, menggunakan local DB: %v\n", err)
+			database.DB.Model(&models.User{}).Where("company_id = ? AND status = ? AND role = ?", admin.CompanyID, "ACTIVE", "EMPLOYEE").Count(&totalEmployees)
 		}
 	}
 
@@ -1525,7 +1541,10 @@ func AdminGetDetailedDashboardSummary(c *gin.Context) {
 	var allEmployees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &allEmployees); err != nil {
-		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service: %v\n", err)
+		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&allEmployees).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+		}
 	}
 
 	var employees []models.User
@@ -1673,7 +1692,10 @@ func AdminGetAttendanceTrend(c *gin.Context) {
 	var allEmployees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &allEmployees); err != nil {
-		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service: %v\n", err)
+		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&allEmployees).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+		}
 	}
 
 	var employees []models.User
@@ -2138,8 +2160,11 @@ func CalculateAttendanceAdjustments(userID string, month int, year int) (float64
 	// Ambil data karyawan via internal API Auth Service (Port 8081)
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID)
 	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
-		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service: %v\n", err)
-		return 0, 0, "", ""
+		fmt.Printf("[Attendance] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").First(&emp, "id = ?", userID).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+			return 0, 0, "", ""
+		}
 	}
 
 	var settings models.AttendanceSettings

@@ -743,7 +743,7 @@ func getEmbedding(base64Image string) ([]float32, error) {
 
 	// Kirim request ke Python API
 	client := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest("POST", "http://localhost:5000/extract-embeddings", &b)
+	req, err := http.NewRequest("POST", "http://localhost:5000/extract-embeddings", &b) //extract-embeddings
 	if err != nil {
 		return nil, fmt.Errorf("gagal membuat request HTTP ke AI engine: %w", err)
 	}
@@ -782,7 +782,7 @@ func getEmbedding(base64Image string) ([]float32, error) {
 	// Jika Python mengembalikan error object di elemen pertama
 	if errMap, ok := results[0].(map[string]interface{}); ok {
 		if errMsg, exists := errMap["error"]; exists {
-			return nil, fmt.Errorf("AI Error: %v", errMsg)
+			return nil, fmt.Errorf("%v", errMsg)
 		}
 	}
 

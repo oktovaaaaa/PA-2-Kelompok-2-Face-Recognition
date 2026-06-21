@@ -40,8 +40,12 @@ func AdminCreateBonus(c *gin.Context) {
 	var checkUser models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", input.UserID)
 	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
-		utils.Error(c, "Karyawan tidak ditemukan atau gangguan koneksi service")
-		return
+		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal memverifikasi user dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").First(&checkUser, "id = ?", input.UserID).Error; dbErr != nil {
+			fmt.Printf("--> [PAYROLL ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Karyawan tidak ditemukan atau gangguan koneksi service")
+			return
+		}
 	}
 
 	// 3. validasi kecocokan perusahaan admin dengan perusahaan karyawan
@@ -96,8 +100,12 @@ func AdminGetBonuses(c *gin.Context) {
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
-		utils.Error(c, "Gagal mengambil data karyawan")
-		return
+		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&employees).Error; dbErr != nil {
+			fmt.Printf("--> [PAYROLL ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Gagal mengambil data karyawan")
+			return
+		}
 	}
 
 	userMap := make(map[string]models.User)
@@ -183,7 +191,14 @@ func AdminDeleteBonus(c *gin.Context) {
 	// [FIX MICROSERVICES] Verifikasi kepemilikan user via Auth Service
 	var checkUser models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", bonus.UserID)
-	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil || checkUser.CompanyID != admin.CompanyID {
+	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
+		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data user dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").First(&checkUser, "id = ?", bonus.UserID).Error; dbErr != nil || checkUser.CompanyID != admin.CompanyID {
+			fmt.Printf("--> [PAYROLL ERROR] Local DB juga gagal atau company mismatch: %v\n", dbErr)
+			utils.Error(c, "Anda tidak memiliki akses ke data ini")
+			return
+		}
+	} else if checkUser.CompanyID != admin.CompanyID {
 		utils.Error(c, "Anda tidak memiliki akses ke data ini")
 		return
 	}
@@ -208,7 +223,10 @@ func AdminGetBonusYears(c *gin.Context) {
 	// [FIX MICROSERVICES] Ambil user IDs dulu
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
-	utils.CallInternalAPI(authURL, &employees)
+	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
+		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&employees)
+	}
 
 	var userIDs []string
 	for _, e := range employees {

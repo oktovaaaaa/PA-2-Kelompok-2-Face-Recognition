@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -437,17 +438,19 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
       value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
-        body: ShakeWidget(
-          key: _shakeKey,
-          shakeCount: 2,
-          shakeOffset: 5,
-          shakeDuration: const Duration(milliseconds: 300),
-          child: RefreshIndicator(
-            color: const Color(0xFF2563EB),
-            onRefresh: _load,
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
+        body: Stack(
+          children: [
+            ShakeWidget(
+              key: _shakeKey,
+              shakeCount: 2,
+              shakeOffset: 5,
+              shakeDuration: const Duration(milliseconds: 300),
+              child: RefreshIndicator(
+                color: const Color(0xFF2563EB),
+                onRefresh: _load,
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
                 // Header
                 Stack(
                   children: [
@@ -733,8 +736,69 @@ class _EmployeeAttendanceTabState extends State<EmployeeAttendanceTab> {
             ),
           ),
         ),
+        if (_actionLoading)
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: Container(
+                color: Colors.black.withOpacity(0.4),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Memverifikasi Wajah...',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Memproses kecocokan wajah. Harap tunggu sebentar...',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildCardDetail(String label, String value, {Color? color}) {

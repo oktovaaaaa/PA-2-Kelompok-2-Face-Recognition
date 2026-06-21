@@ -32,8 +32,12 @@ func AdminGetLeaveRequests(c *gin.Context) {
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
-		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
-		return
+		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&employees).Error; dbErr != nil {
+			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Gagal mengambil data karyawan dari Auth Service dan database lokal")
+			return
+		}
 	}
 
 	// Create map for easy lookup and filter by search
@@ -341,16 +345,19 @@ func EmployeeCreateLeave(c *gin.Context) {
 	// ambil daftar data admin perusahaan ini dari auth service
 	var admins []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/admins?company_id=%s", emp.CompanyID)
-	if err := utils.CallInternalAPI(authURL, &admins); err == nil {
-		// kirimkan notifikasi ke setiap admin perusahaan secara paralel
-		for _, admin := range admins {
-			// simpan record log notifikasi baru ke database admin
-			services.CreateNotification(admin.ID, fullEmp.CompanyID, "Pengajuan Izin Baru",
-				fullEmp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
-			// kirim push notification firebase cloud messaging ke hp admin
-			services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",
-				fullEmp.Name+" mengajukan "+body.Type+": "+body.Title)
-		}
+	if err := utils.CallInternalAPI(authURL, &admins); err != nil {
+		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data admin dari Auth Service, mencoba local DB: %v\n", err)
+		database.DB.Preload("Company").Preload("Position").Where("company_id = ? AND role = ?", emp.CompanyID, "ADMIN").Find(&admins)
+	}
+
+	// kirimkan notifikasi ke setiap admin perusahaan secara paralel
+	for _, admin := range admins {
+		// simpan record log notifikasi baru ke database admin
+		services.CreateNotification(admin.ID, fullEmp.CompanyID, "Pengajuan Izin Baru",
+			fullEmp.Name+" mengajukan "+body.Type+": "+body.Title, "LEAVE_REQUEST", leave.ID)
+		// kirim push notification firebase cloud messaging ke hp admin
+		services.SendPushNotification(admin.ID, "Pengajuan Izin Baru",
+			fullEmp.Name+" mengajukan "+body.Type+": "+body.Title)
 	}
 
 	utils.Success(c, "Izin berhasil diajukan", leave)

@@ -39,7 +39,7 @@ func ProcessFaceImages(images []string) (string, error) {
 
 	// Kirim POST request ke Python API
 	client := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest("POST", "http://localhost:5000/extract-embeddings", &b)
+	req, err := http.NewRequest("POST", "http://localhost:5000/extract-embeddings", &b) // 
 	if err != nil {
 		return "", fmt.Errorf("gagal membuat request HTTP ke AI engine: %w", err)
 	}
@@ -78,7 +78,7 @@ func ProcessFaceImages(images []string) (string, error) {
 		if len(allResults) > 0 {
 			if errMap, ok := allResults[0].(map[string]interface{}); ok {
 				if errMsg, exists := errMap["error"]; exists {
-					return "", fmt.Errorf("AI Error: %v", errMsg)
+					return "", fmt.Errorf("%v", errMsg)
 				}
 			}
 		}

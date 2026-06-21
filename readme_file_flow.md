@@ -162,6 +162,8 @@ position_handler.go
 sync.go
 
 ## Export PDF
+attendanceTable.tsx:
+ const handleExportPDF
 
 ## Panduan Operasional & Konfigurasi Sistem
 
@@ -293,3 +295,28 @@ Mekanisme replikasi data instansi, jabatan, dan pengguna lintas microservices:
     // sync ke DB target (pa2_attendance & pa2_payroll)
     database.SyncPositionToAttendance(position)
     ```
+
+
+1. Kenapa Hanya Network Bandwidth yang Melonjak Tajam?
+Penyebab: Request POST /checkin mengirimkan payload berupa foto wajah (baik dalam format Base64 atau file gambar). Satu file foto memiliki ukuran yang cukup besar (bisa 500 KB hingga 2 MB per foto).
+Efek: Ketika 100 user melakukan absensi secara bersamaan, mereka mengunggah file foto secara serentak ke server. Ini menyebabkan lonjakan lalu lintas jaringan (transfer data masuk/ingress) yang membuat grafik Network Bandwidth naik drastis.
+Perbandingan: Request GET lainnya (/locations, /today, dll.) hanya mengirimkan teks JSON kecil (beberapa byte saja), sehingga tidak mempengaruhi bandwidth.
+2. Kenapa Waktu Respon POST Sangat Lambat (25,8 Detik) tetapi CPU, RAM, & Disk I/O Sangat Rendah?
+A. Kemacetan Antrean (Single-Threaded Blocking)
+Proses ekstraksi wajah dengan model AI (face_analyzer.get(img)) adalah komputasi matematika berat. Secara default, FastAPI/Uvicorn berjalan pada satu worker (single-process).
+
+Python memiliki batas yang disebut GIL (Global Interpreter Lock) yang membuat Python hanya bisa mengeksekusi komputasi berat pada satu CPU core secara bergantian.
+Ketika 100 user menembak server secara bersamaan, server tidak memproses 100 foto sekaligus, melainkan mengantrekan request tersebut. User ke-2 harus menunggu user ke-1 selesai, user ke-3 menunggu user ke-2, hingga user ke-100 harus mengantre di urutan paling belakang.
+Waktu 25,8 detik tersebut bukanlah waktu pemrosesan 1 foto, melainkan waktu tunggu antrean akumulatif bagi user-user di antrean belakang sebelum foto mereka giliran diproses.
+B. Mengapa CPU Terlihat Rendah (Mendekati 0%)?
+Karena request tersebut mengantre satu per satu, hanya 1 core CPU saja yang bekerja pada satu waktu, sedangkan core CPU lainnya (misalnya server Anda memiliki 8 atau 16 core) menganggur. Pada grafik total server, penggunaan CPU kumulatif akan terlihat sangat kecil (misal hanya 5-10% dari total kapasitas CPU server keseluruhan).
+C. Mengapa RAM Datar?
+Model AI buffalo_l sudah di-load ke RAM sejak server dijalankan (~1.8 GB). Saat memproses foto, memori yang dibutuhkan untuk satu foto sangat kecil dan langsung dihapus setelah deteksi selesai. Karena foto diproses satu per satu (tidak paralel), penggunaan RAM tidak akan menumpuk dan grafik RAM akan terlihat flat.
+D. Mengapa Disk I/O Datar?
+Pemrosesan foto di process_face_api.py dilakukan langsung di dalam memori menggunakan io.BytesIO (in-memory bytes). Server tidak menulis atau membaca file foto ke dalam Harddisk/SSD selama proses verifikasi, sehingga aktivitas piringan harddisk (Disk I/O) tetap berada di angka 0.
+💡 Solusi untuk Mengatasi Masalah Ini:
+Gunakan Multi-Worker (Multiprocessing): Jalankan Uvicorn dengan menambahkan parameter --workers sesuai jumlah core CPU Anda.
+Contoh: uvicorn process_face_api:app --host 0.0.0.0 --port 5000 --workers 4
+Ini akan membuat Python membuka 4 proses paralel di RAM untuk memproses 4 wajah sekaligus di core CPU yang berbeda.
+Kompres Gambar di Sisi Aplikasi (Flutter): Sebelum mengirim foto ke backend, kompres resolusi gambar (maksimal 640x640 piksel saja karena input deteksi model diset pada det_size=(640, 640)). Ini akan memangkas lonjakan network bandwidth dan meringankan beban kerja CPU.
+8:17 AM

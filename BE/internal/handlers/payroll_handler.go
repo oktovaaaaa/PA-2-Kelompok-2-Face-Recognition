@@ -115,8 +115,12 @@ func AdminGetSalaries(c *gin.Context) {
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", admin.CompanyID)
 	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
-		utils.Error(c, "Gagal mengambil data karyawan dari Auth Service")
-		return
+		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", admin.CompanyID).Find(&employees).Error; dbErr != nil {
+			fmt.Printf("--> [PAYROLL ERROR] Local DB juga gagal: %v\n", dbErr)
+			utils.Error(c, "Gagal mengambil data karyawan dari Auth Service dan database lokal")
+			return
+		}
 	}
 
 	// 2. Filter employees in memory (mimic previous DB filters)
@@ -354,7 +358,13 @@ func repairDuplicates(userID string, month int, year int) {
 func generateSalary(userID string, month int, year int) {
 	// 1. ambil data user karyawan secara internal dari auth service
 	var user models.User
-	utils.CallInternalAPI(fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID), &user)
+	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID)
+	if err := utils.CallInternalAPI(authURL, &user); err != nil {
+		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan tunggal dari Auth Service, mencoba local DB: %v\n", err)
+		if dbErr := database.DB.Preload("Company").Preload("Position").First(&user, "id = ?", userID).Error; dbErr != nil {
+			fmt.Printf("--> [PAYROLL ERROR] Local DB juga gagal: %v\n", dbErr)
+		}
+	}
 
 	if user.ID == "" {
 		return

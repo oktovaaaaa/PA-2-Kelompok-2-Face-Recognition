@@ -1,23 +1,34 @@
-import sys, json, os, numpy as np, cv2
-import logging
+import sys, json, os, numpy as np, cv2  # Modul bawaan & eksternal untuk sistem, JSON, manipulasi array (numpy), dan pemrosesan gambar (OpenCV)
+import logging  # Bawaan Python: Untuk menampilkan log kesalahan (error logging)
 logging.basicConfig(level=logging.ERROR)
 
-
-import warnings
+import warnings  # Bawaan Python: Untuk mengabaikan pesan peringatan (warning) sistem
 warnings.filterwarnings("ignore")
 
-# PIL for EXIF-based rotation correction
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps  # Library Pillow: Untuk membuka gambar & rotasi otomatis agar tidak miring
+import insightface  # Library utama untuk pengenalan wajah (Face Recognition)
+from insightface.app import FaceAnalysis  # Class dari InsightFace untuk pipeline deteksi & ekstraksi wajah
 
-# InsightFace for face detection + alignment + embedding
-import insightface
-from insightface.app import FaceAnalysis
 
-# Initialize InsightFace with ArcFace model (buffalo_l)
+# ==============================================================================
+# PERBEDAAN PROCESS_FACE.PY (SCRIPT CLI LAMA) VS PROCESS_FACE_API.PY (API BARU):
+# - process_face.py (File Ini): Dijalankan sebagai script CLI sekali jalan. 
+#   Setiap kali ada request registrasi/check-in, sistem Go backend akan mengeksekusi 
+#   script ini dari awal. Kelemahannya: Sistem harus memuat model 'buffalo_l' 
+#   ke RAM dari awal setiap kali dipanggil, yang memakan waktu (overhead ~2-4 detik).
+# - process_face_api.py (API): Berjalan terus-menerus sebagai server API (FastAPI).
+#   Model 'buffalo_l' hanya dimuat SEKALI saat server dinyalakan. Saat ada registrasi/check-in,
+#   Go backend cukup memanggil endpoint HTTP POST sehingga prosesnya instan (<0.5 detik).
+# ==============================================================================
+
+# Inisialisasi model 'buffalo_l'. Pada script CLI lama ini, model akan di-load 
+# ke memori SETIAP KALI script ini dipanggil lewat perintah terminal/exec command.
+# Parameter 'providers': Menggunakan ONNX Runtime (library eksekusi model AI .onnx) dengan pilihan 'CPUExecutionProvider' untuk memproses model menggunakan CPU.
 app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
 app.prepare(ctx_id=-1, det_size=(640, 640))
 
 def get_embedding(image_paths):
+    
     try:
         results = []
         
@@ -51,9 +62,14 @@ def get_embedding(image_paths):
 
 
 if __name__ == "__main__":
+    # Memeriksa apakah argumen baris perintah kurang dari 2 (artinya tidak ada file foto yang dikirim dari backend)
     if len(sys.argv) < 2:
+        # Menampilkan pesan error dalam format JSON yang diawali "JSON_START" dan diakhiri "JSON_END" agar mudah di-parsing Go
         print("JSON_START" + json.dumps([{"error": "Path gambar diperlukan"}]) + "JSON_END")
     else:
+        # Mengambil semua argumen baris perintah mulai dari indeks ke-1 (daftar lokasi/path file gambar)
         image_paths = sys.argv[1:]
+        # Mengekstrak embedding wajah, mengubahnya ke format JSON, lalu mencetaknya di antara tanda pembatas "JSON_START" & "JSON_END"
         print("JSON_START" + json.dumps(get_embedding(image_paths)) + "JSON_END")
+        # Memaksa terminal untuk segera mengirimkan output teks (buffer flush) ke backend tanpa menunggu proses Python selesai
         sys.stdout.flush()
