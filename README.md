@@ -87,22 +87,55 @@ Telah disediakan script otomatis untuk mem-backup database baik di lingkungan lo
 3. Hasil file backup (.sql) akan otomatis disimpan di folder `BE/backups` dengan format nama menyertakan tanggal saat ini.
 
 ### B. Lingkungan Produksi (VPS Linux/Ubuntu)
-1. Pastikan file [backup_db.sh](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/backup_db.sh) sudah ter-upload di VPS pada folder proyek `BE`.
-2. Berikan izin eksekusi jika pertama kali dijalankan:
+1. Masuk ke folder proyek BE di VPS Anda:
+   ```bash
+   cd ~/PA-2-Kelompok-2-Face-Recognition/BE
+   ```
+2. Berikan izin eksekusi pada file script backup:
    ```bash
    chmod +x backup_db.sh
    ```
-3. Untuk melakukan backup secara manual, jalankan:
+3. Jalankan script backup secara manual:
    ```bash
    ./backup_db.sh
    ```
-4. **Otomatisasi Menggunakan Cron Job:**
-   Agar backup berjalan otomatis setiap minggu (misal setiap hari Minggu pukul 00:00), edit konfigurasi cron di VPS Anda:
+4. **Cara Melihat Hasil Backup:**
+   File backup `.sql` akan tersimpan di direktori `~/db_backups/`. Gunakan perintah berikut untuk melihat hasil dan isinya:
+   ```bash
+   cd ~/db_backups
+   ls -lh                                                 # Melihat daftar file backup dan ukurannya
+   grep -i "INSERT INTO" videnti_auth_2026-06-22.sql | head -n 10  # Memverifikasi data record yang berhasil di-backup
+   ```
+5. **Otomatisasi Menggunakan Cron Job:**
+   Agar backup berjalan otomatis setiap hari (misal pukul 02:00 dini hari), edit konfigurasi cron di VPS Anda:
    ```bash
    crontab -e
    ```
-   Tambahkan baris berikut di baris paling bawah:
+   Tambahkan baris berikut di baris paling bawah (sesuaikan dengan username VPS Anda):
    ```text
-   0 0 * * 0 /home/ubuntu/videnti-app/BE/backup_db.sh
+   0 2 * * * /home/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/BE/backup_db.sh > /dev/null 2>&1
    ```
-   *Catatan: Sesuaikan path `/home/ubuntu/videnti-app/BE` dengan letak folder proyek Anda di VPS.*
+
+---
+
+## 🛡️ Mekanisme Ketahanan (Database Fallback Resilience)
+
+Sistem microservices ini telah dilengkapi dengan mekanisme ketahanan terhadap kegagalan service pusat (`auth-service` di port `8081`). 
+
+### Cara Kerja:
+- Secara default, `attendance-service` dan `payroll-service` mengambil data profile user, detail instansi, jabatan, dan daftar admin melalui request REST API internal ke `auth-service`.
+- Jika `auth-service` mati atau port `8081` tidak dapat dihubungi (misalnya saat maintenance server), pemanggilan REST API tersebut akan gagal.
+- Sistem akan otomatis mendeteksi kegagalan tersebut dan beralih (**fallback**) untuk membaca data langsung dari tabel replikasi lokal (`users`, `companies`, `positions`) yang berada di database masing-masing (`pa2_attendance` dan `pa2_payroll`).
+- Dengan demikian, dashboard web admin, pengajuan izin/sakit, absensi masuk/pulang, dan kalkulasi payroll tetap dapat berfungsi dengan normal meskipun `auth-service` sedang offline.
+
+### Cara Simulasi Pengujian di VPS:
+1. Hentikan container `auth-service` secara manual di VPS:
+   ```bash
+   sudo docker stop videnti_auth
+   ```
+2. Akses web admin dashboard atau aplikasi mobile. Sistem akan mendeteksi `auth-service` down dan mengaktifkan fallback lokal. Anda akan melihat log fallback pada konsol docker container:
+   `--> [ATTENDANCE WORKAROUND] Gagal mengambil data dari Auth Service, mencoba local DB...`
+3. Nyalakan kembali container jika pengujian selesai:
+   ```bash
+   sudo docker start videnti_auth
+   ```
