@@ -13,15 +13,15 @@ mkdir -p "$BACKUP_DIR"
 echo "=== Memulai Backup Database Videnti ($DATE) ==="
 
 # 1. Backup Database Auth (pa2_auth)
-docker exec videnti_db pg_dump -U postgres --inserts pa2_auth > "$BACKUP_DIR/videnti_auth_$DATE.sql"
+sudo docker exec videnti_db pg_dump -U postgres --inserts pa2_auth > "$BACKUP_DIR/videnti_auth_$DATE.sql"
 echo "[✔] Backup pa2_auth berhasil."
 
 # 2. Backup Database Attendance (pa2_attendance)
-docker exec videnti_db pg_dump -U postgres --inserts pa2_attendance > "$BACKUP_DIR/videnti_attendance_$DATE.sql"
+sudo docker exec videnti_db pg_dump -U postgres --inserts pa2_attendance > "$BACKUP_DIR/videnti_attendance_$DATE.sql"
 echo "[✔] Backup pa2_attendance berhasil."
 
 # 3. Backup Database Payroll (pa2_payroll)
-docker exec videnti_db pg_dump -U postgres --inserts pa2_payroll > "$BACKUP_DIR/videnti_payroll_$DATE.sql"
+sudo docker exec videnti_db pg_dump -U postgres --inserts pa2_payroll > "$BACKUP_DIR/videnti_payroll_$DATE.sql"
 echo "[✔] Backup pa2_payroll berhasil."
 
 # Hapus backup yang berumur lebih dari 30 hari agar penyimpanan VPS tidak penuh
