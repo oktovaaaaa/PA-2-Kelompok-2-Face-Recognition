@@ -347,6 +347,37 @@
   transform: translateY(-3px);
 }
 
+/* Tombol Download APK - ikon + teks sejajar */
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tombol outline sekunder di hero (Login Web) */
+.btn-secondary-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-white);
+  padding: 1rem 2.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
+}
+
+.btn-secondary-outline:hover {
+  border-color: var(--secondary-blue);
+  color: var(--secondary-blue);
+  background: rgba(0, 209, 255, 0.05);
+  transform: translateY(-3px);
+}
+
 .hero-image-container {
   position: relative;
   width: 80%; /* Diperbesar Super Jumbo dari 60% -> 80% sesuai permintaan Bos */

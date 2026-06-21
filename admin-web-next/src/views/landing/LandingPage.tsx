@@ -372,7 +372,21 @@ Saya ingin menghubungi Anda dengan detail berikut:
             Karyawan melakukan absensi berbasis Face Recognition & Geolocation secara praktis melalui aplikasi mobile. Administrator dapat mengelola data kehadiran, sistem penggajian otomatis, sanksi, serta bonus karyawan secara fleksibel melalui aplikasi mobile maupun dashboard web tersentralisasi.
           </p>
           <div className='hero-cta'>
-            <Link href='/login' className='btn-primary'>Mulai Sekarang</Link>
+            {/* Tombol Download APK - file APK di-host di GitHub Releases */}
+            <a
+              href='https://github.com/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/releases/latest/download/videnti.apk'
+              className='btn-primary btn-download'
+              download='videnti.apk'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              <svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round' style={{ marginRight: '8px', flexShrink: 0 }}>
+                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                <polyline points='7 10 12 15 17 10' />
+                <line x1='12' y1='15' x2='12' y2='3' />
+              </svg>
+              Download APK
+            </a>
           </div>
         </div>
         
@@ -605,7 +619,21 @@ Saya ingin menghubungi Anda dengan detail berikut:
               <strong>Karyawan</strong> dapat melakukan absensi Face Recognition & Geolokasi yang super presisi, serta memantau slip gaji langsung dalam genggaman. 
               Sementara <strong>Bos (Admin)</strong> dapat memantau produktivitas tim, mengelola payroll otomatis, memberikan sanksi, serta menyetujui bonus secara fleksibel melalui antarmuka mobile yang sangat modern dan dinamis.
             </p>
-            <Link href='/login' className='btn-showcase'>Mulai Sekarang</Link>
+            {/* Tombol Download APK - file APK di-host di GitHub Releases */}
+            <a
+              href='https://github.com/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/releases/latest/download/videnti.apk'
+              className='btn-showcase btn-download'
+              download='videnti.apk'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round' style={{ marginRight: '8px', flexShrink: 0 }}>
+                <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                <polyline points='7 10 12 15 17 10' />
+                <line x1='12' y1='15' x2='12' y2='3' />
+              </svg>
+              Download APK Android
+            </a>
           </div>
         </div>
       </section>
