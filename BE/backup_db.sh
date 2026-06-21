@@ -4,7 +4,7 @@
 # ====================================================
 
 # Tentukan folder penyimpanan backup di VPS
-BACKUP_DIR="/home/ubuntu/db_backups"
+BACKUP_DIR="$HOME/db_backups"
 DATE=$(date +%Y-%m-%d)
 
 # Buat folder jika belum ada
