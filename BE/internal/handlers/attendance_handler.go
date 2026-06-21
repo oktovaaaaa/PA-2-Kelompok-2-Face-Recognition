@@ -135,6 +135,7 @@ func CheckIn(c *gin.Context) {
 	var emp models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
 	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
+		// FALLBACK: Jika auth-service (port 8081) mati, ambil profil user langsung dari database lokal pa2_attendance
 		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data dari Auth Service, mencoba local DB: %v\n", err)
 		if dbErr := database.DB.Preload("Company").Preload("Position").First(&emp, "id = ?", userID).Error; dbErr != nil {
 			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)
@@ -355,6 +356,7 @@ func CheckOut(c *gin.Context) {
 	var emp models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%v", userID)
 	if err := utils.CallInternalAPI(authURL, &emp); err != nil {
+		// FALLBACK: Jika auth-service (port 8081) mati, ambil profil user langsung dari database lokal pa2_attendance
 		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data dari Auth Service, mencoba local DB: %v\n", err)
 		if dbErr := database.DB.Preload("Company").Preload("Position").First(&emp, "id = ?", userID).Error; dbErr != nil {
 			fmt.Printf("--> [ATTENDANCE ERROR] Local DB juga gagal: %v\n", dbErr)

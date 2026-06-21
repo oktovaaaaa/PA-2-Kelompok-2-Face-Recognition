@@ -41,6 +41,9 @@ func CreatePenalty(c *gin.Context) {
 	// 2. panggil auth service internal untuk memverifikasi data karyawan
 	var checkUser models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", input.UserID)
+	// FALLBACK: Jika auth-service (port 8081) tidak bisa diakses, verifikasi karyawan
+	// dari tabel users yang direplikasi di database lokal payroll (pa2_payroll).
+	// Lihat: BE/internal/handlers/penalty_handler.go (AdminAddPenalty)
 	if err := utils.CallInternalAPI(authURL, &checkUser); err != nil {
 		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal memverifikasi user dari Auth Service, mencoba local DB: %v\n", err)
 		if dbErr := database.DB.Preload("Company").Preload("Position").First(&checkUser, "id = ?", input.UserID).Error; dbErr != nil {
@@ -125,6 +128,9 @@ func GetPenalties(c *gin.Context) {
 	// [FIX MICROSERVICES] Ambil data user via Auth Service
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", user.CompanyID)
+	// FALLBACK: Jika auth-service (port 8081) tidak bisa diakses, ambil daftar karyawan
+	// dari tabel users yang direplikasi di database lokal payroll (pa2_payroll).
+	// Lihat: BE/internal/handlers/penalty_handler.go (GetPenalties)
 	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
 		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
 		database.DB.Preload("Company").Preload("Position").Where("company_id = ?", user.CompanyID).Find(&employees)

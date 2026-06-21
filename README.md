@@ -141,13 +141,22 @@ Agar backup berjalan otomatis setiap minggu pada **hari Minggu pukul 00:00 dini 
 
 ## 🛡️ Mekanisme Ketahanan (Database Fallback Resilience)
 
-Sistem microservices ini telah dilengkapi dengan mekanisme ketahanan terhadap kegagalan service pusat (`auth-service` di port `8081`). 
+Sistem microservices ini telah dilengkapi dengan mekanisme ketahanan terhadap kegagalan service pusat (`auth-service` di port `8081`).
+
+### File Terkait:
+- **`attendance-service` (port 8082)**:
+  - [attendance_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/attendance_handler.go) (fitur check-in, check-out, history, dashboard summary)
+  - [leave_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/leave_handler.go) (approval izin, pengajuan izin admin/karyawan)
+- **`payroll-service` (port 8083)**:
+  - [payroll_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/payroll_handler.go) (kalkulasi gaji, report payroll admin)
+  - [bonus_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/bonus_handler.go) (input bonus manual admin)
+  - [penalty_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/penalty_handler.go) (input denda manual admin)
 
 ### Cara Kerja:
-- Secara default, `attendance-service` dan `payroll-service` mengambil data profile user, detail instansi, jabatan, dan daftar admin melalui request REST API internal ke `auth-service`.
-- Jika `auth-service` mati atau port `8081` tidak dapat dihubungi (misalnya saat maintenance server), pemanggilan REST API tersebut akan gagal.
-- Sistem akan otomatis mendeteksi kegagalan tersebut dan beralih (**fallback**) untuk membaca data langsung dari tabel replikasi lokal (`users`, `companies`, `positions`) yang berada di database masing-masing (`pa2_attendance` dan `pa2_payroll`).
-- Dengan demikian, dashboard web admin, pengajuan izin/sakit, absensi masuk/pulang, dan kalkulasi payroll tetap dapat berfungsi dengan normal meskipun `auth-service` sedang offline.
+- Secara default, `attendance-service` dan `payroll-service` mengambil data profile user, detail instansi, jabatan, dan daftar admin melalui request REST API internal ke `auth-service` (port `8081`).
+- Jika `auth-service` mati atau port `8081` terputus, pemanggilan REST API tersebut akan gagal dengan error *connection refused*.
+- Sistem akan mendeteksi kegagalan tersebut melalui penanganan error pada client HTTP dan beralih (**fallback**) untuk membaca data secara lokal dari tabel replikasi (`users`, `companies`, `positions`) di database internal masing-masing (`pa2_attendance` dan `pa2_payroll`).
+- Dengan demikian, dashboard web admin, perizinan, absensi masuk/pulang, dan laporan payroll tetap berfungsi dengan normal meskipun `auth-service` sedang offline.
 
 ### Cara Simulasi Pengujian di VPS:
 1. Hentikan container `auth-service` secara manual di VPS:

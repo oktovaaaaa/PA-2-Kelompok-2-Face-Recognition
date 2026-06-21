@@ -31,6 +31,9 @@ func AdminGetLeaveRequests(c *gin.Context) {
 	// 1. Fetch Employees from Auth Service (Port 8081)
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", adminUser.CompanyID)
+	// FALLBACK: Jika auth-service (port 8081) tidak bisa diakses, ambil daftar karyawan
+	// dari tabel users yang direplikasi di database lokal attendance (pa2_attendance).
+	// Lihat: BE/internal/handlers/leave_handler.go (GetLeaves - admin)
 	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
 		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
 		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", adminUser.CompanyID).Find(&employees).Error; dbErr != nil {
@@ -345,6 +348,9 @@ func EmployeeCreateLeave(c *gin.Context) {
 	// ambil daftar data admin perusahaan ini dari auth service
 	var admins []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/admins?company_id=%s", emp.CompanyID)
+	// FALLBACK: Jika auth-service (port 8081) tidak bisa diakses, ambil daftar admin
+	// dari tabel users yang direplikasi di database lokal attendance (pa2_attendance).
+	// Lihat: BE/internal/handlers/leave_handler.go (SubmitLeave - pengiriman notif ke admin)
 	if err := utils.CallInternalAPI(authURL, &admins); err != nil {
 		fmt.Printf("--> [ATTENDANCE WORKAROUND] Gagal mengambil data admin dari Auth Service, mencoba local DB: %v\n", err)
 		database.DB.Preload("Company").Preload("Position").Where("company_id = ? AND role = ?", emp.CompanyID, "ADMIN").Find(&admins)

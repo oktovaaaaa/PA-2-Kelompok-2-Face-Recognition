@@ -114,6 +114,9 @@ func AdminGetSalaries(c *gin.Context) {
 	// 1. Fetch Employees from Auth Service (Port 8081)
 	var employees []models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users?company_id=%s", admin.CompanyID)
+	// FALLBACK: Jika auth-service (port 8081) tidak bisa diakses, ambil data karyawan dari
+	// tabel users yang direplikasi di database lokal payroll (pa2_payroll).
+	// Lihat: BE/internal/handlers/payroll_handler.go (AdminGetSalaries)
 	if err := utils.CallInternalAPI(authURL, &employees); err != nil {
 		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan dari Auth Service, mencoba local DB: %v\n", err)
 		if dbErr := database.DB.Preload("Company").Preload("Position").Where("company_id = ?", admin.CompanyID).Find(&employees).Error; dbErr != nil {
@@ -359,6 +362,9 @@ func generateSalary(userID string, month int, year int) {
 	// 1. ambil data user karyawan secara internal dari auth service
 	var user models.User
 	authURL := fmt.Sprintf("http://localhost:8081/api/internal/users/single?id=%s", userID)
+	// FALLBACK: Jika auth-service (port 8081) tidak bisa diakses, ambil data user tunggal
+	// dari tabel users yang direplikasi di database lokal payroll (pa2_payroll).
+	// Lihat: BE/internal/handlers/payroll_handler.go (generateSalary)
 	if err := utils.CallInternalAPI(authURL, &user); err != nil {
 		fmt.Printf("--> [PAYROLL WORKAROUND] Gagal mengambil data karyawan tunggal dari Auth Service, mencoba local DB: %v\n", err)
 		if dbErr := database.DB.Preload("Company").Preload("Position").First(&user, "id = ?", userID).Error; dbErr != nil {

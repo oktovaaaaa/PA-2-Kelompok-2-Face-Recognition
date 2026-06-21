@@ -319,4 +319,23 @@ Gunakan Multi-Worker (Multiprocessing): Jalankan Uvicorn dengan menambahkan para
 Contoh: uvicorn process_face_api:app --host 0.0.0.0 --port 5000 --workers 4
 Ini akan membuat Python membuka 4 proses paralel di RAM untuk memproses 4 wajah sekaligus di core CPU yang berbeda.
 Kompres Gambar di Sisi Aplikasi (Flutter): Sebelum mengirim foto ke backend, kompres resolusi gambar (maksimal 640x640 piksel saja karena input deteksi model diset pada det_size=(640, 640)). Ini akan memangkas lonjakan network bandwidth dan meringankan beban kerja CPU.
-8:17 AM
+
+---
+
+## 12. Mekanisme Ketahanan Database (Database Fallback Resilience)
+
+### File Lokasi Alur:
+- **Attendance Service**:
+  - [attendance_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/attendance_handler.go)
+  - [leave_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/leave_handler.go)
+- **Payroll Service**:
+  - [payroll_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/payroll_handler.go)
+  - [bonus_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/bonus_handler.go)
+  - [penalty_handler.go](file:///c:/Users/Oktovaaaaa/Documents/GitHub/PA-2-Kelompok-2-Face-Recognition/BE/internal/handlers/penalty_handler.go)
+
+### Penjelasan Alur:
+1. **Request API Internal:** Microservices `attendance-service` (port `8082`) dan `payroll-service` (port `8083`) secara default memanggil endpoint REST API internal `auth-service` (port `8081`) menggunakan helper `utils.CallInternalAPI` untuk mengambil data instansi, jabatan, dan detail profil pengguna.
+2. **Deteksi Gangguan Port:** Jika `auth-service` mati (port `8081` terputus/off), pemanggilan HTTP internal tersebut akan gagal dengan error *connection refused*.
+3. **Peralihan ke Database Lokal (Fallback):** Saat mendeteksi error tersebut, masing-masing handler tidak akan mengembalikan pesan error ke client, melainkan langsung beralih mengeksekusi query database GORM (`database.DB.Preload(...)`) secara lokal pada tabel replikasi (`users`, `companies`, `positions`) di database layanan itu sendiri (`pa2_attendance` dan `pa2_payroll`).
+4. **Respon Sukses:** Data lokal hasil fallback tersebut langsung dikirim ke client, menjamin sistem dashboard, absensi masuk/pulang, perizinan, dan payroll tetap berjalan normal tanpa gangguan.
+
