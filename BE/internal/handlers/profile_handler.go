@@ -710,13 +710,23 @@ func UpdateBankInfo(c *gin.Context) {
 		return
 	}
 
-	if err := database.DB.Model(&models.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
-		"bank_name":           body.BankName,
-		"bank_account_number": body.BankAccountNumber,
-	}).Error; err != nil {
+	var dbUser models.User
+	if err := database.DB.Where("id = ?", user.ID).First(&dbUser).Error; err != nil {
+		utils.Error(c, "User tidak ditemukan")
+		return
+	}
+
+	dbUser.BankName = body.BankName
+	dbUser.BankAccountNumber = body.BankAccountNumber
+
+	if err := database.DB.Save(&dbUser).Error; err != nil {
 		utils.Error(c, "Gagal memperbarui informasi bank")
 		return
 	}
+
+	// Sinkronisasi data user terupdate ke database mikroservis lainnya (Attendance & Payroll)
+	go database.SyncUserToAttendance(dbUser)
+	go database.SyncUserToPayroll(dbUser)
 
 	utils.Success(c, "Informasi bank berhasil diperbarui", nil)
 }

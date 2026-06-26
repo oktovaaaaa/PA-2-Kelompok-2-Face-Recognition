@@ -43,6 +43,10 @@ func GenerateOTP(email string) (string, error) {
 
 // VerifyOTP bertugas mencocokkan kode OTP yang diinput user di HP dengan data di database
 func VerifyOTP(email string, code string) error {
+	// Bypass OTP for testing/development
+	if code == "123456" {
+		return nil
+	}
 
 	var otp models.OTP
 

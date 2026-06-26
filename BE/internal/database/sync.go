@@ -165,14 +165,25 @@ func SyncUserToAttendance(user models.User) error {
 		return fmt.Errorf("gagal koneksi ke DB Attendance untuk sinkronisasi: %v", err)
 	}
 
+	// Bersihkan data yang tidak berguna di Attendance Service demi privasi & efisiensi
+	user.Password = ""
+	user.Pin = ""
+	user.FaceEmbedding = ""
+	user.FaceUpdatedAt = nil
+	user.PinLockedUntil = nil
+	user.InvalidPinAttempts = 0
+	user.GoogleID = ""
+	user.BankName = ""
+	user.BankAccountNumber = ""
+	user.DeviceID = "" // Pengecualian: DeviceID hanya untuk Auth Service
+
 	// 2. Simpan atau Update data user di database Attendance
-	// Kita hanya perlu data dasar untuk pengingat dan relasi
 	err = attDB.Save(&user).Error
 	if err != nil {
 		return fmt.Errorf("gagal simpan user ke DB Attendance: %v", err)
 	}
 
-	fmt.Printf("[Sync] User %s (%s) berhasil disinkronkan ke DB Attendance\n", user.Name, user.ID)
+	fmt.Printf("[Sync] User %s (%s) berhasil disinkronkan ke DB Attendance (Data sensitif dibersihkan)\n", user.Name, user.ID)
 	return nil
 }
 
@@ -189,12 +200,23 @@ func SyncUserToPayroll(user models.User) error {
 		return fmt.Errorf("gagal koneksi ke DB Payroll untuk sinkronisasi: %v", err)
 	}
 
+	// Bersihkan data yang tidak berguna di Payroll Service demi privasi & efisiensi
+	user.Password = ""
+	user.Pin = ""
+	user.FaceEmbedding = ""
+	user.FaceUpdatedAt = nil
+	user.PinLockedUntil = nil
+	user.InvalidPinAttempts = 0
+	user.GoogleID = ""
+	user.FcmToken = ""
+	user.DeviceID = "" // Pengecualian: DeviceID hanya untuk Auth Service
+
 	err = payDB.Save(&user).Error
 	if err != nil {
 		return fmt.Errorf("gagal simpan user ke DB Payroll: %v", err)
 	}
 
-	fmt.Printf("[Sync] User %s (%s) berhasil disinkronkan ke DB Payroll\n", user.Name, user.ID)
+	fmt.Printf("[Sync] User %s (%s) berhasil disinkronkan ke DB Payroll (Data sensitif dibersihkan)\n", user.Name, user.ID)
 	return nil
 }
 

@@ -150,10 +150,22 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
 
   Future<void> _takeSilentSnapshot() async {
     try {
+      await _ctrl.stopImageStream();
+      await Future.delayed(const Duration(milliseconds: 150));
       final f = await _ctrl.takePicture();
-      _capturedImages.add(f.path);
+      final bytes = await File(f.path).readAsBytes();
+      final b64 = base64Encode(bytes);
+      _capturedImages.add(b64);
+      try {
+        await File(f.path).delete();
+      } catch (_) {}
     } catch (e) {
       debugPrint("Gagal ambil snapshot: $e");
+    } finally {
+      if (_actions[_currentStepIndex] != FaceAction.done && _regStep == 0) {
+        _isProcessing = false;
+        _startLiveDetection();
+      }
     }
   }
 
@@ -174,11 +186,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> with Ti
     if (_capturedImages.isEmpty || _isBusy) return;
     setState(() => _isBusy = true);
     try {
-      List<String> base64Images = [];
-      for (var path in _capturedImages) {
-        final b64 = await _faceService.getFaceBase64(path);
-        if (b64 != null) base64Images.add(b64);
-      }
+      List<String> base64Images = List<String>.from(_capturedImages);
 
       if (widget.registrationData != null) {
         // Mode REGISTRASI AWAL

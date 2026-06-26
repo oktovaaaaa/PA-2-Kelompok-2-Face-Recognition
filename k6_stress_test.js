@@ -20,7 +20,7 @@ import { Trend, Rate } from 'k6/metrics';
 const BASE_URL = 'http://103.49.238.222:8080';
 
 // Token Karyawan
-const EMPLOYEE_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb21wYW55X2lkIjoiNzk0ZmYxY2QtM2NlOC00NWFiLWE1YjYtNzljODU2MDNmZDkyIiwiZXhwIjoxNzgxNTIwMDU4LCJyb2xlIjoiRU1QTE9ZRUUiLCJ1c2VyX2lkIjoiYzUxMWMwYjYtMzA5My00NzkyLTlkMWYtMzRjZmYwMTNjNmU2In0.klQfbnu3lE5Wxl2_DMme0Gi3-RKxWLCMHghInaRMIhE';
+const EMPLOYEE_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb21wYW55X2lkIjoiODQ1MzAyNmItYmE5ZS00MWFlLTlkNDktMWRhYjI0ZGJmMDA2IiwiZXhwIjoxNzgyNDQwMzQ3LCJyb2xlIjoiRU1QTE9ZRUUiLCJ1c2VyX2lkIjoiOTcwNWRiNjUtMWM4NC00MDBjLWFhOTYtOTJjOTcxOWFhMjhkIn0.RVUx2yN-3Dz6CZvm-9pLd5-Cgw4ubs0k0xHqZidYnZQ';
 
 // Load face image dari file (k6 baca saat startup)
 const FACE_IMAGE = open('./face_base64.txt');
@@ -110,8 +110,8 @@ export default function () {
   // Yang ditest: apakah server tahan menjalankan face recognition 100x bersamaan
   group('Employee - Check In (Face Recognition Load Test)', () => {
     const payload = JSON.stringify({
-      latitude:   -6.2088,   // Koordinat Jakarta (sesuaikan dengan lokasi perusahaan)
-      longitude:  106.8456,  // Koordinat Jakarta
+      latitude:   2.3856999379272374,   // Koordinat Camp Nou, Barcelona
+      longitude:  99.1478135628844,  // Koordinat Camp Nou, Barcelona
       face_image: FACE_IMAGE.trim(),  // Face image asli dari file
       bssid: '',
       ssid: '',
