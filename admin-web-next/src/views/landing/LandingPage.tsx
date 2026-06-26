@@ -372,9 +372,9 @@ Saya ingin menghubungi Anda dengan detail berikut:
             Karyawan melakukan absensi berbasis Face Recognition & Geolocation secara praktis melalui aplikasi mobile. Administrator dapat mengelola data kehadiran, sistem penggajian otomatis, sanksi, serta bonus karyawan secara fleksibel melalui aplikasi mobile maupun dashboard web tersentralisasi.
           </p>
           <div className='hero-cta'>
-            {/* Tombol Download APK - file APK di-host di GitHub Releases */}
+            {/* Tombol Download APK - file APK di-host lokal di public directory */}
             <a
-              href='https://github.com/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/releases/latest/download/videnti.apk'
+              href='/videnti.apk'
               className='btn-primary btn-download'
               download='videnti.apk'
               target='_blank'
@@ -619,9 +619,9 @@ Saya ingin menghubungi Anda dengan detail berikut:
               <strong>Karyawan</strong> dapat melakukan absensi Face Recognition & Geolokasi yang super presisi, serta memantau slip gaji langsung dalam genggaman. 
               Sementara <strong>Bos (Admin)</strong> dapat memantau produktivitas tim, mengelola payroll otomatis, memberikan sanksi, serta menyetujui bonus secara fleksibel melalui antarmuka mobile yang sangat modern dan dinamis.
             </p>
-            {/* Tombol Download APK - file APK di-host di GitHub Releases */}
+            {/* Tombol Download APK - file APK di-host lokal di public directory */}
             <a
-              href='https://github.com/oktovaaaaa/PA-2-Kelompok-2-Face-Recognition/releases/latest/download/videnti.apk'
+              href='/videnti.apk'
               className='btn-showcase btn-download'
               download='videnti.apk'
               target='_blank'
