@@ -15,7 +15,8 @@
 # vendor/
 
 # Local configuration
-.env
+.env*
+!.env.example
 
 # Secrets / Credentials
 service-account.json
