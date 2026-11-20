@@ -363,6 +363,31 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : const Text('Buka Kunci', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: TextButton(
+                              onPressed: () async {
+                                await SessionStorage.clear();
+                                if (!mounted) return;
+                                final auth = Provider.of<AuthProvider>(context, listen: false);
+                                auth.logout();
+                                auth.unlockSession();
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LandingScreen()),
+                                  (_) => false,
+                                );
+                              },
+                              child: const Text(
+                                'Keluar / Ganti Akun',
+                                style: TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       )
                     : Form(

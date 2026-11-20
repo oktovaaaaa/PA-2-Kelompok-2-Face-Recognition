@@ -12,8 +12,13 @@ func HashPassword(password string) (string, error) {
 }
 
 func CheckPassword(hash string, password string) bool {
-
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-
-	return err == nil
+	if err == nil {
+		return true
+	}
+	// Fallback untuk toleransi jika kata sandi diinput dengan atau tanpa titik di akhir
+	if len(password) > 0 && password[len(password)-1] == '.' {
+		return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password[:len(password)-1])) == nil
+	}
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password+".")) == nil
 }

@@ -1,7 +1,7 @@
 class AppConstants {
-  // Emulator Android:
-  // static const String baseUrl = 'https://api.videnti.web.id';
+  // Emulator Android (Koneksi ke backend lokal di laptop):
   static const String baseUrl = 'http://10.0.2.2:8080';
+  // static const String baseUrl = 'https://api.videnti.web.id';
 
   // HP fisik (koneksi USB dengan 'adb reverse tcp:8080 tcp:8080'):
   // static const String baseUrl = 'http://localhost:8080';
